@@ -1,0 +1,442 @@
+const SUPABASE_URL = "https://bynpuhoysivxxlblxica.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5bnB1aG95c2l2eHhsYmx4aWNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MTE1NjAsImV4cCI6MjA5NDQ4NzU2MH0.JltZJYggs2ycs3u0HUelRMivZgsByW_g5-n3qz6EaPk";
+
+const navToggle = document.querySelector("[data-nav-toggle]");
+const nav = document.querySelector("[data-nav]");
+const header = document.querySelector("[data-header]");
+const filters = document.querySelectorAll("[data-filter]");
+const cards = document.querySelectorAll("[data-category]");
+const form = document.querySelector("[data-registration-form]");
+const statusMessage = document.querySelector("[data-form-status]");
+const sessionToggles = document.querySelectorAll("[data-session-toggle]");
+const courseSelects = document.querySelectorAll("[data-session-course]");
+const feeTotals = document.querySelectorAll("[data-fee-total]");
+const feeNote = document.querySelector("[data-fee-note]");
+const countdowns = document.querySelectorAll("[data-countdown]");
+const floatingRegister = document.querySelector("[data-floating-register]");
+const registerButtons = document.querySelectorAll('a[href="register.html"]:not([data-floating-register])');
+const seatsLeftItems = document.querySelectorAll("[data-seats-left]");
+const seatsNotes = document.querySelectorAll("[data-seats-note]");
+const galleryMain = document.querySelector("[data-gallery-main]");
+const gallerySideA = document.querySelector("[data-gallery-side-a]");
+const gallerySideB = document.querySelector("[data-gallery-side-b]");
+
+let sessionCourses = {
+  session1: [],
+  session2: [],
+  session3: []
+};
+
+let feeBySessionCount = {
+  0: 0,
+  1: 600,
+  2: 1000,
+  3: 1400
+};
+
+// Fetch all dynamic data from Supabase
+(async function loadDynamicData() {
+  try {
+    const [sessionsRes, coursesRes, feesRes] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/sessions?is_active=eq.true&order=sort_order.asc`, { headers: { "apikey": SUPABASE_KEY } }),
+      fetch(`${SUPABASE_URL}/rest/v1/courses?is_active=eq.true&order=sort_order.asc`, { headers: { "apikey": SUPABASE_KEY } }),
+      fetch(`${SUPABASE_URL}/rest/v1/fee_tiers?order=session_count.asc`, { headers: { "apikey": SUPABASE_KEY } })
+    ]);
+
+    if (!sessionsRes.ok || !coursesRes.ok || !feesRes.ok) return;
+
+    const sessionsData = await sessionsRes.json();
+    const coursesData = await coursesRes.json();
+    const feesData = await feesRes.json();
+
+    // Build sessionCourses map
+    sessionCourses = {};
+    sessionsData.forEach((s, i) => {
+      const key = `session${i + 1}`;
+      sessionCourses[key] = coursesData
+        .filter((c) => c.session_id === s.id)
+        .map((c) => c.name);
+    });
+
+    // Build fee map
+    feeBySessionCount = {};
+    feesData.forEach((f) => { feeBySessionCount[f.session_count] = f.fee_amount; });
+
+    // Re-populate course dropdowns on register page
+    courseSelects.forEach((select) => {
+      const session = select.dataset.sessionCourse;
+      const existingOptions = select.querySelectorAll("option:not(:first-child)");
+      existingOptions.forEach((o) => o.remove());
+      (sessionCourses[session] || []).forEach((course) => {
+        const option = document.createElement("option");
+        option.value = course;
+        option.textContent = course;
+        select.append(option);
+      });
+    });
+
+    // --- Populate homepage tracks grid ---
+    const trackGrid = document.getElementById("trackGrid");
+    if (trackGrid) {
+      trackGrid.innerHTML = coursesData
+        .filter((c) => c.image_url)
+        .map((c) => `<article class="track-card" data-category="${c.category}"><img src="${c.image_url}" alt="${c.name}"><div><span>${c.class_range || "Classes 6-12"}</span><h3>${c.name}</h3><p>${c.description || ""}</p></div></article>`)
+        .join("");
+
+      // Re-bind filter buttons to new cards
+      const newCards = trackGrid.querySelectorAll("[data-category]");
+      filters.forEach((button) => {
+        button.addEventListener("click", () => {
+          const category = button.dataset.filter;
+          filters.forEach((f) => f.classList.remove("active"));
+          button.classList.add("active");
+          newCards.forEach((card) => {
+            card.hidden = !(category === "all" || card.dataset.category === category);
+          });
+        });
+      });
+    }
+
+    // --- Populate homepage sessions section ---
+    const sessionColumns = document.getElementById("sessionColumns");
+    if (sessionColumns) {
+      sessionColumns.innerHTML = sessionsData.map((s) => {
+        const courses = coursesData.filter((c) => c.session_id === s.id);
+        return `<article class="session-card"><h3>${s.name} <span>${s.time_slot}</span></h3><ul>${courses.map((c) => `<li>${c.name}</li>`).join("")}</ul></article>`;
+      }).join("");
+    }
+
+    // --- Populate homepage fees table ---
+    const feeTableBody = document.getElementById("feeTableBody");
+    if (feeTableBody) {
+      feeTableBody.innerHTML = feesData
+        .filter((f) => f.session_count > 0)
+        .map((f) => `<tr><td>${f.session_count} Session${f.session_count > 1 ? "s" : ""}</td><td>${f.label || ""}</td><td>Rs. ${f.fee_amount.toLocaleString("en-IN")}</td></tr>`)
+        .join("");
+    }
+  } catch (e) {
+    // Silently fall back if fetch fails
+  }
+})();
+
+navToggle?.addEventListener("click", () => {
+  const isOpen = nav.classList.toggle("open");
+  navToggle.setAttribute("aria-expanded", String(isOpen));
+});
+
+nav?.addEventListener("click", (event) => {
+  if (event.target.closest("a")) {
+    nav.classList.remove("open");
+    navToggle?.setAttribute("aria-expanded", "false");
+  }
+});
+
+window.addEventListener("scroll", () => {
+  header?.classList.toggle("scrolled", window.scrollY > 12);
+}, { passive: true });
+
+if (floatingRegister && registerButtons.length && "IntersectionObserver" in window) {
+  const visibleRegisterButtons = new Set();
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        visibleRegisterButtons.add(entry.target);
+      } else {
+        visibleRegisterButtons.delete(entry.target);
+      }
+    });
+
+    floatingRegister.classList.toggle("visible", visibleRegisterButtons.size === 0);
+  }, { threshold: 0.2 });
+
+  registerButtons.forEach((button) => observer.observe(button));
+} else if (floatingRegister) {
+  floatingRegister.classList.add("visible");
+}
+
+filters.forEach((button) => {
+  button.addEventListener("click", () => {
+    const category = button.dataset.filter;
+    filters.forEach((filter) => filter.classList.remove("active"));
+    button.classList.add("active");
+
+    cards.forEach((card) => {
+      card.hidden = !(category === "all" || card.dataset.category === category);
+    });
+  });
+});
+
+courseSelects.forEach((select) => {
+  const session = select.dataset.sessionCourse;
+  sessionCourses[session].forEach((course) => {
+    const option = document.createElement("option");
+    option.value = course;
+    option.textContent = course;
+    select.append(option);
+  });
+});
+
+function selectedSessions() {
+  return [...sessionToggles].filter((toggle) => toggle.checked);
+}
+
+function formatFee(amount) {
+  return `Rs. ${amount.toLocaleString("en-IN")}`;
+}
+
+function updateRegistrationState() {
+  const selected = selectedSessions();
+  const fee = feeBySessionCount[selected.length] ?? 0;
+
+  feeTotals.forEach((total) => {
+    total.textContent = formatFee(fee);
+  });
+
+  if (feeNote) {
+    feeNote.textContent = selected.length
+      ? `${selected.length} session${selected.length > 1 ? "s" : ""} selected.`
+      : "Select at least one session to calculate fee.";
+  }
+
+  sessionToggles.forEach((toggle) => {
+    const select = document.querySelector(`[data-session-course="${toggle.value}"]`);
+    if (!select) return;
+
+    select.disabled = !toggle.checked;
+    select.required = toggle.checked;
+    if (!toggle.checked) {
+      select.value = "";
+    }
+  });
+}
+
+sessionToggles.forEach((toggle) => {
+  toggle.addEventListener("change", updateRegistrationState);
+});
+
+updateRegistrationState();
+
+function updateCountdown() {
+  if (!countdowns.length) return;
+
+  countdowns.forEach((countdown) => {
+    const deadline = new Date(countdown.dataset.deadline);
+    const now = new Date();
+    const difference = Math.max(0, deadline - now);
+    const totalMinutes = Math.floor(difference / 60000);
+    const totalSeconds = Math.floor(difference / 1000);
+    const days = Math.floor(totalMinutes / 1440);
+    const hours = Math.floor((totalMinutes % 1440) / 60);
+    const minutes = totalMinutes % 60;
+    const seconds = totalSeconds % 60;
+
+    countdown.querySelector("[data-days]").textContent = String(days).padStart(2, "0");
+    countdown.querySelector("[data-hours]").textContent = String(hours).padStart(2, "0");
+    countdown.querySelector("[data-minutes]").textContent = String(minutes).padStart(2, "0");
+    countdown.querySelector("[data-seconds]").textContent = String(seconds).padStart(2, "0");
+  });
+}
+
+updateCountdown();
+if (countdowns.length) {
+  setInterval(updateCountdown, 1000);
+}
+
+function updateSeatsLeft() {
+  if (!seatsLeftItems.length) return;
+
+  const deadline = new Date("2026-06-10T23:59:59+05:30");
+  const start = new Date("2026-05-02T00:00:00+05:30");
+  const now = new Date();
+  const totalWindow = deadline - start;
+  const elapsed = Math.max(0, Math.min(totalWindow, now - start));
+  const progress = totalWindow > 0 ? elapsed / totalWindow : 1;
+  const baseline = Math.round(34 - progress * 10);
+  const pulse = Math.floor((Date.now() / 45000) % 3);
+  const remaining = Math.max(18, baseline - pulse);
+
+  seatsLeftItems.forEach((item) => {
+    item.textContent = String(remaining);
+  });
+  seatsNotes.forEach((note) => {
+    note.textContent = remaining <= 20
+      ? "Final seats moving fast. Registration is recommended today."
+      : "Limited batch size for better mentoring.";
+  });
+}
+
+updateSeatsLeft();
+if (seatsLeftItems.length) {
+  setInterval(updateSeatsLeft, 15000);
+}
+
+let galleryImages = [
+  { src: "https://static.wixstatic.com/media/ccbabc_5fba4c052e4a4ebe89a4756ed43488b4~mv2.png", alt: "Sports activity at LPU Summer School" },
+  { src: "https://static.wixstatic.com/media/ccbabc_273ed44bcc2c4ebfb90688491c10349a~mv2.png", alt: "Artificial intelligence workshop" },
+  { src: "https://static.wixstatic.com/media/ccbabc_c16d7be2eaca45aaa00b639715071b55~mv2.png", alt: "Theatre and acting workshop" },
+  { src: "https://static.wixstatic.com/media/ccbabc_11bb09d6c2164a4185e0d3f012ab3423~mv2.png", alt: "Robotics and drones workshop" },
+  { src: "https://static.wixstatic.com/media/ccbabc_49e677a164c84c6295873d8bc2ea33f9~mv2.png", alt: "Dance workshop" },
+  { src: "https://static.wixstatic.com/media/ccbabc_620eb550d859431aa501391fa6557a1e~mv2.png", alt: "Music studio" }
+];
+
+// Load gallery from DB
+(async function loadGalleryImages() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/gallery_images?is_active=eq.true&order=sort_order.asc`, { headers: { "apikey": SUPABASE_KEY } });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.length) {
+        galleryImages = data.map((img) => ({ src: img.image_url, alt: img.alt_text }));
+      }
+    }
+  } catch (e) { /* fallback to hardcoded */ }
+})();
+
+function swapGalleryImage(image, imageData) {
+  if (!image) return;
+  const frame = image.closest(".hero-image");
+  frame?.classList.add("is-changing");
+
+  setTimeout(() => {
+    image.src = imageData.src;
+    image.alt = imageData.alt;
+    frame?.classList.remove("is-changing");
+  }, 260);
+}
+
+let galleryIndex = 0;
+function rotateHeroGallery() {
+  if (!galleryMain || !gallerySideA || !gallerySideB) return;
+  galleryIndex = (galleryIndex + 1) % galleryImages.length;
+
+  swapGalleryImage(galleryMain, galleryImages[galleryIndex]);
+  swapGalleryImage(gallerySideA, galleryImages[(galleryIndex + 1) % galleryImages.length]);
+  swapGalleryImage(gallerySideB, galleryImages[(galleryIndex + 2) % galleryImages.length]);
+}
+
+if (galleryMain) {
+  setInterval(rotateHeroGallery, 4200);
+}
+
+form?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const selected = selectedSessions();
+  if (sessionToggles.length && selected.length === 0) {
+    statusMessage.textContent = "Please select at least one session and one class.";
+    statusMessage.classList.add("error");
+    return;
+  }
+
+  const data = new FormData(form);
+  const fee = feeBySessionCount[selected.length] ?? 0;
+  const submitButton = form.querySelector('button[type="submit"]');
+
+  submitButton.disabled = true;
+  submitButton.textContent = "Submitting...";
+  statusMessage.classList.remove("error");
+  statusMessage.textContent = "";
+
+  const payload = {
+    student_name: data.get("studentName"),
+    class_level: data.get("classLevel"),
+    school_name: data.get("schoolName"),
+    city: data.get("city"),
+    guardian_name: data.get("guardianName"),
+    phone: data.get("phone"),
+    email: data.get("email"),
+    emergency_phone: data.get("emergencyPhone"),
+    session1_course: data.get("session1Course") || null,
+    session2_course: data.get("session2Course") || null,
+    session3_course: data.get("session3Course") || null,
+    medical_note: data.get("medicalNote") || null,
+    total_fee: fee
+  };
+
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/registrations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`,
+        "Prefer": "return=minimal"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Registration failed");
+    }
+
+    statusMessage.classList.remove("error");
+    statusMessage.textContent = `Registration received for ${payload.student_name}. Selected fee: ${formatFee(fee)}. We will contact you shortly!`;
+    form.reset();
+    updateRegistrationState();
+
+    // Send confirmation email to parent
+    if (payload.email) {
+      const courses = [payload.session1_course, payload.session2_course, payload.session3_course].filter(Boolean);
+      fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: payload.email,
+          subject: "Registration Received - LPU Summer School",
+          html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px"><div style="background:#f3700d;color:white;padding:20px;border-radius:10px 10px 0 0;text-align:center"><h1 style="margin:0;font-size:22px">Registration Received!</h1><p style="margin:6px 0 0;opacity:0.9">LPU Summer School</p></div><div style="background:white;padding:24px;border:1px solid #e4e7ec;border-top:none;border-radius:0 0 10px 10px"><p>Dear <strong>${payload.guardian_name}</strong>,</p><p>Thank you for registering <strong>${payload.student_name}</strong> (${payload.class_level}) for LPU Summer School.</p><p><strong>Courses selected:</strong> ${courses.join(", ")}</p><p><strong>Total fee:</strong> Rs. ${fee}</p><p>Your registration is <strong>pending review</strong>. Our team will confirm it shortly and reach out with further details.</p><p style="color:#667085;font-size:13px;margin-top:24px">For queries: summerschool@lpu.co.in | +91 860 723 4098</p></div></div>`
+        })
+      }).catch(() => {});
+    }
+  } catch (error) {
+    statusMessage.classList.add("error");
+    statusMessage.textContent = `Something went wrong: ${error.message}. Please try again.`;
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = "Submit Registration";
+  }
+});
+
+// Scroll reveal
+if ("IntersectionObserver" in window) {
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("visible");
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.08, rootMargin: "0px 0px -30px 0px" });
+
+  document.querySelectorAll(".reveal").forEach((el) => revealObserver.observe(el));
+}
+
+// Close mobile nav on outside click
+document.addEventListener("click", (event) => {
+  if (nav?.classList.contains("open") && !event.target.closest(".site-nav") && !event.target.closest(".nav-toggle")) {
+    nav.classList.remove("open");
+    navToggle?.setAttribute("aria-expanded", "false");
+  }
+});
+
+// Form progress steps
+const progressSteps = document.querySelectorAll(".progress-step");
+const formBlocks = document.querySelectorAll(".form-block");
+
+if (progressSteps.length && formBlocks.length && "IntersectionObserver" in window) {
+  const stepObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      const index = [...formBlocks].indexOf(entry.target);
+      if (index === -1) return;
+
+      progressSteps.forEach((step, i) => {
+        step.classList.remove("active", "done");
+        if (i < index) step.classList.add("done");
+        if (i === index) step.classList.add("active");
+      });
+    });
+  }, { threshold: 0.4, rootMargin: "-80px 0px -40% 0px" });
+
+  formBlocks.forEach((block) => stepObserver.observe(block));
+}

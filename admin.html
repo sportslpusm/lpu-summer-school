@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin | LPU Summer School</title>
+    <link rel="stylesheet" href="admin.css">
+  </head>
+  <body>
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+      <div class="login-card">
+        <h1>Admin Login</h1>
+        <p>LPU Summer School Dashboard</p>
+        <form id="loginForm">
+          <label>Email <input type="email" id="loginEmail" required></label>
+          <label>Password <input type="password" id="loginPassword" required></label>
+          <button type="submit" class="btn primary">Sign In</button>
+          <button type="button" class="btn-link" id="forgotPassBtn">Forgot Password?</button>
+          <p class="login-error" id="loginError"></p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard" id="dashboard" hidden>
+      <header class="admin-header">
+        <div class="admin-brand">
+          <strong>LPU Summer School</strong>
+          <span>Admin Dashboard</span>
+        </div>
+        <div class="admin-user">
+          <span id="adminEmail"></span>
+          <button class="btn ghost small" id="changePassBtn">Change Password</button>
+          <button class="btn ghost small" id="logoutBtn">Logout</button>
+        </div>
+      </header>
+
+      <nav class="admin-tabs">
+        <button class="tab active" data-tab="registrations">Registrations</button>
+        <button class="tab" data-tab="courses">Courses</button>
+        <button class="tab" data-tab="sessions">Sessions</button>
+        <button class="tab" data-tab="fees">Fees</button>
+        <button class="tab" data-tab="gallery">Gallery</button>
+        <button class="tab" data-tab="settings">Settings</button>
+      </nav>
+
+      <main class="admin-main">
+        <!-- Registrations Tab -->
+        <section class="tab-panel active" id="panel-registrations">
+          <div class="panel-header">
+            <h2>Registrations</h2>
+            <div class="panel-actions">
+              <select id="regStatusFilter">
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+              <button class="btn ghost small" id="exportCsvBtn">Export CSV</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table id="regTable">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Student</th>
+                  <th>Class</th>
+                  <th>School</th>
+                  <th>Guardian</th>
+                  <th>Phone</th>
+                  <th>Sessions</th>
+                  <th>Fee</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="regBody"></tbody>
+            </table>
+          </div>
+          <p class="empty-state" id="regEmpty" hidden>No registrations found.</p>
+        </section>
+
+        <!-- Courses Tab -->
+        <section class="tab-panel" id="panel-courses">
+          <div class="panel-header">
+            <h2>Courses</h2>
+            <button class="btn primary small" id="addCourseBtn">+ Add Course</button>
+          </div>
+          <div class="table-wrap">
+            <table id="courseTable">
+              <thead>
+                <tr>
+                  <th>Course Name</th>
+                  <th>Session</th>
+                  <th>Category</th>
+                  <th>Class Range</th>
+                  <th>Active</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="courseBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Sessions Tab -->
+        <section class="tab-panel" id="panel-sessions">
+          <div class="panel-header">
+            <h2>Sessions</h2>
+            <button class="btn primary small" id="addSessionBtn">+ Add Session</button>
+          </div>
+          <div class="table-wrap">
+            <table id="sessionTable">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Time Slot</th>
+                  <th>Order</th>
+                  <th>Active</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="sessionBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Fees Tab -->
+        <section class="tab-panel" id="panel-fees">
+          <div class="panel-header">
+            <h2>Fee Tiers</h2>
+            <button class="btn primary small" id="addFeeBtn">+ Add Tier</button>
+          </div>
+          <div class="table-wrap">
+            <table id="feeTable">
+              <thead>
+                <tr>
+                  <th>Sessions Count</th>
+                  <th>Fee (Rs.)</th>
+                  <th>Label</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="feeBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Gallery Tab -->
+        <section class="tab-panel" id="panel-gallery">
+          <div class="panel-header">
+            <h2>Gallery Images</h2>
+            <button class="btn primary small" id="addImageBtn">+ Add Image</button>
+          </div>
+          <div class="gallery-grid" id="galleryGrid"></div>
+        </section>
+
+        <!-- Settings Tab -->
+        <section class="tab-panel" id="panel-settings">
+          <div class="panel-header">
+            <h2>Site Settings</h2>
+            <button class="btn primary small" id="saveSettingsBtn">Save All</button>
+          </div>
+          <div class="settings-grid" id="settingsGrid"></div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay" hidden>
+      <div class="modal" id="modal">
+        <div class="modal-header">
+          <h3 id="modalTitle">Modal</h3>
+          <button class="modal-close" id="modalClose">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-footer">
+          <button class="btn ghost" id="modalCancel">Cancel</button>
+          <button class="btn primary" id="modalSave">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="admin.js"></script>
+  </body>
+</html>

@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Register for LPU Summer School 2026. Select one class from each chosen session.">
+    <title>Register | LPU Summer School 2026</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body class="register-page">
+    <div class="utility-bar">
+      <span>Lovely Professional University | Student Welfare Wing</span>
+      <a href="mailto:summerschool@lpu.co.in">summerschool@lpu.co.in</a>
+    </div>
+
+    <header class="site-header" data-header>
+      <a class="brand" href="index.html" aria-label="Back to LPU Summer School home">
+        <img class="brand-logo" src="assets/dsosww-logo.png" alt="LPU Student Welfare Wing">
+        <img class="naac-logo" src="assets/lpu-naac-logo.png" alt="NAAC Grade A++">
+      </a>
+      <button class="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false" data-nav-toggle>
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <nav class="site-nav" data-nav>
+        <a href="index.html#tracks">Tracks</a>
+        <a href="index.html#sessions">Sessions</a>
+        <a href="index.html#fees">Fees</a>
+        <a href="index.html#contact">Contact</a>
+        <a class="nav-cta" href="register.html">Register Now</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="registration-hero">
+        <div>
+          <p class="label">Official Registration</p>
+          <h1>Register for LPU Summer School 2026</h1>
+          <p>Fill student and parent details, then select the sessions. Each selected session allows only one class from that session.</p>
+        </div>
+        <aside class="registration-summary">
+          <span>Fee preview</span>
+          <strong data-fee-total>Rs. 0</strong>
+          <p data-fee-note>Select at least one session to calculate fee.</p>
+        </aside>
+      </section>
+
+      <section class="section registration-section">
+        <div class="form-progress" aria-label="Registration steps">
+          <div class="progress-step active" data-step="1"><span>1</span> Student</div>
+          <div class="progress-step" data-step="2"><span>2</span> Guardian</div>
+          <div class="progress-step" data-step="3"><span>3</span> Sessions</div>
+          <div class="progress-step" data-step="4"><span>4</span> Confirm</div>
+        </div>
+        <form class="registration-form full-form" data-registration-form>
+          <div class="form-block">
+            <div class="form-heading">
+              <span>01</span>
+              <h2>Student details</h2>
+            </div>
+            <div class="form-grid">
+              <label>
+                Student full name
+                <input name="studentName" type="text" autocomplete="name" required>
+              </label>
+              <label>
+                Current class
+                <select name="classLevel" required>
+                  <option value="">Select class</option>
+                  <option>Class 6</option>
+                  <option>Class 7</option>
+                  <option>Class 8</option>
+                  <option>Class 9</option>
+                  <option>Class 10</option>
+                  <option>Class 11</option>
+                  <option>Class 12</option>
+                </select>
+              </label>
+              <label>
+                School name
+                <input name="schoolName" type="text" required>
+              </label>
+              <label>
+                City
+                <input name="city" type="text" required>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-block">
+            <div class="form-heading">
+              <span>02</span>
+              <h2>Parent or guardian details</h2>
+            </div>
+            <div class="form-grid">
+              <label>
+                Parent or guardian name
+                <input name="guardianName" type="text" autocomplete="name" required>
+              </label>
+              <label>
+                Phone number
+                <input name="phone" type="tel" inputmode="tel" autocomplete="tel" required>
+              </label>
+              <label>
+                Email
+                <input name="email" type="email" autocomplete="email" required>
+              </label>
+              <label>
+                Emergency contact
+                <input name="emergencyPhone" type="tel" inputmode="tel" required>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-block">
+            <div class="form-heading">
+              <span>03</span>
+              <h2>Session and class selection</h2>
+            </div>
+            <p class="form-help">Select the session first, then choose one class from that session only.</p>
+            <div class="session-selectors">
+              <article class="selection-card">
+                <label class="check-row">
+                  <input type="checkbox" name="session" value="session1" data-session-toggle>
+                  <span>Session 1</span>
+                  <small>09:30 - 11:30</small>
+                </label>
+                <label>
+                  Class for Session 1
+                  <select name="session1Course" data-session-course="session1" disabled>
+                    <option value="">Select Session 1 class</option>
+                  </select>
+                </label>
+              </article>
+              <article class="selection-card">
+                <label class="check-row">
+                  <input type="checkbox" name="session" value="session2" data-session-toggle>
+                  <span>Session 2</span>
+                  <small>12:00 - 14:00</small>
+                </label>
+                <label>
+                  Class for Session 2
+                  <select name="session2Course" data-session-course="session2" disabled>
+                    <option value="">Select Session 2 class</option>
+                  </select>
+                </label>
+              </article>
+              <article class="selection-card">
+                <label class="check-row">
+                  <input type="checkbox" name="session" value="session3" data-session-toggle>
+                  <span>Session 3</span>
+                  <small>15:00 - 17:00</small>
+                </label>
+                <label>
+                  Class for Session 3
+                  <select name="session3Course" data-session-course="session3" disabled>
+                    <option value="">Select Session 3 class</option>
+                  </select>
+                </label>
+              </article>
+            </div>
+          </div>
+
+          <div class="form-block">
+            <div class="form-heading">
+              <span>04</span>
+              <h2>Additional information</h2>
+            </div>
+            <div class="form-grid">
+              <label class="full">
+                Medical note or special requirement
+                <textarea name="medicalNote" rows="4" placeholder="Mention allergies, medication, pickup note, or write NA"></textarea>
+              </label>
+              <label class="consent-row full">
+                <input type="checkbox" name="consent" required>
+                <span>I confirm that the details are correct and I agree to be contacted by the LPU Summer School team.</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="submit-bar">
+            <div>
+              <span>Total fee</span>
+              <strong data-fee-total>Rs. 0</strong>
+            </div>
+            <button class="button primary" type="submit">Submit Registration</button>
+          </div>
+          <p class="form-status" role="status" data-form-status></p>
+        </form>
+      </section>
+    </main>
+
+    <footer class="site-footer" id="contact">
+      <div>
+        <img src="assets/dsosww-logo.png" alt="LPU Student Welfare Wing">
+        <h2>LPU Summer School 2026</h2>
+        <p>Lovely Professional University, Jalandhar - Delhi G.T. Road, Phagwara, Punjab, India - 144411</p>
+      </div>
+      <address>
+        <strong>For Any Queries, Please Contact</strong>
+        <span>Dr. Sorabh Lakhanpal, Program Director</span>
+        <a href="mailto:sorabh.lakhanpal@lpu.co.in">sorabh.lakhanpal@lpu.co.in</a>
+        <span>Ravinder Kumar, Project Manager</span>
+        <a href="tel:+918607234098">+91 86072 34098</a>
+        <span>Vivek Kumar, Project Manager</span>
+        <a href="tel:+918637573863">+91 86375 73863</a>
+      </address>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>

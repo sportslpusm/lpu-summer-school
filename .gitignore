@@ -1,0 +1,7 @@
+node_modules/
+.playwright-mcp/
+.code-review-graph/
+*.png
+!assets/*.png
+.claude/
+.vercel/
