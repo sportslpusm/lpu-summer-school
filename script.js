@@ -62,6 +62,15 @@ let feeBySessionCount = {
     feeBySessionCount = {};
     feesData.forEach((f) => { feeBySessionCount[f.session_count] = f.fee_amount; });
 
+    // Update session labels and time slots on register page
+    sessionsData.forEach((s, i) => {
+      const key = `session${i + 1}`;
+      const nameEl = document.querySelector(`[data-session-name="${key}"]`);
+      const timeEl = document.querySelector(`[data-session-time="${key}"]`);
+      if (nameEl) nameEl.textContent = s.name;
+      if (timeEl) timeEl.textContent = s.time_slot;
+    });
+
     // Re-populate course dropdowns on register page
     courseSelects.forEach((select) => {
       const session = select.dataset.sessionCourse;
