@@ -80,7 +80,7 @@ let feeBySessionCount = {
     if (trackGrid) {
       trackGrid.innerHTML = coursesData
         .filter((c) => c.image_url)
-        .map((c) => `<article class="track-card" data-category="${c.category}"><img src="${c.image_url}" alt="${c.name}"><div><span>${c.class_range || "Classes 6-12"}</span><h3>${c.name}</h3><p>${c.description || ""}</p></div></article>`)
+        .map((c) => `<article class="track-card" data-category="${esc(c.category)}"><img src="${esc(c.image_url)}" alt="${esc(c.name)}"><div><span>${esc(c.class_range || "Classes 6-12")}</span><h3>${esc(c.name)}</h3><p>${esc(c.description || "")}</p></div></article>`)
         .join("");
 
       // Re-bind filter buttons to new cards
@@ -102,7 +102,7 @@ let feeBySessionCount = {
     if (sessionColumns) {
       sessionColumns.innerHTML = sessionsData.map((s) => {
         const courses = coursesData.filter((c) => c.session_id === s.id);
-        return `<article class="session-card"><h3>${s.name} <span>${s.time_slot}</span></h3><ul>${courses.map((c) => `<li>${c.name}</li>`).join("")}</ul></article>`;
+        return `<article class="session-card"><h3>${esc(s.name)} <span>${esc(s.time_slot)}</span></h3><ul>${courses.map((c) => `<li>${esc(c.name)}</li>`).join("")}</ul></article>`;
       }).join("");
     }
 
@@ -111,7 +111,7 @@ let feeBySessionCount = {
     if (feeTableBody) {
       feeTableBody.innerHTML = feesData
         .filter((f) => f.session_count > 0)
-        .map((f) => `<tr><td>${f.session_count} Session${f.session_count > 1 ? "s" : ""}</td><td>${f.label || ""}</td><td>Rs. ${f.fee_amount.toLocaleString("en-IN")}</td></tr>`)
+        .map((f) => `<tr><td>${f.session_count} Session${f.session_count > 1 ? "s" : ""}</td><td>${esc(f.label || "")}</td><td>Rs. ${f.fee_amount.toLocaleString("en-IN")}</td></tr>`)
         .join("");
     }
   } catch (e) {
@@ -185,6 +185,11 @@ function formatFee(amount) {
 }
 
 const GST_RATE = 0.18;
+
+function esc(str) {
+  if (!str) return "";
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
 
 function updateRegistrationState() {
   const selected = selectedSessions();
@@ -373,7 +378,7 @@ form?.addEventListener("submit", async (event) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        base_amount: baseFee,
+        session_count: selected.length,
         student_name: registrationData.student_name,
         email: registrationData.email,
         phone: registrationData.phone
@@ -386,6 +391,11 @@ form?.addEventListener("submit", async (event) => {
     }
 
     const order = await orderRes.json();
+
+    // Use server-validated amounts (not client-calculated)
+    registrationData.base_amount = order.base_amount;
+    registrationData.gst_amount = order.gst_amount;
+    registrationData.total_amount = order.total_amount;
 
     // Step 2: Open Razorpay checkout
     const options = {

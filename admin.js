@@ -110,7 +110,11 @@ async function sendEmail(to, subject, html) {
   try {
     await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${accessToken}`,
+        "apikey": SUPABASE_KEY
+      },
       body: JSON.stringify({ to, subject, html })
     });
   } catch (e) {
@@ -127,12 +131,12 @@ function registrationConfirmationEmail(reg) {
         <p style="margin:6px 0 0;opacity:0.9">LPU Summer School</p>
       </div>
       <div style="background:white;padding:24px;border:1px solid #e4e7ec;border-top:none;border-radius:0 0 10px 10px">
-        <p>Dear <strong>${reg.guardian_name}</strong>,</p>
-        <p>We are delighted to confirm <strong>${reg.student_name}</strong>'s registration for LPU Summer School.</p>
+        <p>Dear <strong>${esc(reg.guardian_name)}</strong>,</p>
+        <p>We are delighted to confirm <strong>${esc(reg.student_name)}</strong>'s registration for LPU Summer School.</p>
         <table style="width:100%;border-collapse:collapse;margin:16px 0">
-          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Student</td><td style="padding:8px;border-bottom:1px solid #eee"><strong>${reg.student_name}</strong></td></tr>
-          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Class</td><td style="padding:8px;border-bottom:1px solid #eee">${reg.class_level}</td></tr>
-          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Courses</td><td style="padding:8px;border-bottom:1px solid #eee">${courses.join(", ")}</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Student</td><td style="padding:8px;border-bottom:1px solid #eee"><strong>${esc(reg.student_name)}</strong></td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Class</td><td style="padding:8px;border-bottom:1px solid #eee">${esc(reg.class_level)}</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Courses</td><td style="padding:8px;border-bottom:1px solid #eee">${courses.map(c => esc(c)).join(", ")}</td></tr>
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Total Fee</td><td style="padding:8px;border-bottom:1px solid #eee"><strong>Rs. ${reg.total_fee}</strong></td></tr>
           <tr><td style="padding:8px;color:#667085">Status</td><td style="padding:8px"><span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:99px;font-weight:700;font-size:13px">Confirmed</span></td></tr>
         </table>
@@ -159,7 +163,9 @@ $("#loginForm").addEventListener("submit", async (e) => {
     accessToken = data.access_token;
     localStorage.setItem("sb_token", accessToken);
     localStorage.setItem("sb_email", email);
+    localStorage.setItem("sb_login_time", String(Date.now()));
     showDashboard(email);
+    startSessionTimer();
   } catch (err) {
     $("#loginError").textContent = err.message;
   }
@@ -232,19 +238,66 @@ function showDashboard(email) {
   loadAll();
 }
 
-// Auto-login from stored token
-(function checkSession() {
+// Session timeout: 2 hours
+const SESSION_TIMEOUT = 2 * 60 * 60 * 1000;
+let sessionTimer = null;
+
+function startSessionTimer() {
+  clearTimeout(sessionTimer);
+  sessionTimer = setTimeout(() => {
+    alert("Session expired. Please log in again.");
+    $("#logoutBtn").click();
+  }, SESSION_TIMEOUT);
+}
+
+// Auto-login from stored token with validation
+(async function checkSession() {
   const token = localStorage.getItem("sb_token");
   const email = localStorage.getItem("sb_email");
+  const loginTime = parseInt(localStorage.getItem("sb_login_time") || "0");
+
   if (token && email) {
-    accessToken = token;
-    showDashboard(email);
+    // Check if session has expired
+    if (Date.now() - loginTime > SESSION_TIMEOUT) {
+      localStorage.removeItem("sb_token");
+      localStorage.removeItem("sb_email");
+      localStorage.removeItem("sb_login_time");
+      return;
+    }
+    // Validate token is still valid
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        headers: { "Authorization": `Bearer ${token}`, "apikey": SUPABASE_KEY }
+      });
+      if (res.ok) {
+        accessToken = token;
+        showDashboard(email);
+        startSessionTimer();
+      } else {
+        localStorage.removeItem("sb_token");
+        localStorage.removeItem("sb_email");
+        localStorage.removeItem("sb_login_time");
+      }
+    } catch {
+      localStorage.removeItem("sb_token");
+      localStorage.removeItem("sb_email");
+      localStorage.removeItem("sb_login_time");
+    }
   }
 })();
 
-$("#logoutBtn").addEventListener("click", () => {
+$("#logoutBtn").addEventListener("click", async () => {
+  // Server-side token invalidation
+  try {
+    await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${accessToken}`, "apikey": SUPABASE_KEY }
+    });
+  } catch {}
+  clearTimeout(sessionTimer);
   localStorage.removeItem("sb_token");
   localStorage.removeItem("sb_email");
+  localStorage.removeItem("sb_login_time");
   accessToken = null;
   $("#dashboard").hidden = true;
   $("#loginScreen").hidden = false;
@@ -300,7 +353,7 @@ function renderRegistrations(rows) {
       <td>${esc(r.school_name)}</td>
       <td>${esc(r.guardian_name)}</td>
       <td>${esc(r.phone)}</td>
-      <td>${[r.session1_course, r.session2_course, r.session3_course].filter(Boolean).join(", ") || "\u2014"}</td>
+      <td>${[r.session1_course, r.session2_course, r.session3_course].filter(Boolean).map(c => esc(c)).join(", ") || "\u2014"}</td>
       <td>Rs. ${r.total_fee}</td>
       <td><span class="badge badge-${r.payment_status === 'paid' ? 'confirmed' : 'pending'}">${r.payment_status || 'unpaid'}</span></td>
       <td><span class="badge badge-${r.status}">${r.status}</span></td>
@@ -329,7 +382,7 @@ window.viewRegistration = async function(id) {
       <div><strong>Email:</strong> ${esc(r.email)}</div>
       <div><strong>Emergency:</strong> ${esc(r.emergency_phone)}</div>
       <hr style="border:none;border-top:1px solid #e4e7ec">
-      <div><strong>Courses:</strong> ${courses.join(", ") || "None"}</div>
+      <div><strong>Courses:</strong> ${courses.map(c => esc(c)).join(", ") || "None"}</div>
       <div><strong>Fee:</strong> Rs. ${r.total_fee}</div>
       <div><strong>Payment:</strong> <span class="badge badge-${r.payment_status === 'paid' ? 'confirmed' : 'pending'}">${r.payment_status || 'unpaid'}</span></div>
       <div><strong>Status:</strong> <span class="badge badge-${r.status}">${r.status}</span></div>
@@ -452,8 +505,8 @@ function renderCourses(courses) {
           <strong>${esc(c.name)}</strong>
         </div>
       </td>
-      <td>${c.sessions?.name || "\u2014"}</td>
-      <td><span class="badge badge-${c.category === 'tech' ? 'pending' : c.category === 'sports' ? 'confirmed' : 'cancelled'}">${c.category}</span></td>
+      <td>${esc(c.sessions?.name) || "\u2014"}</td>
+      <td><span class="badge badge-${c.category === 'tech' ? 'pending' : c.category === 'sports' ? 'confirmed' : 'cancelled'}">${esc(c.category)}</span></td>
       <td>${esc(c.class_range || "")}</td>
       <td><span class="toggle ${c.is_active ? "on" : ""}" onclick="toggleCourse('${c.id}', ${!c.is_active})"></span></td>
       <td class="row-actions">
@@ -753,5 +806,5 @@ $("#modalSave").addEventListener("click", async () => {
 // --- Utility ---
 function esc(str) {
   if (!str) return "";
-  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
