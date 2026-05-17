@@ -505,3 +505,16 @@ if (progressSteps.length && formBlocks.length && "IntersectionObserver" in windo
 
   formBlocks.forEach((block) => stepObserver.observe(block));
 }
+
+// Contact overlay toggle
+const contactToggle = document.querySelector("[data-contact-toggle]");
+const contactOverlay = document.querySelector("[data-contact-overlay]");
+const contactClose = document.querySelector("[data-contact-close]");
+
+if (contactToggle && contactOverlay) {
+  contactToggle.addEventListener("click", () => { contactOverlay.hidden = false; });
+  contactClose?.addEventListener("click", () => { contactOverlay.hidden = true; });
+  contactOverlay.addEventListener("click", (e) => {
+    if (e.target === contactOverlay) contactOverlay.hidden = true;
+  });
+}
