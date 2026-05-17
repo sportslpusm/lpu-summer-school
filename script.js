@@ -34,13 +34,93 @@ let feeBySessionCount = {
   3: 1400
 };
 
+function phoneDigits(phone) { return phone.replace(/[^0-9+]/g, ""); }
+function phoneWA(phone) { return phone.replace(/[^0-9]/g, ""); }
+const waText = encodeURIComponent("Hi, I have a query about LPU Summer School 2026");
+
+function applySettings(cfg) {
+  const phone1 = cfg["contact phone 1"] || "";
+  const phone2 = cfg["contact phone 2"] || "";
+  const email = cfg["contact email"] || "";
+  const pm1 = cfg["project manager 1"] || "";
+  const pm2 = cfg["project manager 2"] || "";
+  const eventName = cfg["event name"] || "";
+  const uniName = cfg["university name"] || "";
+  const address = cfg["address"] || "";
+  const deadline = cfg["registration deadline"] || "";
+
+  // Utility bar contact
+  document.querySelectorAll('[data-cfg="utility-contact"]').forEach((el) => {
+    el.textContent = phone1 && phone2 ? `${phone1} | ${phone2} | ${email}` : email;
+    if (email) el.href = `mailto:${email}`;
+  });
+
+  // Footer event name
+  document.querySelectorAll('[data-cfg="event-name"]').forEach((el) => {
+    if (eventName) el.textContent = eventName;
+  });
+
+  // Footer full address
+  document.querySelectorAll('[data-cfg="full-address"]').forEach((el) => {
+    if (uniName && address) el.textContent = `${uniName}, ${address}`;
+  });
+
+  // Footer email
+  document.querySelectorAll('[data-cfg="footer-email"]').forEach((el) => {
+    if (email) el.innerHTML = `General enquiries: <a href="mailto:${esc(email)}">${esc(email)}</a>`;
+  });
+
+  // Footer contact cards
+  function updateFooterPM(n, name, phone) {
+    document.querySelectorAll(`[data-cfg-pm="${n}"]`).forEach((card) => {
+      if (name) card.querySelector("span").textContent = `${name}, Program Manager`;
+      const links = card.querySelectorAll(".contact-links a");
+      if (phone && links[0]) {
+        links[0].href = `tel:${phoneDigits(phone)}`;
+        links[0].textContent = `\u{1F4DE} ${phone}`;
+      }
+      if (phone && links[1]) {
+        links[1].href = `https://wa.me/${phoneWA(phone)}?text=${waText}`;
+      }
+    });
+  }
+  updateFooterPM("1", pm1, phone1);
+  updateFooterPM("2", pm2, phone2);
+
+  // Overlay manager cards
+  function updateOverlayPM(n, name, phone) {
+    document.querySelectorAll(`[data-cfg-pm-overlay="${n}"]`).forEach((card) => {
+      if (name) card.querySelector("strong").textContent = name;
+      const call = card.querySelector(".action-btn.call");
+      const wa = card.querySelector(".action-btn.whatsapp");
+      if (phone && call) call.href = `tel:${phoneDigits(phone)}`;
+      if (phone && wa) wa.href = `https://wa.me/${phoneWA(phone)}?text=${waText}`;
+    });
+  }
+  updateOverlayPM("1", pm1, phone1);
+  updateOverlayPM("2", pm2, phone2);
+
+  // Countdown deadline
+  if (deadline) {
+    document.querySelectorAll("[data-countdown]").forEach((el) => {
+      el.dataset.deadline = deadline;
+    });
+    const dlabel = document.querySelector('[data-cfg="deadline-label"]');
+    if (dlabel) {
+      const d = new Date(deadline);
+      dlabel.textContent = d.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+    }
+  }
+}
+
 // Fetch all dynamic data from Supabase
 (async function loadDynamicData() {
   try {
-    const [sessionsRes, coursesRes, feesRes] = await Promise.all([
+    const [sessionsRes, coursesRes, feesRes, settingsRes] = await Promise.all([
       fetch(`${SUPABASE_URL}/rest/v1/sessions?is_active=eq.true&order=sort_order.asc`, { headers: { "apikey": SUPABASE_KEY } }),
       fetch(`${SUPABASE_URL}/rest/v1/courses?is_active=eq.true&order=sort_order.asc`, { headers: { "apikey": SUPABASE_KEY } }),
-      fetch(`${SUPABASE_URL}/rest/v1/fee_tiers?order=session_count.asc`, { headers: { "apikey": SUPABASE_KEY } })
+      fetch(`${SUPABASE_URL}/rest/v1/fee_tiers?order=session_count.asc`, { headers: { "apikey": SUPABASE_KEY } }),
+      fetch(`${SUPABASE_URL}/rest/v1/site_settings?select=key,value`, { headers: { "apikey": SUPABASE_KEY } })
     ]);
 
     if (!sessionsRes.ok || !coursesRes.ok || !feesRes.ok) return;
@@ -48,6 +128,12 @@ let feeBySessionCount = {
     const sessionsData = await sessionsRes.json();
     const coursesData = await coursesRes.json();
     const feesData = await feesRes.json();
+
+    const cfg = {};
+    if (settingsRes.ok) {
+      (await settingsRes.json()).forEach((r) => { cfg[r.key] = r.value; });
+      applySettings(cfg);
+    }
 
     // Build sessionCourses map
     sessionCourses = {};
@@ -269,7 +355,8 @@ if (countdowns.length) {
 function updateSeatsLeft() {
   if (!seatsLeftItems.length) return;
 
-  const deadline = new Date("2026-06-10T23:59:59+05:30");
+  const cdEl = document.querySelector("[data-countdown]");
+  const deadline = new Date(cdEl ? cdEl.dataset.deadline : "2026-06-10T23:59:59+05:30");
   const start = new Date("2026-05-02T00:00:00+05:30");
   const now = new Date();
   const totalWindow = deadline - start;
