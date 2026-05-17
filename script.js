@@ -120,7 +120,7 @@ function applySettings(cfg) {
       fetch(`${SUPABASE_URL}/rest/v1/sessions?is_active=eq.true&order=sort_order.asc`, { headers: { "apikey": SUPABASE_KEY } }),
       fetch(`${SUPABASE_URL}/rest/v1/courses?is_active=eq.true&order=sort_order.asc`, { headers: { "apikey": SUPABASE_KEY } }),
       fetch(`${SUPABASE_URL}/rest/v1/fee_tiers?order=session_count.asc`, { headers: { "apikey": SUPABASE_KEY } }),
-      fetch(`${SUPABASE_URL}/rest/v1/site_settings?select=key,value`, { headers: { "apikey": SUPABASE_KEY } })
+      fetch(`${SUPABASE_URL}/rest/v1/site_config?select=key,value`, { headers: { "apikey": SUPABASE_KEY } })
     ]);
 
     if (!sessionsRes.ok || !coursesRes.ok || !feesRes.ok) return;
