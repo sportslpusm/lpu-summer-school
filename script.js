@@ -39,15 +39,15 @@ function phoneWA(phone) { return phone.replace(/[^0-9]/g, ""); }
 const waText = encodeURIComponent("Hi, I have a query about LPU Summer School 2026");
 
 function applySettings(cfg) {
-  const phone1 = cfg["contact phone 1"] || "";
-  const phone2 = cfg["contact phone 2"] || "";
-  const email = cfg["contact email"] || "";
-  const pm1 = cfg["project manager 1"] || "";
-  const pm2 = cfg["project manager 2"] || "";
-  const eventName = cfg["event name"] || "";
-  const uniName = cfg["university name"] || "";
+  const phone1 = cfg["contact_phone_1"] || "";
+  const phone2 = cfg["contact_phone_2"] || "";
+  const email = cfg["contact_email"] || "";
+  const pm1 = cfg["project_manager_1"] || "";
+  const pm2 = cfg["project_manager_2"] || "";
+  const eventName = cfg["event_name"] || "";
+  const uniName = cfg["university_name"] || "";
   const address = cfg["address"] || "";
-  const deadline = cfg["registration deadline"] || "";
+  const deadline = cfg["registration_deadline"] || "";
 
   // Utility bar contact
   document.querySelectorAll('[data-cfg="utility-contact"]').forEach((el) => {
