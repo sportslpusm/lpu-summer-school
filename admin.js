@@ -302,6 +302,7 @@ function renderRegistrations(rows) {
       <td>${esc(r.phone)}</td>
       <td>${[r.session1_course, r.session2_course, r.session3_course].filter(Boolean).join(", ") || "\u2014"}</td>
       <td>Rs. ${r.total_fee}</td>
+      <td><span class="badge badge-${r.payment_status === 'paid' ? 'confirmed' : 'pending'}">${r.payment_status || 'unpaid'}</span></td>
       <td><span class="badge badge-${r.status}">${r.status}</span></td>
       <td class="row-actions">
         <button onclick="viewRegistration('${r.id}')">View</button>
@@ -330,6 +331,7 @@ window.viewRegistration = async function(id) {
       <hr style="border:none;border-top:1px solid #e4e7ec">
       <div><strong>Courses:</strong> ${courses.join(", ") || "None"}</div>
       <div><strong>Fee:</strong> Rs. ${r.total_fee}</div>
+      <div><strong>Payment:</strong> <span class="badge badge-${r.payment_status === 'paid' ? 'confirmed' : 'pending'}">${r.payment_status || 'unpaid'}</span></div>
       <div><strong>Status:</strong> <span class="badge badge-${r.status}">${r.status}</span></div>
       <div><strong>Medical:</strong> ${esc(r.medical_note) || "None"}</div>
       <div><strong>Registered:</strong> ${new Date(r.created_at).toLocaleString("en-IN")}</div>

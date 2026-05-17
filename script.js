@@ -184,12 +184,22 @@ function formatFee(amount) {
   return `Rs. ${amount.toLocaleString("en-IN")}`;
 }
 
+const GST_RATE = 0.18;
+
 function updateRegistrationState() {
   const selected = selectedSessions();
-  const fee = feeBySessionCount[selected.length] ?? 0;
+  const baseFee = feeBySessionCount[selected.length] ?? 0;
+  const gst = Math.round(baseFee * GST_RATE);
+  const total = baseFee + gst;
 
-  feeTotals.forEach((total) => {
-    total.textContent = formatFee(fee);
+  feeTotals.forEach((el) => { el.textContent = formatFee(total); });
+
+  document.querySelectorAll("[data-fee-base]").forEach((el) => { el.textContent = formatFee(baseFee); });
+  document.querySelectorAll("[data-gst-detail]").forEach((el) => {
+    el.textContent = baseFee ? `+ GST 18%: ${formatFee(gst)}` : "";
+  });
+  document.querySelectorAll("[data-gst-line]").forEach((el) => {
+    el.textContent = baseFee ? `Includes 18% GST: ${formatFee(gst)}` : "";
   });
 
   if (feeNote) {
@@ -328,72 +338,127 @@ form?.addEventListener("submit", async (event) => {
     return;
   }
 
-  const data = new FormData(form);
-  const fee = feeBySessionCount[selected.length] ?? 0;
+  const formData = new FormData(form);
+  const baseFee = feeBySessionCount[selected.length] ?? 0;
+  const gstAmount = Math.round(baseFee * GST_RATE);
+  const totalFee = baseFee + gstAmount;
   const submitButton = form.querySelector('button[type="submit"]');
 
   submitButton.disabled = true;
-  submitButton.textContent = "Submitting...";
+  submitButton.textContent = "Processing...";
   statusMessage.classList.remove("error");
   statusMessage.textContent = "";
 
-  const payload = {
-    student_name: data.get("studentName"),
-    class_level: data.get("classLevel"),
-    school_name: data.get("schoolName"),
-    city: data.get("city"),
-    guardian_name: data.get("guardianName"),
-    phone: data.get("phone"),
-    email: data.get("email"),
-    emergency_phone: data.get("emergencyPhone"),
-    session1_course: data.get("session1Course") || null,
-    session2_course: data.get("session2Course") || null,
-    session3_course: data.get("session3Course") || null,
-    medical_note: data.get("medicalNote") || null,
-    total_fee: fee
+  const registrationData = {
+    student_name: formData.get("studentName"),
+    class_level: formData.get("classLevel"),
+    school_name: formData.get("schoolName"),
+    city: formData.get("city"),
+    guardian_name: formData.get("guardianName"),
+    phone: formData.get("phone"),
+    email: formData.get("email"),
+    emergency_phone: formData.get("emergencyPhone"),
+    session1_course: formData.get("session1Course") || null,
+    session2_course: formData.get("session2Course") || null,
+    session3_course: formData.get("session3Course") || null,
+    medical_note: formData.get("medicalNote") || null,
+    base_amount: baseFee,
+    gst_amount: gstAmount,
+    total_amount: totalFee
   };
 
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/registrations`, {
+    // Step 1: Create Razorpay order
+    const orderRes = await fetch(`${SUPABASE_URL}/functions/v1/create-order`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-        "Prefer": "return=minimal"
-      },
-      body: JSON.stringify(payload)
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        base_amount: baseFee,
+        student_name: registrationData.student_name,
+        email: registrationData.email,
+        phone: registrationData.phone
+      })
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Registration failed");
+    if (!orderRes.ok) {
+      const err = await orderRes.json();
+      throw new Error(err.error || "Failed to create payment order");
     }
 
-    statusMessage.classList.remove("error");
-    statusMessage.textContent = `Registration received for ${payload.student_name}. Selected fee: ${formatFee(fee)}. We will contact you shortly!`;
-    form.reset();
-    updateRegistrationState();
+    const order = await orderRes.json();
 
-    // Send confirmation email to parent
-    if (payload.email) {
-      const courses = [payload.session1_course, payload.session2_course, payload.session3_course].filter(Boolean);
-      fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: payload.email,
-          subject: "Registration Received - LPU Summer School",
-          html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px"><div style="background:#f3700d;color:white;padding:20px;border-radius:10px 10px 0 0;text-align:center"><h1 style="margin:0;font-size:22px">Registration Received!</h1><p style="margin:6px 0 0;opacity:0.9">LPU Summer School</p></div><div style="background:white;padding:24px;border:1px solid #e4e7ec;border-top:none;border-radius:0 0 10px 10px"><p>Dear <strong>${payload.guardian_name}</strong>,</p><p>Thank you for registering <strong>${payload.student_name}</strong> (${payload.class_level}) for LPU Summer School.</p><p><strong>Courses selected:</strong> ${courses.join(", ")}</p><p><strong>Total fee:</strong> Rs. ${fee}</p><p>Your registration is <strong>pending review</strong>. Our team will confirm it shortly and reach out with further details.</p><p style="color:#667085;font-size:13px;margin-top:24px">For queries: summerschool@lpu.co.in | +91 860 723 4098</p></div></div>`
-        })
-      }).catch(() => {});
-    }
+    // Step 2: Open Razorpay checkout
+    const options = {
+      key: order.key_id,
+      amount: order.amount,
+      currency: order.currency,
+      name: "LPU Summer School 2026",
+      description: `Registration (${selected.length} session${selected.length > 1 ? "s" : ""}) + 18% GST`,
+      order_id: order.order_id,
+      prefill: {
+        name: registrationData.guardian_name,
+        email: registrationData.email,
+        contact: registrationData.phone
+      },
+      notes: {
+        student_name: registrationData.student_name,
+        sessions: selected.length
+      },
+      theme: { color: "#f3700d" },
+      handler: async function (response) {
+        // Step 3: Verify payment and save registration
+        submitButton.textContent = "Verifying payment...";
+        try {
+          const verifyRes = await fetch(`${SUPABASE_URL}/functions/v1/verify-payment`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              registration_data: registrationData
+            })
+          });
+
+          if (!verifyRes.ok) {
+            const err = await verifyRes.json();
+            throw new Error(err.error || "Payment verification failed");
+          }
+
+          statusMessage.classList.remove("error");
+          statusMessage.textContent = `Payment successful! Registration confirmed for ${registrationData.student_name}. Payment ID: ${response.razorpay_payment_id}. A confirmation email has been sent.`;
+          form.reset();
+          updateRegistrationState();
+        } catch (verifyErr) {
+          statusMessage.classList.add("error");
+          statusMessage.textContent = `Payment received but verification failed: ${verifyErr.message}. Please contact us with Payment ID: ${response.razorpay_payment_id}`;
+        } finally {
+          submitButton.disabled = false;
+          submitButton.textContent = "Pay & Register";
+        }
+      },
+      modal: {
+        ondismiss: function () {
+          submitButton.disabled = false;
+          submitButton.textContent = "Pay & Register";
+          statusMessage.textContent = "Payment cancelled. You can try again.";
+        }
+      }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.on("payment.failed", function (response) {
+      submitButton.disabled = false;
+      submitButton.textContent = "Pay & Register";
+      statusMessage.classList.add("error");
+      statusMessage.textContent = `Payment failed: ${response.error.description}. Please try again.`;
+    });
+    rzp.open();
   } catch (error) {
     statusMessage.classList.add("error");
     statusMessage.textContent = `Something went wrong: ${error.message}. Please try again.`;
-  } finally {
     submitButton.disabled = false;
-    submitButton.textContent = "Submit Registration";
+    submitButton.textContent = "Pay & Register";
   }
 });
 
