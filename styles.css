@@ -220,7 +220,7 @@ h1 {
   box-shadow: var(--shadow);
   transition: transform 500ms ease, opacity 320ms ease;
 }
-.hero-image img { width: 100%; height: 100%; object-fit: contain; background: #e8edf4; transition: opacity 420ms ease, transform 850ms ease; }
+.hero-image img { width: 100%; height: 100%; object-fit: cover; transition: opacity 420ms ease, transform 850ms ease; }
 .hero-image.is-changing img { opacity: 0; transform: scale(1.04); }
 .hero-image.large { inset: 32px 74px 32px 0; }
 .hero-image.large::after { position: absolute; inset: 0; content: ""; background: linear-gradient(0deg, rgba(17, 24, 39, 0.08), transparent 36%); pointer-events: none; }
