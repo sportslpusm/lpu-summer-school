@@ -642,46 +642,58 @@ if (contactToggle && contactOverlay) {
 
 // Social proof popup — fake registration notifications
 (function socialProofPopup() {
-  if (document.querySelector(".register-page")) return; // skip on registration form
+  if (document.querySelector(".register-page")) return;
 
-  const cities = ["Delhi", "Chandigarh", "Ludhiana", "Jaipur", "Amritsar", "Noida", "Gurgaon", "Lucknow", "Mumbai", "Pune", "Patiala", "Jalandhar", "Mohali", "Dehradun", "Kolkata"];
-  const classes = ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10", "Class 11", "Class 12"];
-  const fallbackCourses = ["AI & Machine Learning", "Robotics & Drones", "Theatre & Acting", "Western Dance", "Basketball Training", "Public Speaking", "Fashion Design", "Music Production"];
-  let courseNames = [];
-
-  // Pull real course names once available
-  const observer = new MutationObserver(() => {
-    const cards = document.querySelectorAll(".track-card h3");
-    if (cards.length) {
-      courseNames = [...cards].map(h => h.textContent.trim());
-      observer.disconnect();
-    }
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
+  const names = [
+    "Aarav S.", "Vivaan M.", "Aditya R.", "Vihaan K.", "Arjun P.", "Sai T.", "Reyansh G.", "Ayaan D.",
+    "Krishna B.", "Ishaan L.", "Shaurya V.", "Atharv N.", "Advik J.", "Pranav W.", "Advaith C.", "Aarush H.",
+    "Kabir F.", "Ritvik A.", "Darsh E.", "Arnav Q.", "Dhruv S.", "Harsh M.", "Lakshya R.", "Parth K.",
+    "Rudra P.", "Yash T.", "Ananya G.", "Diya D.", "Myra B.", "Sara L.", "Aanya V.", "Aadhya N.",
+    "Ira J.", "Navya W.", "Pari C.", "Saanvi H.", "Anika F.", "Kiara A.", "Riya E.", "Anvi Q.",
+    "Prisha S.", "Zara M.", "Mishka R.", "Ahana K.", "Trisha P.", "Kavya T.", "Siya G.", "Nitya D.",
+    "Meera B.", "Tanya L.", "Amaira V.", "Charvi N.", "Eshani J.", "Fatima W.", "Gauri C.", "Hiya H.",
+    "Inaya F.", "Jiya A.", "Khushi E.", "Lavanya Q.", "Mahi S.", "Nisha M.", "Oviya R.", "Pihu K.",
+    "Radhika P.", "Shreya T.", "Tanvi G.", "Uma D.", "Vedika B.", "Wridhi L.", "Yashvi V.", "Zoya N.",
+    "Rohit J.", "Sahil W.", "Tanmay C.", "Utkarsh H.", "Vansh F.", "Kunal A.", "Manav E.", "Nikhil Q.",
+    "Om S.", "Pranit M.", "Rachit R.", "Sparsh K.", "Tejas P.", "Ujjwal T.", "Dev G.", "Gaurav D.",
+    "Himanshu B.", "Jay L.", "Kartik V.", "Mohit N.", "Neil J.", "Rohan W.", "Siddharth C.", "Tushar H.",
+    "Varun F.", "Aryan A.", "Bhavya E.", "Chirag Q.", "Divyansh S.", "Eklavya M."
+  ];
+  const cities = [
+    "Delhi", "Chandigarh", "Ludhiana", "Jaipur", "Amritsar", "Noida", "Gurgaon", "Lucknow",
+    "Mumbai", "Pune", "Patiala", "Jalandhar", "Mohali", "Dehradun", "Kolkata", "Hyderabad",
+    "Bengaluru", "Chennai", "Ahmedabad", "Indore", "Bhopal", "Ranchi", "Patna", "Varanasi",
+    "Nagpur", "Surat", "Vadodara", "Kochi", "Mysuru", "Coimbatore", "Shimla", "Agra",
+    "Meerut", "Faridabad", "Rajkot", "Nashik", "Jodhpur", "Raipur", "Guwahati", "Bhubaneswar"
+  ];
+  const sessionLabels = ["1 session", "2 sessions", "all 3 sessions"];
 
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-  const minAgo = () => Math.floor(Math.random() * 12) + 1;
+  const minAgo = () => Math.floor(Math.random() * 18) + 1;
 
-  // Create toast container
   const toast = document.createElement("div");
   toast.className = "social-proof-toast";
   toast.setAttribute("aria-live", "polite");
   document.body.appendChild(toast);
 
+  // Shuffle to avoid repeats in sequence
+  let namePool = [...names].sort(() => Math.random() - 0.5);
+  let idx = 0;
+
   function showProof() {
-    const pool = courseNames.length ? courseNames : fallbackCourses;
+    if (idx >= namePool.length) { namePool = [...names].sort(() => Math.random() - 0.5); idx = 0; }
+    const name = namePool[idx++];
     const city = pick(cities);
-    const cls = pick(classes);
-    const course = pick(pool);
+    // Weight towards 2-3 sessions (more revenue feel)
+    const r = Math.random();
+    const sessions = r < 0.25 ? sessionLabels[0] : r < 0.6 ? sessionLabels[1] : sessionLabels[2];
     const mins = minAgo();
 
-    toast.innerHTML = `<div class="sp-icon">🎓</div><div class="sp-body"><strong>A ${cls} student from ${city}</strong> registered for <em>${course}</em><span>${mins} min ago</span></div>`;
+    toast.innerHTML = `<div class="sp-icon">🎓</div><div class="sp-body"><strong>${name} from ${city}</strong> registered for <em>${sessions}</em><span>${mins} min ago</span></div>`;
     toast.classList.add("visible");
-
     setTimeout(() => { toast.classList.remove("visible"); }, 5500);
   }
 
-  // First popup after 8-14s, then every 25-40s
   setTimeout(() => {
     showProof();
     setInterval(showProof, (25 + Math.random() * 15) * 1000);
