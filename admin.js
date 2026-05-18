@@ -569,6 +569,7 @@ function courseForm(c = {}) {
     <label>Class Range <input id="mCourseClass" value="${esc(c.class_range || "Classes 6-12")}"></label>
     <label>Description <textarea id="mCourseDesc" rows="3">${esc(c.description || "")}</textarea></label>
     <label>Upload Image <input id="mCourseFile" type="file" accept="image/*"></label>
+    <small style="color:#667085;display:block;margin:-6px 0 8px">Recommended size: <strong>560 x 350 px</strong> (8:5 ratio)</small>
     ${c.image_url ? `<div style="margin:-8px 0 8px"><img src="${esc(c.image_url)}" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px"><small style="color:#667085">Current image — upload new to replace</small></div>` : ""}
     <label>Or Image URL <input id="mCourseImg" value="${esc(c.image_url || "")}" placeholder="https://..."></label>
     <label>Sort Order <input id="mCourseOrder" type="number" value="${c.sort_order ?? 0}"></label>
@@ -674,6 +675,7 @@ window.editImage = async function(id) {
   openModal("Edit Image", `
     ${img.image_url ? `<img src="${esc(img.image_url)}" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;margin-bottom:12px">` : ""}
     <label>Upload New Image <input id="mImgFile" type="file" accept="image/*"></label>
+    <small style="color:#667085;display:block;margin:-6px 0 8px">Recommended size: <strong>1000 x 750 px</strong> (4:3 ratio)</small>
     <label>Or Image URL <input id="mImgUrl" value="${esc(img.image_url)}"></label>
     <label>Alt Text <input id="mImgAlt" value="${esc(img.alt_text)}"></label>
     <label>Sort Order <input id="mImgOrder" type="number" value="${img.sort_order}"></label>
@@ -701,6 +703,7 @@ window.deleteImage = async function(id) {
 $("#addImageBtn").addEventListener("click", () => {
   openModal("Add Image", `
     <label>Upload Image <input id="mImgFile" type="file" accept="image/*"></label>
+    <small style="color:#667085;display:block;margin:-6px 0 8px">Recommended size: <strong>1000 x 750 px</strong> (4:3 ratio, used in hero gallery)</small>
     <label>Or Image URL <input id="mImgUrl" placeholder="https://..."></label>
     <label>Alt Text <input id="mImgAlt" placeholder="Description of image"></label>
     <label>Sort Order <input id="mImgOrder" type="number" value="0"></label>
