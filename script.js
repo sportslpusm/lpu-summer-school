@@ -644,52 +644,64 @@ if (contactToggle && contactOverlay) {
 (function socialProofPopup() {
   if (document.querySelector(".register-page")) return;
 
-  const names = [
-    "Aarav S.", "Vivaan M.", "Aditya R.", "Vihaan K.", "Arjun P.", "Sai T.", "Reyansh G.", "Ayaan D.",
-    "Krishna B.", "Ishaan L.", "Shaurya V.", "Atharv N.", "Advik J.", "Pranav W.", "Advaith C.", "Aarush H.",
-    "Kabir F.", "Ritvik A.", "Darsh E.", "Arnav Q.", "Dhruv S.", "Harsh M.", "Lakshya R.", "Parth K.",
-    "Rudra P.", "Yash T.", "Ananya G.", "Diya D.", "Myra B.", "Sara L.", "Aanya V.", "Aadhya N.",
-    "Ira J.", "Navya W.", "Pari C.", "Saanvi H.", "Anika F.", "Kiara A.", "Riya E.", "Anvi Q.",
-    "Prisha S.", "Zara M.", "Mishka R.", "Ahana K.", "Trisha P.", "Kavya T.", "Siya G.", "Nitya D.",
-    "Meera B.", "Tanya L.", "Amaira V.", "Charvi N.", "Eshani J.", "Fatima W.", "Gauri C.", "Hiya H.",
-    "Inaya F.", "Jiya A.", "Khushi E.", "Lavanya Q.", "Mahi S.", "Nisha M.", "Oviya R.", "Pihu K.",
-    "Radhika P.", "Shreya T.", "Tanvi G.", "Uma D.", "Vedika B.", "Wridhi L.", "Yashvi V.", "Zoya N.",
-    "Rohit J.", "Sahil W.", "Tanmay C.", "Utkarsh H.", "Vansh F.", "Kunal A.", "Manav E.", "Nikhil Q.",
-    "Om S.", "Pranit M.", "Rachit R.", "Sparsh K.", "Tejas P.", "Ujjwal T.", "Dev G.", "Gaurav D.",
-    "Himanshu B.", "Jay L.", "Kartik V.", "Mohit N.", "Neil J.", "Rohan W.", "Siddharth C.", "Tushar H.",
-    "Varun F.", "Aryan A.", "Bhavya E.", "Chirag Q.", "Divyansh S.", "Eklavya M."
+  const first = [
+    "Aarav","Vivaan","Aditya","Vihaan","Arjun","Sai","Reyansh","Ayaan","Krishna","Ishaan",
+    "Shaurya","Atharv","Advik","Pranav","Advaith","Aarush","Kabir","Ritvik","Darsh","Arnav",
+    "Dhruv","Harsh","Lakshya","Parth","Rudra","Yash","Rohit","Sahil","Tanmay","Utkarsh",
+    "Vansh","Kunal","Manav","Nikhil","Om","Pranit","Rachit","Sparsh","Tejas","Ujjwal",
+    "Dev","Gaurav","Himanshu","Jay","Kartik","Mohit","Neil","Rohan","Siddharth","Tushar",
+    "Varun","Aryan","Bhavya","Chirag","Divyansh","Eklavya","Raghav","Virat","Karan","Aman",
+    "Ananya","Diya","Myra","Sara","Aanya","Aadhya","Ira","Navya","Pari","Saanvi",
+    "Anika","Kiara","Riya","Anvi","Prisha","Zara","Mishka","Ahana","Trisha","Kavya",
+    "Siya","Nitya","Meera","Tanya","Amaira","Charvi","Eshani","Fatima","Gauri","Hiya",
+    "Inaya","Jiya","Khushi","Lavanya","Mahi","Nisha","Oviya","Pihu","Radhika","Shreya",
+    "Tanvi","Uma","Vedika","Wridhi","Yashvi","Zoya","Pooja","Neha","Simran","Palak",
+    "Ridhi","Sneha","Swati","Komal","Aditi","Bhumi","Chetna","Deepa","Esha","Gargi",
+    "Harini","Ishita","Janvi","Kritika","Lata","Madhuri","Nandini","Ojaswi","Paridhi","Ridhima"
   ];
-  const cities = [
-    "Delhi", "Chandigarh", "Ludhiana", "Jaipur", "Amritsar", "Noida", "Gurgaon", "Lucknow",
-    "Mumbai", "Pune", "Patiala", "Jalandhar", "Mohali", "Dehradun", "Kolkata", "Hyderabad",
-    "Bengaluru", "Chennai", "Ahmedabad", "Indore", "Bhopal", "Ranchi", "Patna", "Varanasi",
-    "Nagpur", "Surat", "Vadodara", "Kochi", "Mysuru", "Coimbatore", "Shimla", "Agra",
-    "Meerut", "Faridabad", "Rajkot", "Nashik", "Jodhpur", "Raipur", "Guwahati", "Bhubaneswar"
+  const last = [
+    "S.","M.","R.","K.","P.","T.","G.","D.","B.","L.","V.","N.","J.","W.","C.","H.","F.","A.","E.","Q."
   ];
   const sessionLabels = ["1 session", "2 sessions", "all 3 sessions"];
 
-  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-  const minAgo = () => Math.floor(Math.random() * 18) + 1;
+  // Seeded shuffle using timestamp so each page load is different
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // Generate 250 unique names by combining first + last
+  const allNames = [];
+  const shuffledFirst = shuffle(first);
+  const shuffledLast = shuffle(last);
+  const used = new Set();
+  for (let i = 0; allNames.length < 250 && i < 2000; i++) {
+    const f = shuffledFirst[i % shuffledFirst.length];
+    const l = shuffledLast[Math.floor(Math.random() * last.length)];
+    const full = f + " " + l;
+    if (!used.has(full)) { used.add(full); allNames.push(full); }
+  }
+
+  const namePool = shuffle(allNames);
+  let idx = 0;
 
   const toast = document.createElement("div");
   toast.className = "social-proof-toast";
   toast.setAttribute("aria-live", "polite");
   document.body.appendChild(toast);
 
-  // Shuffle to avoid repeats in sequence
-  let namePool = [...names].sort(() => Math.random() - 0.5);
-  let idx = 0;
-
   function showProof() {
-    if (idx >= namePool.length) { namePool = [...names].sort(() => Math.random() - 0.5); idx = 0; }
+    if (idx >= namePool.length) idx = 0;
     const name = namePool[idx++];
-    const city = pick(cities);
-    // Weight towards 2-3 sessions (more revenue feel)
     const r = Math.random();
     const sessions = r < 0.25 ? sessionLabels[0] : r < 0.6 ? sessionLabels[1] : sessionLabels[2];
-    const mins = minAgo();
+    const mins = Math.floor(Math.random() * 18) + 1;
 
-    toast.innerHTML = `<div class="sp-icon">🎓</div><div class="sp-body"><strong>${name} from ${city}</strong> registered for <em>${sessions}</em><span>${mins} min ago</span></div>`;
+    toast.innerHTML = `<div class="sp-icon">🎓</div><div class="sp-body"><strong>${name}</strong> registered for <em>${sessions}</em><span>${mins} min ago</span></div>`;
     toast.classList.add("visible");
     setTimeout(() => { toast.classList.remove("visible"); }, 5500);
   }
