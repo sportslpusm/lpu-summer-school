@@ -524,7 +524,7 @@ h1 {
   .track-card div { padding: 10px; position: relative; background: var(--white); }
   .track-card h3 { margin: 6px 0 4px; font-size: 0.88rem; line-height: 1.25; }
   .track-card p { font-size: 0.75rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .hero-visual { grid-template-columns: 1fr 1fr; }
+  .hero-visual { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; }
   .hero-image.large { grid-column: 1 / -1; grid-row: 1; }
   .hero-image.large img { height: auto; aspect-ratio: 3/2; }
   .countdown { grid-template-columns: repeat(4, 1fr); }
