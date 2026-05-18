@@ -519,24 +519,46 @@ h1 {
   .naac-logo { width: min(17vw, 58px); }
   .nav-toggle { grid-column: 2; }
   .hero { padding-top: 42px; }
-  h1, .registration-hero h1 { font-size: clamp(3rem, 17vw, 4.7rem); }
-  .quick-facts, .urgency-panel, .track-grid, .form-grid { grid-template-columns: 1fr; }
-  .hero-visual { min-height: 520px; }
-  .hero-image.large { inset: 0 0 128px 0; }
-  .hero-image.small { width: calc(50% - 6px); height: 128px; top: auto; bottom: 0; }
+  h1 { font-size: clamp(2.4rem, 11vw, 3.5rem); }
+  .quick-facts, .urgency-panel, .form-grid { grid-template-columns: 1fr; }
+  .track-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .track-card div { padding: 12px; }
+  .track-card h3 { margin: 10px 0 4px; font-size: 1rem; }
+  .track-card p { font-size: 0.82rem; }
+  .hero-visual { min-height: 340px; }
+  .hero-image.large { inset: 0 0 100px 0; }
+  .hero-image.small { width: calc(50% - 6px); height: 100px; top: auto; bottom: 0; }
   .hero-image.top { left: 0; right: auto; }
   .hero-image.bottom { right: 0; }
-  .countdown { grid-template-columns: repeat(2, 1fr); }
+  .countdown { grid-template-columns: repeat(4, 1fr); }
+  /* Fee table: stacked rows with labels */
   .fee-table, .fee-table thead, .fee-table tbody, .fee-table tr, .fee-table th, .fee-table td { display: block; }
   .fee-table thead { display: none; }
-  .fee-table tr { border-bottom: 8px solid var(--white); }
-  .progress-step { padding: 8px 6px; font-size: 0.76rem; gap: 5px; }
-  .progress-step span { width: 24px; height: 24px; font-size: 0.72rem; }
-  .form-progress { gap: 0; padding: 0 12px; }
+  .fee-table tr { border-bottom: 8px solid var(--white); padding: 16px; }
+  .fee-table td { padding: 6px 0; border-bottom: none; }
+  .fee-table td::before { display: block; color: var(--muted); font-size: 0.72rem; font-weight: 900; text-transform: uppercase; margin-bottom: 2px; }
+  .fee-table td:nth-child(1)::before { content: "Sessions"; }
+  .fee-table td:nth-child(2)::before { content: "Description"; }
+  .fee-table td:nth-child(3)::before { content: "Fee"; color: var(--orange); }
+  .fee-table td:nth-child(3) { font-size: 1.15rem; color: var(--orange); }
+  /* Progress steps */
+  .progress-step { padding: 8px 4px; font-size: 0.7rem; gap: 4px; }
+  .progress-step span { width: 22px; height: 22px; font-size: 0.68rem; }
+  .form-progress { gap: 0; padding: 0 8px; }
   .submit-bar { align-items: stretch; flex-direction: column; }
   .submit-bar .button, .hero-actions .button { width: 100%; }
-  .registration-hero h1 { font-size: clamp(2rem, 10vw, 3rem); }
-  .floating-register { right: 14px; bottom: 14px; }
+  .registration-hero h1 { font-size: clamp(1.8rem, 9vw, 2.6rem); }
+  /* Footer contact stacking */
+  .contact-links { flex-direction: column; gap: 6px; }
+  .site-footer { padding: 32px 16px; }
+  .site-footer h2 { font-size: 1.3rem; }
+  /* Floating buttons: clear each other */
+  .floating-register { right: 14px; bottom: 14px; font-size: 0.82rem; padding: 12px 14px; }
+  .floating-contact { left: 14px; bottom: 14px; }
+  /* Sections tighter padding on mobile */
+  .section { padding: clamp(36px, 6vw, 58px) 16px; }
+  .recognition { padding: 36px 16px; }
+  .section-heading h2, .fee-shell h2, .recognition h2 { font-size: clamp(1.6rem, 7vw, 2.4rem); }
 }
 
 /* Scroll reveal animations */
