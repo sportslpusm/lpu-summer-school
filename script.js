@@ -44,6 +44,8 @@ function applySettings(cfg) {
   const email = cfg["contact_email"] || "";
   const pm1 = cfg["project_manager_1"] || "";
   const pm2 = cfg["project_manager_2"] || "";
+  const director = cfg["program_director"] || "";
+  const directorEmail = cfg["director_email"] || "";
   const eventName = cfg["event_name"] || "";
   const uniName = cfg["university_name"] || "";
   const address = cfg["address"] || "";
@@ -86,6 +88,16 @@ function applySettings(cfg) {
   }
   updateFooterPM("1", pm1, phone1);
   updateFooterPM("2", pm2, phone2);
+
+  // Footer director card
+  document.querySelectorAll("[data-cfg-director]").forEach((card) => {
+    if (director) card.querySelector("span").textContent = `${director}, Program Director`;
+    const link = card.querySelector("a");
+    if (directorEmail && link) {
+      link.href = `mailto:${directorEmail}`;
+      link.textContent = directorEmail;
+    }
+  });
 
   // Overlay manager cards
   function updateOverlayPM(n, name, phone) {
