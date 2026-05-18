@@ -298,20 +298,32 @@ function esc(str) {
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
+const HOSTEL_FEES = { none: 0, hostel_only: 1400, hostel_food: 3000 };
+
+function getHostelFee() {
+  const checked = document.querySelector('input[name="hostel"]:checked');
+  return HOSTEL_FEES[checked?.value] || 0;
+}
+
 function updateRegistrationState() {
   const selected = selectedSessions();
-  const baseFee = feeBySessionCount[selected.length] ?? 0;
-  const gst = Math.round(baseFee * GST_RATE);
+  const sessionFee = feeBySessionCount[selected.length] ?? 0;
+  const hostelFee = getHostelFee();
+  const baseFee = sessionFee + hostelFee;
+  const gst = Math.round(sessionFee * GST_RATE);
   const total = baseFee + gst;
 
   feeTotals.forEach((el) => { el.textContent = formatFee(total); });
 
   document.querySelectorAll("[data-fee-base]").forEach((el) => { el.textContent = formatFee(baseFee); });
   document.querySelectorAll("[data-gst-detail]").forEach((el) => {
-    el.textContent = baseFee ? `+ GST 18%: ${formatFee(gst)}` : "";
+    const parts = [];
+    if (sessionFee) parts.push(`GST 18%: ${formatFee(gst)}`);
+    if (hostelFee) parts.push(`Hostel: ${formatFee(hostelFee)} (no GST)`);
+    el.textContent = parts.length ? "+ " + parts.join(" | ") : "";
   });
   document.querySelectorAll("[data-gst-line]").forEach((el) => {
-    el.textContent = baseFee ? `Includes 18% GST: ${formatFee(gst)}` : "";
+    el.textContent = sessionFee ? `Includes 18% GST on sessions: ${formatFee(gst)}` : "";
   });
 
   if (feeNote) {
@@ -334,6 +346,10 @@ function updateRegistrationState() {
 
 sessionToggles.forEach((toggle) => {
   toggle.addEventListener("change", updateRegistrationState);
+});
+
+document.querySelectorAll('input[name="hostel"]').forEach((r) => {
+  r.addEventListener("change", updateRegistrationState);
 });
 
 updateRegistrationState();
@@ -455,9 +471,11 @@ form?.addEventListener("submit", async (event) => {
   }
 
   const formData = new FormData(form);
-  const baseFee = feeBySessionCount[selected.length] ?? 0;
-  const gstAmount = Math.round(baseFee * GST_RATE);
-  const totalFee = baseFee + gstAmount;
+  const sessionFee = feeBySessionCount[selected.length] ?? 0;
+  const hostelFee = getHostelFee();
+  const hostelOption = formData.get("hostel") || "none";
+  const gstAmount = Math.round(sessionFee * GST_RATE);
+  const totalFee = sessionFee + hostelFee + gstAmount;
   const submitButton = form.querySelector('button[type="submit"]');
 
   submitButton.disabled = true;
@@ -477,8 +495,10 @@ form?.addEventListener("submit", async (event) => {
     session1_course: formData.get("session1Course") || null,
     session2_course: formData.get("session2Course") || null,
     session3_course: formData.get("session3Course") || null,
+    hostel_option: hostelOption,
+    hostel_amount: hostelFee,
     medical_note: formData.get("medicalNote") || null,
-    base_amount: baseFee,
+    base_amount: sessionFee,
     gst_amount: gstAmount,
     total_amount: totalFee
   };

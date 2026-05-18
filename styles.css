@@ -291,6 +291,25 @@ h1 {
 .fee-table th, .fee-table td { padding: 20px; border-bottom: 3px solid var(--white); text-align: left; }
 .fee-table th { color: var(--white); background: var(--orange); font-size: 0.82rem; text-transform: uppercase; }
 .fee-table td { color: #344054; font-weight: 800; }
+
+/* Hostel info on homepage */
+.hostel-info { margin-top: 20px; padding: 20px 24px; background: var(--soft); border-radius: 12px; border-left: 4px solid var(--orange); }
+.hostel-info h3 { margin: 0 0 6px; font-size: 1rem; color: var(--ink); }
+.hostel-info > p { margin: 0 0 14px; font-size: 0.85rem; color: var(--muted); }
+.hostel-options { display: flex; gap: 16px; }
+.hostel-option { flex: 1; padding: 14px; background: var(--white); border-radius: 8px; text-align: center; }
+.hostel-option strong { display: block; color: var(--orange); font-size: 1.15rem; }
+.hostel-option span { font-size: 0.8rem; color: var(--muted); }
+
+/* Hostel radios on register form */
+.hostel-radios { display: flex; flex-direction: column; gap: 10px; }
+.hostel-radio { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: var(--white); border: 2px solid var(--line); border-radius: 10px; cursor: pointer; transition: border-color 200ms, background 200ms; }
+.hostel-radio:has(input:checked) { border-color: var(--orange); background: #fff8f2; }
+.hostel-radio input { accent-color: var(--orange); width: 18px; height: 18px; flex-shrink: 0; }
+.hostel-radio div { flex: 1; }
+.hostel-radio div strong { display: block; font-size: 0.92rem; color: var(--ink); }
+.hostel-radio div span { font-size: 0.8rem; color: var(--muted); }
+.hostel-radio em { font-style: normal; font-weight: 800; color: var(--orange); font-size: 1rem; white-space: nowrap; }
 .recognition { display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); gap: 28px; align-items: center; padding: clamp(50px, 7vw, 84px) clamp(18px, 4vw, 58px); background: #15100d; color: var(--white); }
 .recognition .eyebrow { color: #ffb86c; }
 .reward-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
