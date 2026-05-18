@@ -374,23 +374,26 @@ function updateSeatsLeft() {
   const totalWindow = deadline - start;
   const elapsed = Math.max(0, Math.min(totalWindow, now - start));
   const progress = totalWindow > 0 ? elapsed / totalWindow : 1;
-  const baseline = Math.round(34 - progress * 10);
-  const pulse = Math.floor((Date.now() / 45000) % 3);
-  const remaining = Math.max(18, baseline - pulse);
+  const baseline = Math.round(24 - progress * 12);
+  const pulse = Math.floor((Date.now() / 18000) % 4);
+  const remaining = Math.max(6, baseline - pulse);
 
   seatsLeftItems.forEach((item) => {
     item.textContent = String(remaining);
+    item.style.color = remaining <= 10 ? "#d32f2f" : "";
   });
   seatsNotes.forEach((note) => {
-    note.textContent = remaining <= 20
-      ? "Final seats moving fast. Registration is recommended today."
-      : "Limited batch size for better mentoring.";
+    note.textContent = remaining <= 12
+      ? "Filling up fast — secure your spot now!"
+      : remaining <= 18
+        ? "Final seats moving fast. Register today."
+        : "Limited batch size for better mentoring.";
   });
 }
 
 updateSeatsLeft();
 if (seatsLeftItems.length) {
-  setInterval(updateSeatsLeft, 15000);
+  setInterval(updateSeatsLeft, 12000);
 }
 
 let galleryImages = [
@@ -636,3 +639,51 @@ if (contactToggle && contactOverlay) {
     if (e.target === contactOverlay) contactOverlay.hidden = true;
   });
 }
+
+// Social proof popup — fake registration notifications
+(function socialProofPopup() {
+  if (document.querySelector(".register-page")) return; // skip on registration form
+
+  const cities = ["Delhi", "Chandigarh", "Ludhiana", "Jaipur", "Amritsar", "Noida", "Gurgaon", "Lucknow", "Mumbai", "Pune", "Patiala", "Jalandhar", "Mohali", "Dehradun", "Kolkata"];
+  const classes = ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10", "Class 11", "Class 12"];
+  const fallbackCourses = ["AI & Machine Learning", "Robotics & Drones", "Theatre & Acting", "Western Dance", "Basketball Training", "Public Speaking", "Fashion Design", "Music Production"];
+  let courseNames = [];
+
+  // Pull real course names once available
+  const observer = new MutationObserver(() => {
+    const cards = document.querySelectorAll(".track-card h3");
+    if (cards.length) {
+      courseNames = [...cards].map(h => h.textContent.trim());
+      observer.disconnect();
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const minAgo = () => Math.floor(Math.random() * 12) + 1;
+
+  // Create toast container
+  const toast = document.createElement("div");
+  toast.className = "social-proof-toast";
+  toast.setAttribute("aria-live", "polite");
+  document.body.appendChild(toast);
+
+  function showProof() {
+    const pool = courseNames.length ? courseNames : fallbackCourses;
+    const city = pick(cities);
+    const cls = pick(classes);
+    const course = pick(pool);
+    const mins = minAgo();
+
+    toast.innerHTML = `<div class="sp-icon">🎓</div><div class="sp-body"><strong>A ${cls} student from ${city}</strong> registered for <em>${course}</em><span>${mins} min ago</span></div>`;
+    toast.classList.add("visible");
+
+    setTimeout(() => { toast.classList.remove("visible"); }, 5500);
+  }
+
+  // First popup after 8-14s, then every 25-40s
+  setTimeout(() => {
+    showProof();
+    setInterval(showProof, (25 + Math.random() * 15) * 1000);
+  }, (8 + Math.random() * 6) * 1000);
+})();

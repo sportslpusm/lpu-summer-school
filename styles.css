@@ -572,6 +572,41 @@ h1 {
 .reveal-delay-2 { transition-delay: 200ms; }
 .reveal-delay-3 { transition-delay: 300ms; }
 
+/* Social proof toast */
+.social-proof-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 370px;
+  padding: 14px 18px;
+  background: var(--white);
+  border-left: 4px solid var(--orange);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  transform: translateY(120%);
+  opacity: 0;
+  transition: transform 400ms cubic-bezier(0.34,1.56,0.64,1), opacity 350ms ease;
+  pointer-events: none;
+}
+.social-proof-toast.visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.sp-icon { font-size: 1.6rem; flex-shrink: 0; }
+.sp-body { display: flex; flex-direction: column; gap: 2px; font-size: 0.82rem; line-height: 1.35; color: var(--ink); }
+.sp-body strong { font-size: 0.84rem; }
+.sp-body em { color: var(--orange); font-style: normal; font-weight: 600; }
+.sp-body span { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+@media (max-width: 620px) {
+  .social-proof-toast { left: 10px; right: 10px; bottom: 70px; max-width: none; padding: 12px 14px; }
+}
+
 /* Focus-visible accessibility */
 :focus-visible {
   outline: 3px solid rgba(243, 112, 13, 0.45);
