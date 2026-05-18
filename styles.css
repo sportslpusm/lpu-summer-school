@@ -210,7 +210,7 @@ h1 {
 .countdown span { display: block; margin-top: 4px; color: rgba(255, 255, 255, 0.72); font-size: 0.72rem; font-weight: 800; }
 .seats-card strong { display: block; margin-top: 2px; color: var(--orange); font-size: 2.35rem; line-height: 1; }
 .seats-card p { margin: 8px 0 0; color: var(--muted); font-size: 0.9rem; line-height: 1.45; }
-.hero-visual { position: relative; min-height: 500px; border-radius: 8px; }
+.hero-visual { position: relative; min-height: 500px; border-radius: 8px; overflow: hidden; }
 .hero-image {
   position: absolute;
   overflow: hidden;
@@ -222,9 +222,9 @@ h1 {
 }
 .hero-image img { width: 100%; height: 100%; object-fit: cover; transition: opacity 420ms ease, transform 850ms ease; }
 .hero-image.is-changing img { opacity: 0; transform: scale(1.04); }
-.hero-image.large { left: 0; right: 74px; top: 32px; aspect-ratio: 3/2; }
+.hero-image.large { inset: 32px 74px 32px 0; }
 .hero-image.large::after { position: absolute; inset: 0; content: ""; background: linear-gradient(0deg, rgba(17, 24, 39, 0.08), transparent 36%); pointer-events: none; }
-.hero-image.small { width: 42%; aspect-ratio: 3/2; }
+.hero-image.small { width: 42%; height: 34%; }
 .hero-image.top { top: 0; right: 0; }
 .hero-image.bottom { right: 0; bottom: 0; }
 
@@ -526,8 +526,8 @@ h1 {
   .track-card h3 { margin: 6px 0 4px; font-size: 0.88rem; line-height: 1.25; }
   .track-card p { font-size: 0.75rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .hero-visual { min-height: 340px; }
-  .hero-image.large { left: 0; right: 0; top: 0; aspect-ratio: 3/2; }
-  .hero-image.small { width: calc(50% - 6px); aspect-ratio: 3/2; top: auto; bottom: 0; }
+  .hero-image.large { inset: 0 0 100px 0; }
+  .hero-image.small { width: calc(50% - 6px); height: 100px; top: auto; bottom: 0; }
   .hero-image.top { left: 0; right: auto; }
   .hero-image.bottom { right: 0; }
   .countdown { grid-template-columns: repeat(4, 1fr); }
