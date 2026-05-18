@@ -521,10 +521,12 @@ h1 {
   .hero { padding-top: 42px; }
   h1 { font-size: clamp(2.4rem, 11vw, 3.5rem); }
   .quick-facts, .urgency-panel, .form-grid { grid-template-columns: 1fr; }
-  .track-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  .track-card div { padding: 12px; }
-  .track-card h3 { margin: 10px 0 4px; font-size: 1rem; }
-  .track-card p { font-size: 0.82rem; }
+  .track-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .track-card { grid-template-rows: 110px 1fr; }
+  .track-card img { object-fit: cover; }
+  .track-card div { padding: 10px; position: relative; background: var(--white); }
+  .track-card h3 { margin: 6px 0 4px; font-size: 0.88rem; line-height: 1.25; }
+  .track-card p { font-size: 0.75rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .hero-visual { min-height: 340px; }
   .hero-image.large { inset: 0 0 100px 0; }
   .hero-image.small { width: calc(50% - 6px); height: 100px; top: auto; bottom: 0; }
