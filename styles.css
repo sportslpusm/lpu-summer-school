@@ -302,14 +302,18 @@ h1 {
 .hostel-option span { font-size: 0.8rem; color: var(--muted); }
 
 /* Hostel radios on register form */
-.hostel-radios { display: flex; flex-direction: column; gap: 10px; }
-.hostel-radio { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: var(--white); border: 2px solid var(--line); border-radius: 10px; cursor: pointer; transition: border-color 200ms, background 200ms; }
-.hostel-radio:has(input:checked) { border-color: var(--orange); background: #fff8f2; }
-.hostel-radio input { accent-color: var(--orange); width: 18px; height: 18px; flex-shrink: 0; }
-.hostel-radio div { flex: 1; }
-.hostel-radio div strong { display: block; font-size: 0.92rem; color: var(--ink); }
-.hostel-radio div span { font-size: 0.8rem; color: var(--muted); }
-.hostel-radio em { font-style: normal; font-weight: 800; color: var(--orange); font-size: 1rem; white-space: nowrap; }
+.hostel-radios { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.hostel-radio { display: grid; grid-template-columns: auto 1fr; grid-template-rows: 1fr auto; gap: 0 12px; align-items: start; padding: 18px 20px; background: var(--white); border: 2px solid var(--line); border-radius: 12px; cursor: pointer; transition: border-color 200ms, background 200ms, box-shadow 200ms; }
+.hostel-radio:hover { border-color: #ccc; }
+.hostel-radio:has(input:checked) { border-color: var(--orange); background: #fff8f2; box-shadow: 0 0 0 3px rgba(243, 112, 13, 0.12); }
+.hostel-radio input { accent-color: var(--orange); width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px; grid-row: 1; }
+.hostel-radio-body { grid-row: 1; }
+.hostel-radio-body strong { display: block; font-size: 0.95rem; color: var(--ink); line-height: 1.3; }
+.hostel-radio-body span { display: block; font-size: 0.8rem; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+.hostel-radio-price { grid-column: 1 / -1; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); text-align: center; }
+.hostel-radio-price em { font-style: normal; font-weight: 900; color: var(--orange); font-size: 1.2rem; }
+.hostel-radio-price small { display: block; font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+.hostel-radio:has(input:checked) .hostel-radio-price { border-top-color: rgba(243, 112, 13, 0.25); }
 .recognition { display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); gap: 28px; align-items: center; padding: clamp(50px, 7vw, 84px) clamp(18px, 4vw, 58px); background: #15100d; color: var(--white); }
 .recognition .eyebrow { color: #ffb86c; }
 .reward-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -440,14 +444,24 @@ h1 {
 .registration-summary strong, .submit-bar strong { display: block; margin-top: 6px; color: var(--orange); font-size: 2rem; }
 .gst-line, .gst-detail { font-size: 0.82rem; color: var(--muted); font-weight: 600; margin-top: 4px; text-transform: none; }
 .submit-bar > div { text-align: center; }
-.registration-section { padding-top: clamp(24px, 3vw, 40px); padding-bottom: clamp(40px, 5vw, 72px); background: var(--paper); }
+.registration-section { padding-top: 0; padding-bottom: clamp(40px, 5vw, 72px); background: var(--paper); }
+.form-progress-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--white);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  padding: 12px 0;
+  margin-bottom: clamp(20px, 3vw, 32px);
+}
 .form-progress {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0;
   max-width: 1120px;
-  margin: 0 auto clamp(20px, 3vw, 32px);
+  margin: 0 auto;
   padding: 0 clamp(18px, 4vw, 58px);
 }
 .progress-step {
@@ -485,6 +499,7 @@ h1 {
   font-weight: 950;
   transition: all 300ms ease;
 }
+.progress-step em { font-style: normal; }
 .progress-step.active { color: var(--orange); }
 .progress-step.active span { color: var(--white); background: var(--orange); }
 .progress-step.active::after { background: var(--orange); }
@@ -558,9 +573,13 @@ h1 {
   .fee-table td:nth-child(3)::before { content: "Fee"; color: var(--orange); }
   .fee-table td:nth-child(3) { font-size: 1.15rem; color: var(--orange); }
   /* Progress steps */
-  .progress-step { padding: 8px 4px; font-size: 0.7rem; gap: 4px; }
-  .progress-step span { width: 22px; height: 22px; font-size: 0.68rem; }
-  .form-progress { gap: 0; padding: 0 8px; }
+  .progress-step { padding: 6px 2px; font-size: 0; gap: 4px; flex-direction: column; }
+  .progress-step em { font-style: normal; font-size: 0.62rem; line-height: 1.1; }
+  .progress-step span { width: 24px; height: 24px; font-size: 0.7rem; }
+  .form-progress { gap: 0; padding: 0 6px; }
+  .form-progress-wrapper { padding: 8px 0; }
+  /* Hostel cards stack on mobile */
+  .hostel-radios { grid-template-columns: 1fr; }
   .submit-bar { align-items: stretch; flex-direction: column; }
   .submit-bar .button, .hero-actions .button { width: 100%; }
   .registration-hero h1 { font-size: clamp(1.8rem, 9vw, 2.6rem); }
@@ -698,4 +717,58 @@ button:focus-visible, .button:focus-visible, a:focus-visible {
 }
 .floating-register.visible {
   animation: gentle-pulse 3s ease-in-out infinite;
+}
+
+/* Form validation states */
+.registration-form .field-error {
+  color: #c1121f;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-top: -4px;
+  display: none;
+}
+.registration-form .field-error.visible { display: block; }
+.registration-form input.invalid,
+.registration-form select.invalid,
+.registration-form textarea.invalid {
+  border-color: #c1121f;
+  background: #fff5f5;
+}
+.registration-form input.invalid:focus,
+.registration-form select.invalid:focus,
+.registration-form textarea.invalid:focus {
+  border-color: #c1121f;
+  outline: 3px solid rgba(193, 18, 31, 0.15);
+}
+.selection-card.invalid {
+  border-color: #c1121f;
+  background: #fff5f5;
+}
+.selection-card .field-error { padding: 0 2px; }
+
+/* Form block completion states */
+.form-block {
+  border-left: 3px solid transparent;
+  transition: border-color 300ms ease, background 300ms ease;
+}
+.form-block.block-valid {
+  border-left-color: var(--green);
+}
+.form-block.block-valid .form-heading span {
+  background: var(--green);
+}
+.form-block.block-invalid {
+  border-left-color: #c1121f;
+}
+
+/* Disabled submit button */
+.submit-bar .button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Tablet hostel radios */
+@media (max-width: 880px) {
+  .hostel-radios { grid-template-columns: 1fr; }
 }

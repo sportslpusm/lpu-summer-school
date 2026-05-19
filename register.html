@@ -49,12 +49,14 @@
       </section>
 
       <section class="section registration-section">
-        <div class="form-progress" aria-label="Registration steps">
-          <div class="progress-step active" data-step="1"><span>1</span> Student</div>
-          <div class="progress-step" data-step="2"><span>2</span> Guardian</div>
-          <div class="progress-step" data-step="3"><span>3</span> Sessions</div>
-          <div class="progress-step" data-step="4"><span>4</span> Hostel</div>
-          <div class="progress-step" data-step="5"><span>5</span> Confirm</div>
+        <div class="form-progress-wrapper">
+          <div class="form-progress" aria-label="Registration steps">
+            <div class="progress-step active" data-step="1"><span>1</span> <em>Student</em></div>
+            <div class="progress-step" data-step="2"><span>2</span> <em>Guardian</em></div>
+            <div class="progress-step" data-step="3"><span>3</span> <em>Sessions</em></div>
+            <div class="progress-step" data-step="4"><span>4</span> <em>Hostel</em></div>
+            <div class="progress-step" data-step="5"><span>5</span> <em>Confirm</em></div>
+          </div>
         </div>
         <form class="registration-form full-form" data-registration-form>
           <div class="form-block">
@@ -174,18 +176,27 @@
             <div class="hostel-radios">
               <label class="hostel-radio">
                 <input type="radio" name="hostel" value="none" checked>
-                <div><strong>No hostel needed</strong><span>Day scholar — no accommodation</span></div>
-                <em>Rs. 0</em>
+                <div class="hostel-radio-body">
+                  <strong>No hostel needed</strong>
+                  <span>Day scholar — no accommodation</span>
+                </div>
+                <div class="hostel-radio-price"><em>Free</em></div>
               </label>
               <label class="hostel-radio">
                 <input type="radio" name="hostel" value="hostel_only">
-                <div><strong>Hostel only</strong><span>2-week on-campus stay, no meals</span></div>
-                <em>Rs. 1,400</em>
+                <div class="hostel-radio-body">
+                  <strong>Hostel only</strong>
+                  <span>2-week on-campus stay, no meals</span>
+                </div>
+                <div class="hostel-radio-price"><em>Rs. 1,400</em><small>no GST</small></div>
               </label>
               <label class="hostel-radio">
                 <input type="radio" name="hostel" value="hostel_food">
-                <div><strong>Hostel + Food</strong><span>2-week stay with all meals included</span></div>
-                <em>Rs. 3,000</em>
+                <div class="hostel-radio-body">
+                  <strong>Hostel + Food</strong>
+                  <span>2-week stay with all meals included</span>
+                </div>
+                <div class="hostel-radio-price"><em>Rs. 3,000</em><small>no GST</small></div>
               </label>
             </div>
           </div>
@@ -217,7 +228,7 @@
               <span>Total (incl. 18% GST)</span>
               <strong data-fee-total>Rs. 0</strong>
             </div>
-            <button class="button primary" type="submit">Pay & Register</button>
+            <button class="button primary" type="submit" disabled>Pay & Register</button>
           </div>
           <p class="form-status" role="status" data-form-status></p>
         </form>

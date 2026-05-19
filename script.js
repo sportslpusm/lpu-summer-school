@@ -354,6 +354,216 @@ document.querySelectorAll('input[name="hostel"]').forEach((r) => {
 
 updateRegistrationState();
 
+// ── Form validation system ──────────────────────────────────────────
+const progressSteps = document.querySelectorAll(".progress-step");
+const formBlocks = document.querySelectorAll(".form-block");
+const submitButton = form?.querySelector('button[type="submit"]');
+
+function getFieldError(field) {
+  let err = field.nextElementSibling;
+  if (err && err.classList.contains("field-error")) return err;
+  err = document.createElement("p");
+  err.className = "field-error";
+  err.setAttribute("aria-live", "polite");
+  field.insertAdjacentElement("afterend", err);
+  return err;
+}
+
+function validateField(field) {
+  if (!field || field.disabled) return true;
+  const val = field.value.trim();
+  let msg = "";
+
+  if (field.required && !val) {
+    msg = "This field is required.";
+  } else if (field.type === "email" && val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+    msg = "Enter a valid email address.";
+  } else if (field.type === "tel" && val && field.pattern) {
+    const re = new RegExp("^" + field.pattern + "$");
+    if (!re.test(val)) msg = "Enter a valid phone number.";
+  } else if (field.tagName === "SELECT" && field.required && !val) {
+    msg = "Please select an option.";
+  }
+
+  const errEl = getFieldError(field);
+  if (msg) {
+    field.classList.add("invalid");
+    errEl.textContent = msg;
+    errEl.classList.add("visible");
+    return false;
+  }
+  field.classList.remove("invalid");
+  errEl.classList.remove("visible");
+  errEl.textContent = "";
+  return true;
+}
+
+function validateBlock(blockIndex) {
+  const block = formBlocks[blockIndex];
+  if (!block) return true;
+
+  if (blockIndex === 0 || blockIndex === 1) {
+    const fields = block.querySelectorAll("input, select, textarea");
+    return [...fields].every((f) => {
+      const val = f.value.trim();
+      if (f.required && !val) return false;
+      if (f.type === "email" && val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return false;
+      if (f.type === "tel" && val && f.pattern) {
+        return new RegExp("^" + f.pattern + "$").test(val);
+      }
+      if (f.tagName === "SELECT" && f.required && !val) return false;
+      return true;
+    });
+  }
+
+  if (blockIndex === 2) {
+    const selected = selectedSessions();
+    if (selected.length === 0) return false;
+    return selected.every((toggle) => {
+      const sel = document.querySelector(`[data-session-course="${toggle.value}"]`);
+      return sel && sel.value.trim() !== "";
+    });
+  }
+
+  if (blockIndex === 3) {
+    return true; // hostel is optional, always valid
+  }
+
+  if (blockIndex === 4) {
+    const consent = block.querySelector('input[name="consent"]');
+    return consent ? consent.checked : true;
+  }
+
+  return true;
+}
+
+function validateSessionCards() {
+  let allValid = true;
+  sessionToggles.forEach((toggle) => {
+    const card = toggle.closest(".selection-card");
+    const sel = document.querySelector(`[data-session-course="${toggle.value}"]`);
+    if (!card || !sel) return;
+
+    if (toggle.checked && !sel.value.trim()) {
+      card.classList.add("invalid");
+      const errEl = getFieldError(sel);
+      errEl.textContent = "Select a class for this session.";
+      errEl.classList.add("visible");
+      allValid = false;
+    } else {
+      card.classList.remove("invalid");
+      const errEl = getFieldError(sel);
+      errEl.classList.remove("visible");
+      errEl.textContent = "";
+    }
+  });
+  return allValid;
+}
+
+function updateBlockStates() {
+  if (!formBlocks.length) return;
+
+  formBlocks.forEach((block, i) => {
+    const valid = validateBlock(i);
+    block.classList.toggle("block-valid", valid);
+    block.classList.remove("block-invalid");
+  });
+
+  // Update stepper done states based on completion
+  progressSteps.forEach((step, i) => {
+    if (validateBlock(i)) {
+      step.classList.add("done");
+    } else {
+      step.classList.remove("done");
+    }
+  });
+}
+
+function isFormComplete() {
+  if (!form) return false;
+  for (let i = 0; i < formBlocks.length; i++) {
+    if (!validateBlock(i)) return false;
+  }
+  return true;
+}
+
+function updateSubmitState() {
+  if (!submitButton) return;
+  const complete = isFormComplete();
+  submitButton.disabled = !complete;
+}
+
+function runFullValidation(showErrors) {
+  if (!form) return;
+
+  if (showErrors) {
+    formBlocks.forEach((block, i) => {
+      if (i <= 1) {
+        block.querySelectorAll("input, select, textarea").forEach(validateField);
+      }
+    });
+    validateSessionCards();
+  }
+
+  updateBlockStates();
+  updateSubmitState();
+}
+
+// Attach blur validation to all form fields
+if (form) {
+  form.querySelectorAll("input, select, textarea").forEach((field) => {
+    field.addEventListener("blur", () => {
+      validateField(field);
+      updateBlockStates();
+      updateSubmitState();
+    });
+    field.addEventListener("input", () => {
+      if (field.classList.contains("invalid")) {
+        validateField(field);
+      }
+      updateBlockStates();
+      updateSubmitState();
+    });
+  });
+
+  // Session toggles & course selects: validate on change
+  sessionToggles.forEach((toggle) => {
+    toggle.addEventListener("change", () => {
+      validateSessionCards();
+      updateBlockStates();
+      updateSubmitState();
+    });
+  });
+  courseSelects.forEach((sel) => {
+    sel.addEventListener("change", () => {
+      validateSessionCards();
+      updateBlockStates();
+      updateSubmitState();
+    });
+  });
+
+  // Consent checkbox
+  const consentBox = form.querySelector('input[name="consent"]');
+  if (consentBox) {
+    consentBox.addEventListener("change", () => {
+      updateBlockStates();
+      updateSubmitState();
+    });
+  }
+
+  // Hostel radios
+  document.querySelectorAll('input[name="hostel"]').forEach((r) => {
+    r.addEventListener("change", () => {
+      updateBlockStates();
+      updateSubmitState();
+    });
+  });
+
+  // Initial state
+  updateBlockStates();
+  updateSubmitState();
+}
+
 function updateCountdown() {
   if (!countdowns.length) return;
 
@@ -463,20 +673,24 @@ if (galleryMain) {
 form?.addEventListener("submit", async (event) => {
   event.preventDefault();
 
-  const selected = selectedSessions();
-  if (sessionToggles.length && selected.length === 0) {
-    statusMessage.textContent = "Please select at least one session and one class.";
+  // Run full validation with error display
+  runFullValidation(true);
+  if (!isFormComplete()) {
+    statusMessage.textContent = "Please complete all required fields before proceeding.";
     statusMessage.classList.add("error");
+    // Scroll to first invalid block
+    const firstInvalid = form.querySelector(".invalid, .block-invalid");
+    if (firstInvalid) firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
 
+  const selected = selectedSessions();
   const formData = new FormData(form);
   const sessionFee = feeBySessionCount[selected.length] ?? 0;
   const hostelFee = getHostelFee();
   const hostelOption = formData.get("hostel") || "none";
   const gstAmount = Math.round(sessionFee * GST_RATE);
   const totalFee = sessionFee + hostelFee + gstAmount;
-  const submitButton = form.querySelector('button[type="submit"]');
 
   submitButton.disabled = true;
   submitButton.textContent = "Processing...";
@@ -570,18 +784,19 @@ form?.addEventListener("submit", async (event) => {
           statusMessage.textContent = `Payment successful! Registration confirmed for ${registrationData.student_name}. Payment ID: ${response.razorpay_payment_id}. A confirmation email has been sent.`;
           form.reset();
           updateRegistrationState();
+          runFullValidation(false);
         } catch (verifyErr) {
           statusMessage.classList.add("error");
           statusMessage.textContent = `Payment received but verification failed: ${verifyErr.message}. Please contact us with Payment ID: ${response.razorpay_payment_id}`;
         } finally {
-          submitButton.disabled = false;
           submitButton.textContent = "Pay & Register";
+          updateSubmitState();
         }
       },
       modal: {
         ondismiss: function () {
-          submitButton.disabled = false;
           submitButton.textContent = "Pay & Register";
+          updateSubmitState();
           statusMessage.textContent = "Payment cancelled. You can try again.";
         }
       }
@@ -589,8 +804,8 @@ form?.addEventListener("submit", async (event) => {
 
     const rzp = new Razorpay(options);
     rzp.on("payment.failed", function (response) {
-      submitButton.disabled = false;
       submitButton.textContent = "Pay & Register";
+      updateSubmitState();
       statusMessage.classList.add("error");
       statusMessage.textContent = `Payment failed: ${response.error.description}. Please try again.`;
     });
@@ -598,8 +813,8 @@ form?.addEventListener("submit", async (event) => {
   } catch (error) {
     statusMessage.classList.add("error");
     statusMessage.textContent = `Something went wrong: ${error.message}. Please try again.`;
-    submitButton.disabled = false;
     submitButton.textContent = "Pay & Register";
+    updateSubmitState();
   }
 });
 
@@ -625,21 +840,23 @@ document.addEventListener("click", (event) => {
   }
 });
 
-// Form progress steps
-const progressSteps = document.querySelectorAll(".progress-step");
-const formBlocks = document.querySelectorAll(".form-block");
-
+// Form progress steps (progressSteps & formBlocks declared earlier with validation system)
 if (progressSteps.length && formBlocks.length && "IntersectionObserver" in window) {
+  let activeStepIndex = 0;
+
   const stepObserver = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (!entry.isIntersecting) return;
       const index = [...formBlocks].indexOf(entry.target);
       if (index === -1) return;
+      activeStepIndex = index;
 
       progressSteps.forEach((step, i) => {
-        step.classList.remove("active", "done");
-        if (i < index) step.classList.add("done");
+        step.classList.remove("active");
         if (i === index) step.classList.add("active");
+        // done state is driven by validation via updateBlockStates()
+        // but also mark previous blocks done if validated
+        if (i < index && validateBlock(i)) step.classList.add("done");
       });
     });
   }, { threshold: 0.4, rootMargin: "-80px 0px -40% 0px" });
