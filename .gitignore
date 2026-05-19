@@ -5,3 +5,5 @@ node_modules/
 !assets/*.png
 .claude/
 .vercel/
+
+.vercel

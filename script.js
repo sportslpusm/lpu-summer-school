@@ -624,17 +624,14 @@ if (seatsLeftItems.length) {
   setInterval(updateSeatsLeft, 12000);
 }
 
-let galleryImages = [
-  { src: "https://static.wixstatic.com/media/ccbabc_5fba4c052e4a4ebe89a4756ed43488b4~mv2.png", alt: "Sports activity at LPU Summer School" },
-  { src: "https://static.wixstatic.com/media/ccbabc_273ed44bcc2c4ebfb90688491c10349a~mv2.png", alt: "Artificial intelligence workshop" },
-  { src: "https://static.wixstatic.com/media/ccbabc_c16d7be2eaca45aaa00b639715071b55~mv2.png", alt: "Theatre and acting workshop" },
-  { src: "https://static.wixstatic.com/media/ccbabc_11bb09d6c2164a4185e0d3f012ab3423~mv2.png", alt: "Robotics and drones workshop" },
-  { src: "https://static.wixstatic.com/media/ccbabc_49e677a164c84c6295873d8bc2ea33f9~mv2.png", alt: "Dance workshop" },
-  { src: "https://static.wixstatic.com/media/ccbabc_620eb550d859431aa501391fa6557a1e~mv2.png", alt: "Music studio" }
-];
+let galleryImages = [];
+let galleryInterval = null;
+let galleryIndex = 0;
+let gallerySwapping = false;
 
-// Load gallery from DB
+// Load gallery exclusively from DB — no hardcoded fallback
 (async function loadGalleryImages() {
+  if (!galleryMain) return;
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/gallery_images?is_active=eq.true&order=sort_order.asc`, { headers: { "apikey": SUPABASE_KEY } });
     if (res.ok) {
@@ -643,14 +640,33 @@ let galleryImages = [
         galleryImages = data.map((img) => ({ src: img.image_url, alt: img.alt_text }));
       }
     }
-  } catch (e) { /* fallback to hardcoded */ }
+  } catch (e) { /* no images to rotate */ }
+
+  // Set initial images from DB (replace whatever HTML has)
+  if (galleryImages.length >= 1) {
+    galleryMain.src = galleryImages[0].src;
+    galleryMain.alt = galleryImages[0].alt;
+  }
+  if (galleryImages.length >= 2 && gallerySideA) {
+    gallerySideA.src = galleryImages[1].src;
+    gallerySideA.alt = galleryImages[1].alt;
+  }
+  if (galleryImages.length >= 3 && gallerySideB) {
+    gallerySideB.src = galleryImages[2].src;
+    gallerySideB.alt = galleryImages[2].alt;
+  }
+
+  // Only start rotation if we have more images than visible slots
+  if (galleryImages.length > 3) {
+    galleryIndex = 0;
+    galleryInterval = setInterval(rotateHeroGallery, 4200);
+  }
 })();
 
 function swapGalleryImage(image, imageData) {
   if (!image) return;
   const frame = image.closest(".hero-image");
   frame?.classList.add("is-changing");
-
   setTimeout(() => {
     image.src = imageData.src;
     image.alt = imageData.alt;
@@ -658,18 +674,24 @@ function swapGalleryImage(image, imageData) {
   }, 260);
 }
 
-let galleryIndex = 0;
 function rotateHeroGallery() {
   if (!galleryMain || !gallerySideA || !gallerySideB) return;
+  if (gallerySwapping) return;
+  gallerySwapping = true;
+
   galleryIndex = (galleryIndex + 1) % galleryImages.length;
 
-  swapGalleryImage(galleryMain, galleryImages[galleryIndex]);
-  swapGalleryImage(gallerySideA, galleryImages[(galleryIndex + 1) % galleryImages.length]);
-  swapGalleryImage(gallerySideB, galleryImages[(galleryIndex + 2) % galleryImages.length]);
-}
+  // Pick 3 unique indices (guaranteed since length > 3)
+  const i0 = galleryIndex;
+  const i1 = (galleryIndex + 1) % galleryImages.length;
+  const i2 = (galleryIndex + 2) % galleryImages.length;
 
-if (galleryMain) {
-  setInterval(rotateHeroGallery, 4200);
+  swapGalleryImage(galleryMain, galleryImages[i0]);
+  swapGalleryImage(gallerySideA, galleryImages[i1]);
+  swapGalleryImage(gallerySideB, galleryImages[i2]);
+
+  // Unlock after transition completes (260ms fade-out + 420ms fade-in)
+  setTimeout(() => { gallerySwapping = false; }, 700);
 }
 
 // ── Receipt display ─────────────────────────────────────────────────
