@@ -317,7 +317,11 @@ function updateRegistrationState() {
 
   document.querySelectorAll("[data-fee-base]").forEach((el) => { el.textContent = formatFee(baseFee); });
   document.querySelectorAll("[data-gst-detail]").forEach((el) => {
-    el.textContent = baseFee ? `+ GST 18%: ${formatFee(gst)}` : "";
+    if (!baseFee) { el.innerHTML = ""; return; }
+    const parts = [];
+    if (hostelFee) parts.push(`<div class="fee-line"><span>Hostel</span><strong>${formatFee(hostelFee)}</strong></div>`);
+    parts.push(`<div class="fee-line"><span>GST 18%</span><strong>${formatFee(gst)}</strong></div>`);
+    el.innerHTML = parts.join("");
   });
   document.querySelectorAll("[data-gst-line]").forEach((el) => {
     el.textContent = baseFee ? `Includes 18% GST: ${formatFee(gst)}` : "";
@@ -668,15 +672,103 @@ if (galleryMain) {
   setInterval(rotateHeroGallery, 4200);
 }
 
+// ── Receipt display ─────────────────────────────────────────────────
+const HOSTEL_LABELS = { none: "No hostel", hostel_only: "Hostel only", hostel_food: "Hostel + Food" };
+
+function showReceipt(data) {
+  const receiptEl = document.querySelector("[data-receipt]");
+  const table = document.querySelector("[data-receipt-table]");
+  if (!receiptEl || !table) return;
+
+  const r = data.receipt || {};
+  const rows = [
+    ["Student", `<strong>${esc(r.student_name || "")}</strong> (${esc(r.class_level || "")})`],
+    ["Guardian", esc(r.guardian_name || "")],
+    ["Courses", (r.courses || []).map(c => esc(c)).join(", ")],
+    ["Hostel", esc(r.hostel_label || HOSTEL_LABELS[data.hostel_option] || "No hostel")],
+    ["Session Fee", formatFee(r.session_fee || 0)],
+  ];
+  if ((r.hostel_amount || 0) > 0) rows.push(["Hostel Fee", formatFee(r.hostel_amount)]);
+  rows.push(["GST (18%)", formatFee(r.gst_amount || 0)]);
+
+  const infoRows = [
+    ["Payment ID", `<code>${esc(data.razorpay_payment_id || "")}</code>`],
+    ["Order ID", `<code>${esc(data.razorpay_order_id || "")}</code>`],
+    ["Registration ID", `<code>${esc(data.registration_id || "")}</code>`],
+    ["Date", r.timestamp || new Date().toLocaleString("en-IN")],
+  ];
+
+  table.innerHTML =
+    rows.map(([l, v]) => `<tr><td>${l}</td><td>${v}</td></tr>`).join("") +
+    `<tr class="receipt-total"><td>Total Paid</td><td>${formatFee(r.total_amount || 0)}</td></tr>` +
+    `<tr><td colspan="2" style="height:12px;border:none"></td></tr>` +
+    infoRows.map(([l, v]) => `<tr><td>${l}</td><td>${v}</td></tr>`).join("");
+
+  form.hidden = true;
+  document.querySelector(".form-progress-wrapper")?.remove();
+  receiptEl.hidden = false;
+  receiptEl.scrollIntoView({ behavior: "smooth", block: "start" });
+  sessionStorage.removeItem("lpu_pending_order");
+}
+
+// ── UPI flow recovery ───────────────────────────────────────────────
+function savePendingOrder(orderId, registrationData) {
+  try {
+    sessionStorage.setItem("lpu_pending_order", JSON.stringify({
+      order_id: orderId,
+      registration_data: registrationData,
+      timestamp: Date.now()
+    }));
+  } catch (_) {}
+}
+
+async function checkPendingOrder() {
+  try {
+    const raw = sessionStorage.getItem("lpu_pending_order");
+    if (!raw) return;
+    const pending = JSON.parse(raw);
+    // Expire after 30 minutes
+    if (Date.now() - pending.timestamp > 30 * 60 * 1000) {
+      sessionStorage.removeItem("lpu_pending_order");
+      return;
+    }
+    // Try to verify the order (idempotent — server checks if already processed)
+    const verifyRes = await fetch(`${SUPABASE_URL}/functions/v1/verify-payment`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        razorpay_order_id: pending.order_id,
+        razorpay_payment_id: "recovery_check",
+        razorpay_signature: "recovery_check",
+        registration_data: pending.registration_data
+      })
+    });
+    if (verifyRes.ok) {
+      const result = await verifyRes.json();
+      if (result.success && result.already_processed) {
+        showReceipt({
+          ...result,
+          hostel_option: pending.registration_data.hostel_option
+        });
+      }
+    }
+    // If not processed, clear pending (user can re-submit)
+    if (!verifyRes.ok) sessionStorage.removeItem("lpu_pending_order");
+  } catch (_) {
+    sessionStorage.removeItem("lpu_pending_order");
+  }
+}
+
+if (form) checkPendingOrder();
+
+// ── Form submission ─────────────────────────────────────────────────
 form?.addEventListener("submit", async (event) => {
   event.preventDefault();
 
-  // Run full validation with error display
   runFullValidation(true);
   if (!isFormComplete()) {
     statusMessage.textContent = "Please complete all required fields before proceeding.";
     statusMessage.classList.add("error");
-    // Scroll to first invalid block
     const firstInvalid = form.querySelector(".invalid, .block-invalid");
     if (firstInvalid) firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
@@ -717,7 +809,7 @@ form?.addEventListener("submit", async (event) => {
   };
 
   try {
-    // Step 1: Create Razorpay order
+    // Step 1: Create Razorpay order (now includes hostel)
     const orderRes = await fetch(`${SUPABASE_URL}/functions/v1/create-order`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -725,7 +817,8 @@ form?.addEventListener("submit", async (event) => {
         session_count: selected.length,
         student_name: registrationData.student_name,
         email: registrationData.email,
-        phone: registrationData.phone
+        phone: registrationData.phone,
+        hostel_option: hostelOption
       })
     });
 
@@ -736,10 +829,13 @@ form?.addEventListener("submit", async (event) => {
 
     const order = await orderRes.json();
 
-    // Use server-validated amounts (not client-calculated)
+    // Use server-validated amounts
     registrationData.base_amount = order.base_amount;
     registrationData.gst_amount = order.gst_amount;
     registrationData.total_amount = order.total_amount;
+
+    // Save for UPI recovery before opening Razorpay
+    savePendingOrder(order.order_id, registrationData);
 
     // Step 2: Open Razorpay checkout
     const options = {
@@ -760,7 +856,6 @@ form?.addEventListener("submit", async (event) => {
       },
       theme: { color: "#f3700d" },
       handler: async function (response) {
-        // Step 3: Verify payment and save registration
         submitButton.textContent = "Verifying payment...";
         try {
           const verifyRes = await fetch(`${SUPABASE_URL}/functions/v1/verify-payment`, {
@@ -779,15 +874,16 @@ form?.addEventListener("submit", async (event) => {
             throw new Error(err.error || "Payment verification failed");
           }
 
-          statusMessage.classList.remove("error");
-          statusMessage.textContent = `Payment successful! Registration confirmed for ${registrationData.student_name}. Payment ID: ${response.razorpay_payment_id}. A confirmation email has been sent.`;
-          form.reset();
-          updateRegistrationState();
-          runFullValidation(false);
+          const result = await verifyRes.json();
+          showReceipt({
+            ...result,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id: response.razorpay_order_id,
+            hostel_option: hostelOption
+          });
         } catch (verifyErr) {
           statusMessage.classList.add("error");
           statusMessage.textContent = `Payment received but verification failed: ${verifyErr.message}. Please contact us with Payment ID: ${response.razorpay_payment_id}`;
-        } finally {
           submitButton.textContent = "Pay & Register";
           updateSubmitState();
         }
@@ -807,6 +903,7 @@ form?.addEventListener("submit", async (event) => {
       updateSubmitState();
       statusMessage.classList.add("error");
       statusMessage.textContent = `Payment failed: ${response.error.description}. Please try again.`;
+      sessionStorage.removeItem("lpu_pending_order");
     });
     rzp.open();
   } catch (error) {
@@ -814,6 +911,7 @@ form?.addEventListener("submit", async (event) => {
     statusMessage.textContent = `Something went wrong: ${error.message}. Please try again.`;
     submitButton.textContent = "Pay & Register";
     updateSubmitState();
+    sessionStorage.removeItem("lpu_pending_order");
   }
 });
 

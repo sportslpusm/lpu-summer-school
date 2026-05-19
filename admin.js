@@ -366,10 +366,23 @@ function renderRegistrations(rows) {
   `).join("");
 }
 
+const HOSTEL_LABELS = { none: "No hostel", hostel_only: "Hostel only", hostel_food: "Hostel + Food" };
+
 window.viewRegistration = async function(id) {
   const rows = await apiGet("registrations", `id=eq.${id}`);
   const r = rows[0];
   const courses = [r.session1_course, r.session2_course, r.session3_course].filter(Boolean);
+
+  // Fetch linked payment record for Razorpay IDs and fee breakdown
+  let payment = null;
+  if (r.payment_id) {
+    const prows = await apiGet("payments", `id=eq.${r.payment_id}`);
+    payment = prows[0] || null;
+  }
+
+  const hostelLabel = HOSTEL_LABELS[r.hostel_option] || r.hostel_option || "N/A";
+  const hostelAmt = r.hostel_amount || 0;
+
   openModal("Registration Details", `
     <div style="display:grid;gap:12px">
       <div><strong>Student:</strong> ${esc(r.student_name)}</div>
@@ -383,14 +396,24 @@ window.viewRegistration = async function(id) {
       <div><strong>Emergency:</strong> ${esc(r.emergency_phone)}</div>
       <hr style="border:none;border-top:1px solid #e4e7ec">
       <div><strong>Courses:</strong> ${courses.map(c => esc(c)).join(", ") || "None"}</div>
-      <div><strong>Fee:</strong> Rs. ${r.total_fee}</div>
+      <div><strong>Hostel:</strong> ${esc(hostelLabel)}${hostelAmt ? ` (Rs. ${hostelAmt})` : ""}</div>
+      <hr style="border:none;border-top:1px solid #e4e7ec">
+      <div><strong>Base Amount:</strong> Rs. ${payment ? payment.base_amount : "N/A"}</div>
+      <div><strong>GST (18%):</strong> Rs. ${payment ? payment.gst_amount : "N/A"}</div>
+      <div><strong>Total Fee:</strong> <strong style="color:#f3700d">Rs. ${r.total_fee}</strong></div>
       <div><strong>Payment:</strong> <span class="badge badge-${r.payment_status === 'paid' ? 'confirmed' : 'pending'}">${r.payment_status || 'unpaid'}</span></div>
       <div><strong>Status:</strong> <span class="badge badge-${r.status}">${r.status}</span></div>
+      ${payment ? `
+      <hr style="border:none;border-top:1px solid #e4e7ec">
+      <div style="font-size:12px;color:#667085">
+        <div><strong>Razorpay Payment ID:</strong> ${esc(payment.razorpay_payment_id || "N/A")}</div>
+        <div><strong>Razorpay Order ID:</strong> ${esc(payment.razorpay_order_id || "N/A")}</div>
+        <div><strong>Payment Date:</strong> ${payment.updated_at ? new Date(payment.updated_at).toLocaleString("en-IN") : "N/A"}</div>
+      </div>` : ""}
       <div><strong>Medical:</strong> ${esc(r.medical_note) || "None"}</div>
       <div><strong>Registered:</strong> ${new Date(r.created_at).toLocaleString("en-IN")}</div>
     </div>
   `, null);
-  // Hide save button for view-only modal
   $("#modalSave").hidden = true;
 };
 

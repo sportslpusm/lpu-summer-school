@@ -440,10 +440,9 @@ h1 {
 .registration-hero .label { color: var(--white); background: var(--orange); font-size: 0.85rem; }
 .register-page .nav-cta { display: none; }
 .registration-summary { padding: 22px; border: 2px solid var(--orange); background: linear-gradient(135deg, #fff8f2, #ffffff); }
-.registration-summary span, .submit-bar span { color: var(--muted); font-size: 0.78rem; font-weight: 900; text-transform: uppercase; }
-.registration-summary strong, .submit-bar strong { display: block; margin-top: 6px; color: var(--orange); font-size: 2rem; }
-.gst-line, .gst-detail { font-size: 0.82rem; color: var(--muted); font-weight: 600; margin-top: 4px; text-transform: none; }
-.submit-bar > div { text-align: center; }
+.registration-summary span { color: var(--muted); font-size: 0.78rem; font-weight: 900; text-transform: uppercase; }
+.registration-summary strong { display: block; margin-top: 6px; color: var(--orange); font-size: 2rem; }
+.gst-line { font-size: 0.82rem; color: var(--muted); font-weight: 600; margin-top: 4px; }
 .registration-section { padding-top: 0; padding-bottom: clamp(40px, 5vw, 72px); background: var(--paper); }
 .form-progress-wrapper {
   position: sticky;
@@ -523,9 +522,36 @@ h1 {
 .check-row input, .consent-row input { width: 18px; height: 18px; }
 .check-row small { grid-column: 2; color: var(--muted); }
 .consent-row { align-items: start; }
-.submit-bar { display: flex; align-items: center; justify-content: space-between; gap: 18px; border: 1px solid var(--line); border-radius: 12px; padding: 20px 28px; background: linear-gradient(135deg, #fff8f2, #ffffff); box-shadow: 0 8px 32px rgba(17, 24, 39, 0.08); }
-.form-status { min-height: 26px; margin: 0; color: var(--green); font-weight: 900; }
+.submit-bar { display: grid; gap: 16px; border: 1px solid var(--line); border-radius: 12px; padding: 24px 28px; background: linear-gradient(135deg, #fff8f2, #ffffff); box-shadow: 0 8px 32px rgba(17, 24, 39, 0.08); }
+.submit-bar-fees { display: grid; gap: 6px; }
+.fee-line { display: flex; align-items: baseline; justify-content: space-between; }
+.fee-line span { color: var(--muted); font-size: 0.82rem; font-weight: 700; }
+.fee-line strong { color: var(--ink); font-size: 0.95rem; }
+.fee-line-secondary { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+.fee-line-total { padding-top: 10px; border-top: 2px solid var(--line); margin-top: 4px; }
+.fee-line-total span { color: var(--ink); font-size: 0.88rem; font-weight: 900; text-transform: uppercase; }
+.fee-line-total strong { color: var(--orange); font-size: 1.5rem; font-weight: 950; }
+.submit-bar .button { justify-self: start; }
+.form-status { min-height: 22px; margin: 0; color: var(--green); font-weight: 900; font-size: 0.88rem; }
+.form-status:empty { min-height: 0; }
 .form-status.error { color: #c1121f; }
+
+/* Receipt section */
+.receipt-section { max-width: 600px; margin: 0 auto; padding: 0 clamp(18px, 4vw, 58px); }
+.receipt-card { background: var(--white); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(17, 24, 39, 0.1); }
+.receipt-header { background: var(--orange); color: white; padding: 24px 28px; }
+.receipt-header h2 { margin: 0; font-size: 1.4rem; }
+.receipt-header p { margin: 4px 0 0; opacity: 0.9; font-size: 0.9rem; }
+.receipt-body { padding: 24px 28px; }
+.receipt-table { width: 100%; border-collapse: collapse; }
+.receipt-table td { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 0.88rem; }
+.receipt-table td:first-child { color: var(--muted); font-weight: 700; white-space: nowrap; padding-right: 18px; width: 140px; }
+.receipt-table tr.receipt-total td { border-bottom: none; border-top: 2px solid var(--ink); font-weight: 900; font-size: 1rem; }
+.receipt-table tr.receipt-total td:last-child { color: var(--orange); font-size: 1.15rem; }
+.receipt-confirmed { margin: 20px 0; padding: 14px; background: #d1fae5; border-radius: 8px; text-align: center; font-weight: 900; color: #065f46; }
+.receipt-note { font-size: 0.85rem; color: var(--ink); margin: 12px 0 4px; }
+.receipt-contact { font-size: 0.78rem; color: var(--muted); margin: 0 0 8px; }
+.receipt-card > .button { margin: 0 28px 24px; }
 
 @media (max-width: 1160px) {
   .hero, .fee-shell, .recognition, .registration-hero { grid-template-columns: 1fr; }
@@ -580,8 +606,8 @@ h1 {
   .form-progress-wrapper { padding: 8px 0; top: 64px; margin-left: -16px; margin-right: -16px; }
   /* Hostel cards stack on mobile */
   .hostel-radios { grid-template-columns: 1fr; }
-  .submit-bar { align-items: stretch; flex-direction: column; }
   .submit-bar .button, .hero-actions .button { width: 100%; }
+  .submit-bar .button { justify-self: stretch; }
   .registration-hero h1 { font-size: clamp(1.8rem, 9vw, 2.6rem); }
   /* Footer contact stacking */
   .contact-links { flex-direction: column; gap: 6px; }

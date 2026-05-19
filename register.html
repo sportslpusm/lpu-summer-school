@@ -219,19 +219,37 @@
           </div>
 
           <div class="submit-bar">
-            <div>
-              <span>Base fee</span>
-              <strong data-fee-base>Rs. 0</strong>
-              <span class="gst-detail" data-gst-detail></span>
-            </div>
-            <div>
-              <span>Total (incl. 18% GST)</span>
-              <strong data-fee-total>Rs. 0</strong>
+            <div class="submit-bar-fees">
+              <div class="fee-line">
+                <span>Base fee</span>
+                <strong data-fee-base>Rs. 0</strong>
+              </div>
+              <div class="fee-line fee-line-secondary" data-gst-detail></div>
+              <div class="fee-line fee-line-total">
+                <span>Total payable</span>
+                <strong data-fee-total>Rs. 0</strong>
+              </div>
             </div>
             <button class="button primary" type="submit" disabled>Pay & Register</button>
+            <p class="form-status" role="status" data-form-status></p>
           </div>
-          <p class="form-status" role="status" data-form-status></p>
         </form>
+
+        <section class="receipt-section" data-receipt hidden>
+          <div class="receipt-card">
+            <div class="receipt-header">
+              <h2>Payment Successful</h2>
+              <p>LPU Summer School 2026</p>
+            </div>
+            <div class="receipt-body">
+              <table class="receipt-table" data-receipt-table></table>
+              <div class="receipt-confirmed">Registration Confirmed</div>
+              <p class="receipt-note">A receipt has been emailed to you. Save this page for your records.</p>
+              <p class="receipt-contact">For queries: summerschool@lpu.co.in | +91 860 723 4098</p>
+            </div>
+            <button class="button primary" onclick="window.print()">Print Receipt</button>
+          </div>
+        </section>
       </section>
     </main>
 
