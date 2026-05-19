@@ -227,6 +227,50 @@ h1 {
 .hero-image.large::after { position: absolute; inset: 0; content: ""; background: linear-gradient(0deg, rgba(17, 24, 39, 0.08), transparent 36%); pointer-events: none; }
 .hero-image.small img { aspect-ratio: 3/2; }
 
+/* Program dates strip — homepage */
+.program-dates {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 28px clamp(18px, 4vw, 58px);
+  background: var(--ink);
+}
+.date-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--white);
+}
+.date-card svg { flex-shrink: 0; color: var(--orange); }
+.date-card span { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.65; }
+.date-card strong { display: block; margin-top: 3px; font-size: 1.05rem; font-weight: 900; }
+
+/* Registration page compact dates bar */
+.reg-dates-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 16px;
+  padding: 12px 18px;
+  border-radius: 8px;
+  background: rgba(17, 24, 39, 0.06);
+  border: 1px solid var(--line);
+}
+.reg-dates-bar > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.reg-dates-bar svg { color: var(--orange); }
+.reg-dates-bar strong { color: var(--ink); }
+
 .impact-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -565,7 +609,7 @@ h1 {
   .site-nav.open { opacity: 1; visibility: visible; transform: translateY(0); }
   .site-nav a { padding: 13px 14px; }
   .site-nav .nav-cta { position: static; margin-left: 0; text-align: center; transform: none; }
-  .impact-strip, .story-grid, .session-columns, .session-selectors, .reward-list { grid-template-columns: 1fr; }
+  .program-dates, .impact-strip, .story-grid, .session-columns, .session-selectors, .reward-list { grid-template-columns: 1fr; }
   .track-grid { grid-template-columns: repeat(2, 1fr); }
   .section-heading.split { display: block; }
   .filter-group { margin-top: 18px; }

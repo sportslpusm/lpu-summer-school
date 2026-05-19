@@ -138,9 +138,15 @@ function registrationConfirmationEmail(reg) {
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Class</td><td style="padding:8px;border-bottom:1px solid #eee">${esc(reg.class_level)}</td></tr>
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Courses</td><td style="padding:8px;border-bottom:1px solid #eee">${courses.map(c => esc(c)).join(", ")}</td></tr>
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Total Fee</td><td style="padding:8px;border-bottom:1px solid #eee"><strong>Rs. ${reg.total_fee}</strong></td></tr>
-          <tr><td style="padding:8px;color:#667085">Status</td><td style="padding:8px"><span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:99px;font-weight:700;font-size:13px">Confirmed</span></td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Status</td><td style="padding:8px"><span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:99px;font-weight:700;font-size:13px">Confirmed</span></td></tr>
         </table>
-        <p>Our team will contact you shortly with further details regarding schedule and campus logistics.</p>
+        <div style="background:#f7f8fb;border-radius:8px;padding:16px;margin:16px 0">
+          <p style="margin:0 0 6px;font-weight:700;color:#111827">Program Schedule</p>
+          <p style="margin:0;font-size:14px;color:#667085">Dates: <strong style="color:#111827">16 Jun — 28 Jun 2026</strong></p>
+          <p style="margin:4px 0 0;font-size:14px;color:#667085">Timings: <strong style="color:#111827">9:00 AM — 5:00 PM daily</strong></p>
+          <p style="margin:4px 0 0;font-size:14px;color:#667085">Venue: <strong style="color:#111827">LPU Campus, Phagwara, Punjab</strong></p>
+        </div>
+        <p>Our team will contact you shortly with further details regarding campus logistics.</p>
         <p style="color:#667085;font-size:13px;margin-top:24px">For queries: summerschool@lpu.co.in | +91 860 723 4098</p>
       </div>
     </div>

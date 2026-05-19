@@ -150,6 +150,22 @@ function applySettings(cfg) {
     if (i === 0 && !isNaN(hostelOnly)) strong.textContent = `Rs. ${hostelOnly.toLocaleString("en-IN")}`;
     if (i === 1 && !isNaN(hostelFood)) strong.textContent = `Rs. ${hostelFood.toLocaleString("en-IN")}`;
   });
+
+  // Program dates
+  const startDate = cfg["event_start_date"];
+  const endDate = cfg["event_end_date"];
+  if (startDate && endDate) {
+    const s = new Date(startDate + "T00:00:00+05:30");
+    const e = new Date(endDate + "T00:00:00+05:30");
+    const fmt = (d) => d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+    const fmtShort = (d) => d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+    const dateStr = s.getFullYear() === e.getFullYear()
+      ? `${fmtShort(s)} — ${fmt(e)}`
+      : `${fmt(s)} — ${fmt(e)}`;
+    document.querySelectorAll('[data-cfg="program-dates"]').forEach((el) => {
+      el.textContent = dateStr;
+    });
+  }
 }
 
 function checkDeadlineExpiry() {
@@ -842,13 +858,21 @@ function showReceipt(data) {
   if (!receiptEl || !table) return;
 
   const r = data.receipt || {};
+  // Build program dates string for receipt
+  const cdEl = document.querySelector("[data-countdown]");
+  const progDatesEl = document.querySelector('[data-cfg="program-dates"]');
+  const progDatesStr = progDatesEl ? progDatesEl.textContent : "";
+
   const rows = [
     ["Student", `<strong>${esc(r.student_name || "")}</strong> (${esc(r.class_level || "")})`],
     ["Guardian", esc(r.guardian_name || "")],
     ["Courses", (r.courses || []).map(c => esc(c)).join(", ")],
     ["Hostel", esc(r.hostel_label || HOSTEL_LABELS[data.hostel_option] || "No hostel")],
-    ["Session Fee", formatFee(r.session_fee || 0)],
   ];
+  if (progDatesStr) rows.push(["Program Dates", esc(progDatesStr)]);
+  rows.push(["Daily Timings", "9:00 AM — 5:00 PM"]);
+  rows.push(["Venue", "LPU Campus, Phagwara, Punjab"]);
+  rows.push(["Session Fee", formatFee(r.session_fee || 0)]);
   if ((r.hostel_amount || 0) > 0) rows.push(["Hostel Fee", formatFee(r.hostel_amount)]);
   rows.push(["GST (18%)", formatFee(r.gst_amount || 0)]);
 
