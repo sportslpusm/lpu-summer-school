@@ -447,13 +447,13 @@ h1 {
 .registration-section { padding-top: 0; padding-bottom: clamp(40px, 5vw, 72px); background: var(--paper); }
 .form-progress-wrapper {
   position: sticky;
-  top: 0;
-  z-index: 50;
+  top: 70px;
+  z-index: 40;
   background: var(--white);
   border-bottom: 1px solid var(--line);
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
   padding: 12px 0;
-  margin-bottom: clamp(20px, 3vw, 32px);
+  margin: 0 calc(-1 * clamp(18px, 4vw, 58px)) clamp(20px, 3vw, 32px);
 }
 .form-progress {
   display: flex;
@@ -577,7 +577,7 @@ h1 {
   .progress-step em { font-style: normal; font-size: 0.62rem; line-height: 1.1; }
   .progress-step span { width: 24px; height: 24px; font-size: 0.7rem; }
   .form-progress { gap: 0; padding: 0 6px; }
-  .form-progress-wrapper { padding: 8px 0; }
+  .form-progress-wrapper { padding: 8px 0; top: 64px; margin-left: -16px; margin-right: -16px; }
   /* Hostel cards stack on mobile */
   .hostel-radios { grid-template-columns: 1fr; }
   .submit-bar { align-items: stretch; flex-direction: column; }
