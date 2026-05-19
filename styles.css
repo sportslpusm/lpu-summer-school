@@ -249,27 +249,6 @@ h1 {
 .date-card span { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.65; }
 .date-card strong { display: block; margin-top: 3px; font-size: 1.05rem; font-weight: 900; }
 
-/* Registration page compact dates bar */
-.reg-dates-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 20px;
-  margin-top: 16px;
-  padding: 12px 18px;
-  border-radius: 8px;
-  background: rgba(17, 24, 39, 0.06);
-  border: 1px solid var(--line);
-}
-.reg-dates-bar > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--muted);
-}
-.reg-dates-bar svg { color: var(--orange); }
-.reg-dates-bar strong { color: var(--ink); }
 
 .impact-strip {
   display: grid;
@@ -295,7 +274,7 @@ h1 {
 .section-heading p:not(.eyebrow), .fee-shell p, .registration-hero p { color: var(--muted); line-height: 1.65; }
 .story { background: var(--white); }
 .story-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-.story-grid article, .track-card, .session-card, .fee-table, .registration-summary, .form-block {
+.story-grid article, .track-card, .session-card, .fee-table, .form-block {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--white);
@@ -479,13 +458,58 @@ h1 {
   .contact-panel { width: calc(100vw - 40px); }
 }
 
-.registration-hero { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 28px; align-items: end; padding: clamp(36px, 5vw, 64px) clamp(18px, 4vw, 58px) clamp(28px, 4vw, 48px); background: radial-gradient(circle at 82% 20%, rgba(243, 112, 13, 0.18), transparent 28%), linear-gradient(135deg, #fffaf6, #ffffff); }
-.registration-hero h1 { max-width: 760px; color: var(--orange); }
-.registration-hero .label { color: var(--white); background: var(--orange); font-size: 0.85rem; }
+.registration-hero {
+  padding: clamp(28px, 4vw, 44px) clamp(18px, 4vw, 58px) clamp(20px, 3vw, 32px);
+  background: var(--ink);
+  color: var(--white);
+  text-align: center;
+}
+.registration-hero .label { background: var(--orange); color: var(--white); font-size: 0.78rem; }
+.registration-hero h1 {
+  max-width: 600px;
+  margin: 0 auto;
+  color: var(--white);
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  line-height: 1.1;
+}
+.reg-hero-sub {
+  max-width: 480px;
+  margin: 10px auto 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.reg-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 16px;
+  margin-top: 16px;
+}
+.reg-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+}
+.reg-meta-item svg { color: var(--orange); }
+.reg-meta-item strong { color: var(--white); font-weight: 800; }
+.reg-meta-deadline {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: rgba(243, 112, 13, 0.18);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--orange);
+}
+.reg-meta-deadline svg { color: var(--orange); }
+.reg-meta-deadline strong { color: var(--white); }
 .register-page .nav-cta { display: none; }
-.registration-summary { padding: 22px; border: 2px solid var(--orange); background: linear-gradient(135deg, #fff8f2, #ffffff); }
-.registration-summary span { color: var(--muted); font-size: 0.78rem; font-weight: 900; text-transform: uppercase; }
-.registration-summary strong { display: block; margin-top: 6px; color: var(--orange); font-size: 2rem; }
 .gst-line { font-size: 0.82rem; color: var(--muted); font-weight: 600; margin-top: 4px; }
 .registration-section { padding-top: 0; padding-bottom: clamp(40px, 5vw, 72px); background: var(--paper); }
 .form-progress-wrapper {
@@ -598,7 +622,7 @@ h1 {
 .receipt-card > .button { margin: 0 28px 24px; }
 
 @media (max-width: 1160px) {
-  .hero, .fee-shell, .recognition, .registration-hero { grid-template-columns: 1fr; }
+  .hero, .fee-shell, .recognition { grid-template-columns: 1fr; }
   .hero-visual { min-height: 300px; }
   .track-grid { grid-template-columns: repeat(3, 1fr); }
 }
