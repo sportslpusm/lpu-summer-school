@@ -508,16 +508,36 @@ window.toggleSession = async function(id, active) {
   await loadSessions();
 };
 
+function parseTimeSlot(slot) {
+  // "09:30 - 11:30" or "09:30 - 11:30" -> { start, end }
+  const parts = (slot || "").split(/\s*[-–]\s*/);
+  return { start: (parts[0] || "09:00").trim(), end: (parts[1] || "11:00").trim() };
+}
+
+function sessionTimeForm(slot) {
+  const t = parseTimeSlot(slot);
+  return `<label>Start Time <input type="time" id="mSessionStart" value="${esc(t.start)}" required></label>
+    <label>End Time <input type="time" id="mSessionEnd" value="${esc(t.end)}" required></label>`;
+}
+
+function getSessionTimeSlot() {
+  const start = $("#mSessionStart").value;
+  const end = $("#mSessionEnd").value;
+  if (!start || !end) throw new Error("Start and end times are required");
+  if (start >= end) throw new Error("End time must be after start time");
+  return `${start} - ${end}`;
+}
+
 window.editSession = function(id) {
   const s = sessions.find((x) => x.id === id);
   openModal("Edit Session", `
     <label>Name <input id="mSessionName" value="${esc(s.name)}"></label>
-    <label>Time Slot <input id="mSessionTime" value="${esc(s.time_slot)}"></label>
+    ${sessionTimeForm(s.time_slot)}
     <label>Sort Order <input id="mSessionOrder" type="number" value="${s.sort_order}"></label>
   `, async () => {
     await apiUpdate("sessions", id, {
       name: $("#mSessionName").value,
-      time_slot: $("#mSessionTime").value,
+      time_slot: getSessionTimeSlot(),
       sort_order: parseInt($("#mSessionOrder").value)
     });
     await loadSessions();
@@ -535,12 +555,12 @@ window.deleteSession = async function(id) {
 $("#addSessionBtn").addEventListener("click", () => {
   openModal("Add Session", `
     <label>Name <input id="mSessionName" placeholder="Session 4"></label>
-    <label>Time Slot <input id="mSessionTime" placeholder="17:00 - 19:00"></label>
+    ${sessionTimeForm("")}
     <label>Sort Order <input id="mSessionOrder" type="number" value="${sessions.length + 1}"></label>
   `, async () => {
     await apiInsert("sessions", {
       name: $("#mSessionName").value,
-      time_slot: $("#mSessionTime").value,
+      time_slot: getSessionTimeSlot(),
       sort_order: parseInt($("#mSessionOrder").value)
     });
     await loadSessions();
@@ -817,30 +837,104 @@ async function loadSettings() {
   renderSettings();
 }
 
+// Field type detection for smart inputs
+const SETTING_TYPES = {
+  event_start_date: "date",
+  event_end_date: "date",
+  registration_deadline: "datetime",
+  hostel_only_fee: "number",
+  hostel_food_fee: "number",
+  max_seats: "number",
+};
+
+function settingInput(key, value) {
+  const type = SETTING_TYPES[key];
+  if (type === "date") {
+    // value like "2026-06-16" — native date picker
+    return `<input type="date" data-key="${esc(key)}" value="${esc(value)}" min="2025-01-01" max="2030-12-31">`;
+  }
+  if (type === "datetime") {
+    // value like "2026-06-10T23:59:59+05:30" — split into date + time
+    let dateVal = "", timeVal = "23:59";
+    if (value) {
+      const dt = new Date(value);
+      if (!isNaN(dt)) {
+        // Convert to IST for display
+        const ist = new Date(dt.getTime() + (330 - dt.getTimezoneOffset()) * 60000);
+        dateVal = ist.toISOString().slice(0, 10);
+        timeVal = ist.toISOString().slice(11, 16);
+      }
+    }
+    return `<div style="display:flex;gap:8px">
+      <input type="date" data-key="${esc(key)}" data-part="date" value="${dateVal}" min="2025-01-01" max="2030-12-31" style="flex:1">
+      <input type="time" data-key="${esc(key)}" data-part="time" value="${timeVal}" style="width:120px">
+    </div>
+    <div class="desc">Timezone: IST (Asia/Kolkata). Date and time combined on save.</div>`;
+  }
+  if (type === "number") {
+    return `<input type="number" data-key="${esc(key)}" value="${esc(value)}" min="0" max="999999">`;
+  }
+  return `<input data-key="${esc(key)}" value="${esc(value)}">`;
+}
+
 function renderSettings() {
   $("#settingsGrid").innerHTML = settingsData.map((s) => `
     <div class="setting-item">
       <label>${esc(s.key.replace(/_/g, " "))}</label>
-      <input data-key="${esc(s.key)}" value="${esc(s.value)}">
-      ${s.description ? `<div class="desc">${esc(s.description)}</div>` : ""}
+      ${settingInput(s.key, s.value)}
+      ${s.description && !SETTING_TYPES[s.key]?.startsWith("datetime") ? `<div class="desc">${esc(s.description)}</div>` : ""}
     </div>
   `).join("");
 }
 
-$("#saveSettingsBtn").addEventListener("click", async () => {
+function getSettingsValues() {
+  const values = {};
   const inputs = $$("#settingsGrid input[data-key]");
-  const updates = [];
   inputs.forEach((input) => {
     const key = input.dataset.key;
+    const part = input.dataset.part;
+    if (part === "date" || part === "time") {
+      // Datetime split field — combine date + time into IST ISO string
+      if (!values[key]) values[key] = { date: "", time: "23:59" };
+      values[key][part] = input.value;
+    } else {
+      values[key] = input.value;
+    }
+  });
+  // Resolve datetime pairs
+  for (const key of Object.keys(values)) {
+    const v = values[key];
+    if (v && typeof v === "object" && "date" in v) {
+      if (!v.date) {
+        alert(`"${key.replace(/_/g, " ")}" requires a date.`);
+        return null;
+      }
+      values[key] = `${v.date}T${v.time || "23:59"}:00+05:30`;
+    }
+  }
+  return values;
+}
+
+$("#saveSettingsBtn").addEventListener("click", async () => {
+  const values = getSettingsValues();
+  if (!values) return;
+
+  const updates = [];
+  for (const [key, value] of Object.entries(values)) {
     const orig = settingsData.find((s) => s.key === key);
-    if (orig && orig.value !== input.value) {
+    if (orig && orig.value !== value) {
+      // Validate non-empty for critical fields
+      if (!value && ["event_start_date", "event_end_date", "registration_deadline"].includes(key)) {
+        alert(`"${key.replace(/_/g, " ")}" cannot be empty.`);
+        return;
+      }
       updates.push(api(`site_config?key=eq.${key}`, {
         method: "PATCH",
         headers: { ...authHeaders(), "Prefer": "return=representation" },
-        body: JSON.stringify({ value: input.value, updated_at: new Date().toISOString() })
+        body: JSON.stringify({ value, updated_at: new Date().toISOString() })
       }));
     }
-  });
+  }
   if (updates.length) {
     await Promise.all(updates);
     alert("Settings saved!");
