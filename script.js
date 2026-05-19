@@ -122,7 +122,59 @@ function applySettings(cfg) {
       const d = new Date(deadline);
       dlabel.textContent = d.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
     }
+    registrationDeadline = new Date(deadline);
+    checkDeadlineExpiry();
   }
+
+  // Dynamic hostel fees from config
+  const hostelOnly = parseInt(cfg["hostel_only_fee"]);
+  const hostelFood = parseInt(cfg["hostel_food_fee"]);
+  if (!isNaN(hostelOnly)) HOSTEL_FEES.hostel_only = hostelOnly;
+  if (!isNaN(hostelFood)) HOSTEL_FEES.hostel_food = hostelFood;
+
+  // Update hostel price labels on register page
+  document.querySelectorAll('.hostel-radio').forEach((radio) => {
+    const input = radio.querySelector('input[name="hostel"]');
+    const priceEl = radio.querySelector('.hostel-radio-price');
+    if (!input || !priceEl) return;
+    const fee = HOSTEL_FEES[input.value];
+    if (fee > 0) {
+      priceEl.innerHTML = `<em>Rs. ${fee.toLocaleString("en-IN")}</em><small>+ 18% GST</small>`;
+    }
+  });
+
+  // Update hostel prices on homepage
+  document.querySelectorAll('.hostel-option').forEach((el, i) => {
+    const strong = el.querySelector('strong');
+    if (!strong) return;
+    if (i === 0 && !isNaN(hostelOnly)) strong.textContent = `Rs. ${hostelOnly.toLocaleString("en-IN")}`;
+    if (i === 1 && !isNaN(hostelFood)) strong.textContent = `Rs. ${hostelFood.toLocaleString("en-IN")}`;
+  });
+}
+
+function checkDeadlineExpiry() {
+  if (!registrationDeadline) return;
+  const expired = new Date() > registrationDeadline;
+  if (!expired) return;
+
+  // Disable registration form
+  if (form) {
+    form.querySelectorAll("input, select, textarea, button").forEach((el) => { el.disabled = true; });
+    const status = form.querySelector("[data-form-status]");
+    if (status) {
+      status.textContent = "Registration is closed. The deadline has passed.";
+      status.classList.add("error");
+    }
+  }
+
+  // Update register CTA buttons site-wide
+  document.querySelectorAll('.nav-cta, .floating-register, .hero-actions .button.primary').forEach((el) => {
+    if (el.tagName === "A") {
+      el.removeAttribute("href");
+      el.style.opacity = "0.5";
+      el.style.pointerEvents = "none";
+    }
+  });
 }
 
 // Fetch all dynamic data from Supabase
@@ -145,6 +197,7 @@ function applySettings(cfg) {
     if (settingsRes.ok) {
       (await settingsRes.json()).forEach((r) => { cfg[r.key] = r.value; });
       applySettings(cfg);
+      updateRegistrationState();
     }
 
     // Build sessionCourses map
@@ -384,6 +437,7 @@ function esc(str) {
 }
 
 const HOSTEL_FEES = { none: 0, hostel_only: 1400, hostel_food: 3000 };
+let registrationDeadline = null;
 
 function getHostelFee() {
   const checked = document.querySelector('input[name="hostel"]:checked');
@@ -871,6 +925,13 @@ if (form) checkPendingOrder();
 // ── Form submission ─────────────────────────────────────────────────
 form?.addEventListener("submit", async (event) => {
   event.preventDefault();
+
+  // Block submission if deadline has passed
+  if (registrationDeadline && new Date() > registrationDeadline) {
+    statusMessage.textContent = "Registration is closed. The deadline has passed.";
+    statusMessage.classList.add("error");
+    return;
+  }
 
   runFullValidation(true);
   if (!isFormComplete()) {
