@@ -136,8 +136,8 @@ body {
 .tab.active { color: var(--orange); border-bottom-color: var(--orange); }
 
 /* Main */
-.admin-main { padding: clamp(20px, 3vw, 40px) clamp(20px, 3vw, 48px); }
-.tab-panel { display: none; }
+.admin-main { padding: clamp(20px, 3vw, 40px) clamp(20px, 3vw, 48px); overflow: hidden; }
+.tab-panel { display: none; min-width: 0; }
 .tab-panel.active { display: block; }
 
 /* Panel header */
@@ -162,37 +162,18 @@ body {
 .table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  max-width: 100%;
   background: var(--white);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
 table {
   width: 100%;
-  min-width: 600px;
   border-collapse: collapse;
   font-size: 0.85rem;
-  table-layout: fixed;
 }
-#regTable { min-width: 1000px; }
-#courseTable { min-width: 760px; }
-/* Column sizing — courses */
-#courseTable th:nth-child(1),
-#courseTable td:nth-child(1) { width: 28%; }
-#courseTable th:nth-child(2),
-#courseTable td:nth-child(2) { width: 16%; }
-#courseTable th:nth-child(3),
-#courseTable td:nth-child(3) { width: 14%; }
-#courseTable th:nth-child(4),
-#courseTable td:nth-child(4) { width: 14%; }
-#courseTable th:nth-child(5),
-#courseTable td:nth-child(5) { width: 10%; }
-#courseTable th:nth-child(6),
-#courseTable td:nth-child(6) { width: 18%; }
-/* Column sizing — registrations */
-#regTable th:nth-child(7),
-#regTable td:nth-child(7) { width: 18%; }
-#regTable th:nth-child(11),
-#regTable td:nth-child(11) { width: 12%; }
+#regTable { min-width: 960px; }
+#courseTable { min-width: 720px; }
 th {
   text-align: left;
   padding: 12px 14px;
@@ -209,7 +190,6 @@ td {
   padding: 11px 14px;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
-  word-break: break-word;
 }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: rgba(243, 112, 13, 0.03); }
