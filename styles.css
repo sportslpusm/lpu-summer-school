@@ -798,3 +798,109 @@ button:focus-visible, .button:focus-visible, a:focus-visible {
 @media (max-width: 880px) {
   .hostel-radios { grid-template-columns: 1fr; }
 }
+
+/* ── Mobile course detail bottom sheet ───────────────────────────── */
+.course-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0);
+  transition: background 300ms ease;
+  display: flex;
+  align-items: flex-end;
+}
+.course-sheet-overlay.active {
+  background: rgba(0, 0, 0, 0.45);
+}
+.course-sheet {
+  position: relative;
+  width: 100%;
+  max-height: 85vh;
+  background: var(--white);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.15);
+  transform: translateY(100%);
+  transition: transform 340ms cubic-bezier(0.32, 0.72, 0, 1);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.course-sheet-overlay.active .course-sheet {
+  transform: translateY(0);
+}
+.course-sheet-handle {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 4px;
+  cursor: grab;
+}
+.course-sheet-handle span {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: #d0d5dd;
+}
+.course-sheet-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: var(--paper);
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  z-index: 2;
+  transition: background 150ms;
+}
+.course-sheet-close:hover { background: var(--line); }
+.course-sheet-body { padding: 0 20px 28px; }
+.course-sheet-img {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+.course-sheet-content { display: grid; gap: 8px; }
+.course-sheet-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--soft);
+  color: var(--orange);
+  font-size: 0.75rem;
+  font-weight: 950;
+  text-transform: uppercase;
+  justify-self: start;
+}
+.course-sheet-title {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.course-sheet-session {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.course-sheet-desc {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: #344054;
+}
+
+/* Only show bottom sheet on mobile */
+@media (min-width: 621px) {
+  .course-sheet-overlay { display: none !important; }
+}
+/* Mobile: tappable cards, disable sticky hover lift */
+@media (max-width: 620px) {
+  .track-card { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .track-card:hover { transform: none; box-shadow: 0 16px 45px rgba(17, 24, 39, 0.06); }
+}

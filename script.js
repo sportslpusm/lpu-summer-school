@@ -184,10 +184,10 @@ function applySettings(cfg) {
 
     // --- Populate homepage tracks grid ---
     const trackGrid = document.getElementById("trackGrid");
+    const visibleCourses = coursesData.filter((c) => c.image_url);
     if (trackGrid) {
-      trackGrid.innerHTML = coursesData
-        .filter((c) => c.image_url)
-        .map((c) => `<article class="track-card" data-category="${esc(c.category)}"><img src="${esc(c.image_url)}" alt="${esc(c.name)}"><div><span>${esc(c.class_range || "Classes 6-12")}</span><h3>${esc(c.name)}</h3><p>${esc(c.description || "")}</p></div></article>`)
+      trackGrid.innerHTML = visibleCourses
+        .map((c, i) => `<article class="track-card" data-category="${esc(c.category)}" data-course-idx="${i}"><img src="${esc(c.image_url)}" alt="${esc(c.name)}"><div><span>${esc(c.class_range || "Classes 6-12")}</span><h3>${esc(c.name)}</h3><p>${esc(c.description || "")}</p></div></article>`)
         .join("");
 
       // Re-bind filter buttons to new cards
@@ -202,6 +202,9 @@ function applySettings(cfg) {
           });
         });
       });
+
+      // Mobile bottom sheet for course details
+      initCourseBottomSheet(trackGrid, visibleCourses, sessionsData);
     }
 
     // --- Populate homepage sessions section ---
@@ -225,6 +228,92 @@ function applySettings(cfg) {
     // Silently fall back if fetch fails
   }
 })();
+
+// ── Mobile course detail bottom sheet ───────────────────────────────
+function initCourseBottomSheet(grid, courses, sessions) {
+  const MOBILE_MAX = 620;
+  // Build session lookup: session_id -> session name
+  const sessionMap = {};
+  sessions.forEach((s, i) => { sessionMap[s.id] = s.name + " (" + s.time_slot + ")"; });
+
+  // Create bottom sheet DOM
+  const overlay = document.createElement("div");
+  overlay.className = "course-sheet-overlay";
+  overlay.setAttribute("hidden", "");
+
+  const sheet = document.createElement("div");
+  sheet.className = "course-sheet";
+  sheet.innerHTML = `
+    <div class="course-sheet-handle"><span></span></div>
+    <button class="course-sheet-close" type="button" aria-label="Close">&times;</button>
+    <div class="course-sheet-body">
+      <img class="course-sheet-img" src="" alt="">
+      <div class="course-sheet-content">
+        <span class="course-sheet-badge"></span>
+        <h3 class="course-sheet-title"></h3>
+        <p class="course-sheet-session"></p>
+        <p class="course-sheet-desc"></p>
+      </div>
+    </div>`;
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+
+  const sheetImg = sheet.querySelector(".course-sheet-img");
+  const sheetBadge = sheet.querySelector(".course-sheet-badge");
+  const sheetTitle = sheet.querySelector(".course-sheet-title");
+  const sheetSession = sheet.querySelector(".course-sheet-session");
+  const sheetDesc = sheet.querySelector(".course-sheet-desc");
+  const closeBtn = sheet.querySelector(".course-sheet-close");
+
+  function openSheet(course) {
+    sheetImg.src = course.image_url;
+    sheetImg.alt = course.name;
+    sheetBadge.textContent = course.class_range || "Classes 6-12";
+    sheetTitle.textContent = course.name;
+    sheetSession.textContent = sessionMap[course.session_id] || "";
+    sheetDesc.textContent = course.description || "";
+    overlay.removeAttribute("hidden");
+    requestAnimationFrame(() => {
+      overlay.classList.add("active");
+      document.body.style.overflow = "hidden";
+    });
+  }
+
+  function closeSheet() {
+    overlay.classList.remove("active");
+    document.body.style.overflow = "";
+    sheet.addEventListener("transitionend", function handler(ev) {
+      if (ev.propertyName !== "transform") return;
+      sheet.removeEventListener("transitionend", handler);
+      overlay.setAttribute("hidden", "");
+    });
+  }
+
+  // Tap handler — only on mobile
+  grid.addEventListener("click", (e) => {
+    if (window.innerWidth > MOBILE_MAX) return;
+    const card = e.target.closest(".track-card");
+    if (!card) return;
+    e.preventDefault();
+    const idx = parseInt(card.dataset.courseIdx, 10);
+    if (!isNaN(idx) && courses[idx]) openSheet(courses[idx]);
+  });
+
+  closeBtn.addEventListener("click", closeSheet);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) closeSheet();
+  });
+
+  // Swipe-down to close
+  let touchStartY = 0;
+  sheet.addEventListener("touchstart", (e) => {
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  sheet.addEventListener("touchend", (e) => {
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (dy > 80) closeSheet();
+  }, { passive: true });
+}
 
 navToggle?.addEventListener("click", () => {
   const isOpen = nav.classList.toggle("open");
