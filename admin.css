@@ -308,6 +308,7 @@ tr:hover td { background: rgba(243, 112, 13, 0.03); }
   max-width: 520px;
   max-height: 85vh;
   overflow-y: auto;
+  overflow-x: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 }
 .modal-header {
@@ -325,7 +326,9 @@ tr:hover td { background: rgba(243, 112, 13, 0.03); }
   color: var(--muted);
   padding: 4px 8px;
 }
-.modal-body { padding: 20px 24px; }
+.modal-body { padding: 20px 24px; min-width: 0; overflow: hidden; }
+.modal-body img { max-width: 100%; height: auto; max-height: 150px; object-fit: cover; border-radius: 8px; display: block; }
+.modal-body input[type="file"] { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .modal-body label {
   display: block;
   font-size: 0.82rem;

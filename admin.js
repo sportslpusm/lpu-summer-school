@@ -650,7 +650,7 @@ function courseForm(c = {}) {
     <label>Description <textarea id="mCourseDesc" rows="3">${esc(c.description || "")}</textarea></label>
     <label>Upload Image <input id="mCourseFile" type="file" accept="image/*"></label>
     <small style="color:#667085;display:block;margin:-6px 0 8px">Recommended size: <strong>560 x 350 px</strong> (8:5 ratio)</small>
-    ${c.image_url ? `<div style="margin:-8px 0 8px"><img src="${esc(c.image_url)}" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px"><small style="color:#667085">Current image — upload new to replace</small></div>` : ""}
+    ${c.image_url ? `<div style="margin:-8px 0 8px"><img src="${esc(c.image_url)}"><small style="color:#667085">Current image — upload new to replace</small></div>` : ""}
     <label>Or Image URL <input id="mCourseImg" value="${esc(c.image_url || "")}" placeholder="https://..."></label>
     <label>Sort Order <input id="mCourseOrder" type="number" value="${c.sort_order ?? 0}"></label>
   `;
@@ -753,7 +753,7 @@ window.editImage = async function(id) {
   const imgs = await apiGet("gallery_images", `id=eq.${id}`);
   const img = imgs[0];
   openModal("Edit Image", `
-    ${img.image_url ? `<img src="${esc(img.image_url)}" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;margin-bottom:12px">` : ""}
+    ${img.image_url ? `<img src="${esc(img.image_url)}" style="margin-bottom:12px">` : ""}
     <label>Upload New Image <input id="mImgFile" type="file" accept="image/*"></label>
     <small style="color:#667085;display:block;margin:-6px 0 8px">Recommended size: <strong>1200 x 800 px</strong> (3:2 ratio)</small>
     <label>Or Image URL <input id="mImgUrl" value="${esc(img.image_url)}"></label>
