@@ -310,20 +310,17 @@ function updateRegistrationState() {
   const sessionFee = feeBySessionCount[selected.length] ?? 0;
   const hostelFee = getHostelFee();
   const baseFee = sessionFee + hostelFee;
-  const gst = Math.round(sessionFee * GST_RATE);
+  const gst = Math.round(baseFee * GST_RATE);
   const total = baseFee + gst;
 
   feeTotals.forEach((el) => { el.textContent = formatFee(total); });
 
   document.querySelectorAll("[data-fee-base]").forEach((el) => { el.textContent = formatFee(baseFee); });
   document.querySelectorAll("[data-gst-detail]").forEach((el) => {
-    const parts = [];
-    if (sessionFee) parts.push(`GST 18%: ${formatFee(gst)}`);
-    if (hostelFee) parts.push(`Hostel: ${formatFee(hostelFee)} (no GST)`);
-    el.textContent = parts.length ? "+ " + parts.join(" | ") : "";
+    el.textContent = baseFee ? `+ GST 18%: ${formatFee(gst)}` : "";
   });
   document.querySelectorAll("[data-gst-line]").forEach((el) => {
-    el.textContent = sessionFee ? `Includes 18% GST on sessions: ${formatFee(gst)}` : "";
+    el.textContent = baseFee ? `Includes 18% GST: ${formatFee(gst)}` : "";
   });
 
   if (feeNote) {
@@ -689,8 +686,9 @@ form?.addEventListener("submit", async (event) => {
   const sessionFee = feeBySessionCount[selected.length] ?? 0;
   const hostelFee = getHostelFee();
   const hostelOption = formData.get("hostel") || "none";
-  const gstAmount = Math.round(sessionFee * GST_RATE);
-  const totalFee = sessionFee + hostelFee + gstAmount;
+  const baseFee = sessionFee + hostelFee;
+  const gstAmount = Math.round(baseFee * GST_RATE);
+  const totalFee = baseFee + gstAmount;
 
   submitButton.disabled = true;
   submitButton.textContent = "Processing...";
