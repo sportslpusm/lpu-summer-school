@@ -576,9 +576,9 @@ function renderCourses(courses) {
   $("#courseBody").innerHTML = courses.map((c) => `
     <tr>
       <td>
-        <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden">
           ${c.image_url ? `<img src="${esc(c.image_url)}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0">` : ""}
-          <strong style="overflow:hidden;text-overflow:ellipsis">${esc(c.name)}</strong>
+          <strong style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.name)}</strong>
         </div>
       </td>
       <td>${esc(c.sessions?.name) || "\u2014"}</td>

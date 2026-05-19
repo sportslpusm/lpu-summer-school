@@ -173,7 +173,14 @@ table {
   font-size: 0.85rem;
 }
 #regTable { min-width: 960px; }
-#courseTable { min-width: 720px; }
+#courseTable { min-width: 720px; table-layout: fixed; }
+/* Course table columns: Name | Session | Category | Range | Active | Actions */
+#courseTable col:nth-child(1) { width: 30%; }
+#courseTable col:nth-child(2) { width: 15%; }
+#courseTable col:nth-child(3) { width: 13%; }
+#courseTable col:nth-child(4) { width: 14%; }
+#courseTable col:nth-child(5) { width: 10%; }
+#courseTable col:nth-child(6) { width: 18%; }
 th {
   text-align: left;
   padding: 12px 14px;
