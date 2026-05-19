@@ -423,7 +423,8 @@ function validateBlock(blockIndex) {
   }
 
   if (blockIndex === 3) {
-    return true; // hostel is optional, always valid
+    const hostelChecked = block.querySelector('input[name="hostel"]:checked');
+    return !!hostelChecked;
   }
 
   if (blockIndex === 4) {
@@ -685,7 +686,7 @@ form?.addEventListener("submit", async (event) => {
   const formData = new FormData(form);
   const sessionFee = feeBySessionCount[selected.length] ?? 0;
   const hostelFee = getHostelFee();
-  const hostelOption = formData.get("hostel") || "none";
+  const hostelOption = formData.get("hostel");
   const baseFee = sessionFee + hostelFee;
   const gstAmount = Math.round(baseFee * GST_RATE);
   const totalFee = baseFee + gstAmount;

@@ -293,7 +293,7 @@ h1 {
 .fee-table td { color: #344054; font-weight: 800; }
 
 /* Hostel info on homepage */
-.hostel-info { margin-top: 20px; padding: 20px 24px; background: var(--soft); border-radius: 12px; border-left: 4px solid var(--orange); }
+.hostel-info { grid-column: 1 / -1; margin-top: 20px; padding: 20px 24px; background: var(--soft); border-radius: 12px; border-left: 4px solid var(--orange); }
 .hostel-info h3 { margin: 0 0 6px; font-size: 1rem; color: var(--ink); }
 .hostel-info > p { margin: 0 0 14px; font-size: 0.85rem; color: var(--muted); }
 .hostel-options { display: flex; gap: 16px; }
