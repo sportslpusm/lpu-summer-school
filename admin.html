@@ -52,14 +52,23 @@
           <div class="panel-header">
             <h2>Registrations</h2>
             <div class="panel-actions">
-              <select id="regStatusFilter">
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
               <button class="btn ghost small" id="exportCsvBtn">Export CSV</button>
             </div>
+          </div>
+          <div class="admin-toolbar">
+            <input class="admin-search" type="search" id="regSearch" placeholder="Search student, guardian, school, phone...">
+            <select class="admin-filter" id="regStatusFilter">
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <select class="admin-filter" id="regPaymentFilter">
+              <option value="all">All Payment</option>
+              <option value="paid">Paid</option>
+              <option value="unpaid">Unpaid</option>
+            </select>
+            <span class="toolbar-count" id="regCount"></span>
           </div>
           <div class="table-wrap">
             <table id="regTable">
@@ -90,6 +99,21 @@
             <h2>Courses</h2>
             <button class="btn primary small" id="addCourseBtn">+ Add Course</button>
           </div>
+          <div class="admin-toolbar">
+            <input class="admin-search" type="search" id="courseSearch" placeholder="Search course name...">
+            <select class="admin-filter" id="courseSessionFilter">
+              <option value="all">All Sessions</option>
+            </select>
+            <select class="admin-filter" id="courseCategoryFilter">
+              <option value="all">All Categories</option>
+              <option value="tech">Tech</option>
+              <option value="creative">Creative</option>
+              <option value="career">Career</option>
+              <option value="sports">Sports</option>
+              <option value="general">General</option>
+            </select>
+            <span class="toolbar-count" id="courseCount"></span>
+          </div>
           <div class="table-wrap">
             <table id="courseTable">
               <thead>
@@ -112,6 +136,10 @@
           <div class="panel-header">
             <h2>Sessions</h2>
             <button class="btn primary small" id="addSessionBtn">+ Add Session</button>
+          </div>
+          <div class="admin-toolbar">
+            <input class="admin-search" type="search" id="sessionSearch" placeholder="Search session name...">
+            <span class="toolbar-count" id="sessionCount"></span>
           </div>
           <div class="table-wrap">
             <table id="sessionTable">

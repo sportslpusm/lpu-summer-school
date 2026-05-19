@@ -328,12 +328,26 @@ async function loadAll() {
 }
 
 // --- REGISTRATIONS ---
+let allRegistrations = [];
+
 async function loadRegistrations() {
-  const filter = $("#regStatusFilter").value;
-  let query = "order=created_at.desc";
-  if (filter !== "all") query += `&status=eq.${filter}`;
-  const rows = await apiGet("registrations", query);
+  allRegistrations = await apiGet("registrations", "order=created_at.desc");
+  filterRegistrations();
+}
+
+function filterRegistrations() {
+  const status = $("#regStatusFilter").value;
+  const payment = $("#regPaymentFilter").value;
+  const q = ($("#regSearch").value || "").toLowerCase().trim();
+
+  let rows = allRegistrations;
+  if (status !== "all") rows = rows.filter((r) => r.status === status);
+  if (payment !== "all") rows = rows.filter((r) => (payment === "paid" ? r.payment_status === "paid" : r.payment_status !== "paid"));
+  if (q) rows = rows.filter((r) => [r.student_name, r.guardian_name, r.school_name, r.phone, r.email, r.city].some((v) => v && v.toLowerCase().includes(q)));
+
   renderRegistrations(rows);
+  const countEl = $("#regCount");
+  if (countEl) countEl.textContent = `${rows.length} of ${allRegistrations.length}`;
 }
 
 function renderRegistrations(rows) {
@@ -432,7 +446,9 @@ window.changeRegStatus = async function(id, status) {
   loadRegistrations();
 };
 
-$("#regStatusFilter").addEventListener("change", loadRegistrations);
+$("#regStatusFilter").addEventListener("change", filterRegistrations);
+$("#regPaymentFilter").addEventListener("change", filterRegistrations);
+$("#regSearch").addEventListener("input", filterRegistrations);
 
 $("#exportCsvBtn").addEventListener("click", async () => {
   const rows = await apiGet("registrations", "order=created_at.desc");
@@ -451,11 +467,21 @@ $("#exportCsvBtn").addEventListener("click", async () => {
 // --- SESSIONS ---
 async function loadSessions() {
   sessions = await apiGet("sessions", "order=sort_order.asc");
-  renderSessions();
+  filterSessions();
 }
 
-function renderSessions() {
-  $("#sessionBody").innerHTML = sessions.map((s) => `
+function filterSessions() {
+  const q = ($("#sessionSearch")?.value || "").toLowerCase().trim();
+  let rows = sessions;
+  if (q) rows = rows.filter((s) => s.name && s.name.toLowerCase().includes(q));
+  renderSessions(rows);
+  const countEl = $("#sessionCount");
+  if (countEl) countEl.textContent = `${rows.length} of ${sessions.length}`;
+}
+
+function renderSessions(rows) {
+  if (!rows) rows = sessions;
+  $("#sessionBody").innerHTML = rows.map((s) => `
     <tr>
       <td><strong>${esc(s.name)}</strong></td>
       <td>${esc(s.time_slot)}</td>
@@ -468,6 +494,8 @@ function renderSessions() {
     </tr>
   `).join("");
 }
+
+$("#sessionSearch")?.addEventListener("input", filterSessions);
 
 window.toggleSession = async function(id, active) {
   await apiUpdate("sessions", id, { is_active: active });
@@ -514,18 +542,43 @@ $("#addSessionBtn").addEventListener("click", () => {
 });
 
 // --- COURSES (with image upload) ---
+let allCourses = [];
+
 async function loadCourses() {
-  const courses = await apiGet("courses", "order=sort_order.asc&select=*,sessions(name)");
-  renderCourses(courses);
+  allCourses = await apiGet("courses", "order=sort_order.asc&select=*,sessions(name)");
+  // Populate session filter dropdown
+  const sessionFilter = $("#courseSessionFilter");
+  if (sessionFilter) {
+    const current = sessionFilter.value;
+    sessionFilter.innerHTML = `<option value="all">All Sessions</option>` +
+      sessions.map((s) => `<option value="${s.id}">${esc(s.name)}</option>`).join("");
+    sessionFilter.value = current || "all";
+  }
+  filterCourses();
+}
+
+function filterCourses() {
+  const sessionId = $("#courseSessionFilter")?.value || "all";
+  const category = $("#courseCategoryFilter")?.value || "all";
+  const q = ($("#courseSearch")?.value || "").toLowerCase().trim();
+
+  let rows = allCourses;
+  if (sessionId !== "all") rows = rows.filter((c) => c.session_id === sessionId);
+  if (category !== "all") rows = rows.filter((c) => c.category === category);
+  if (q) rows = rows.filter((c) => c.name && c.name.toLowerCase().includes(q));
+
+  renderCourses(rows);
+  const countEl = $("#courseCount");
+  if (countEl) countEl.textContent = `${rows.length} of ${allCourses.length}`;
 }
 
 function renderCourses(courses) {
   $("#courseBody").innerHTML = courses.map((c) => `
     <tr>
       <td>
-        <div style="display:flex;align-items:center;gap:10px">
-          ${c.image_url ? `<img src="${esc(c.image_url)}" style="width:40px;height:40px;object-fit:cover;border-radius:6px">` : ""}
-          <strong>${esc(c.name)}</strong>
+        <div style="display:flex;align-items:center;gap:10px;min-width:0">
+          ${c.image_url ? `<img src="${esc(c.image_url)}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0">` : ""}
+          <strong style="overflow:hidden;text-overflow:ellipsis">${esc(c.name)}</strong>
         </div>
       </td>
       <td>${esc(c.sessions?.name) || "\u2014"}</td>
@@ -576,6 +629,10 @@ $("#addCourseBtn").addEventListener("click", () => {
     await loadCourses();
   });
 });
+
+$("#courseSearch")?.addEventListener("input", filterCourses);
+$("#courseSessionFilter")?.addEventListener("change", filterCourses);
+$("#courseCategoryFilter")?.addEventListener("change", filterCourses);
 
 function courseForm(c = {}) {
   const sessionOpts = sessions.map((s) => `<option value="${s.id}" ${s.id === c.session_id ? "selected" : ""}>${esc(s.name)} (${esc(s.time_slot)})</option>`).join("");
@@ -789,6 +846,7 @@ $("#saveSettingsBtn").addEventListener("click", async () => {
 
 // --- MODAL ---
 let modalSaveCallback = null;
+let modalInitialState = "";
 
 function openModal(title, bodyHtml, onSave) {
   $("#modalTitle").textContent = title;
@@ -799,17 +857,39 @@ function openModal(title, bodyHtml, onSave) {
   if (!onSave) {
     $("#modalSave").hidden = true;
   }
+  // Snapshot initial form state for dirty checking
+  requestAnimationFrame(() => {
+    modalInitialState = getModalFormState();
+  });
+}
+
+function getModalFormState() {
+  const inputs = $$("#modalBody input, #modalBody select, #modalBody textarea");
+  return [...inputs].map((i) => i.type === "file" ? i.files.length : i.value).join("\x00");
+}
+
+function isModalDirty() {
+  if (!modalSaveCallback) return false;
+  return getModalFormState() !== modalInitialState;
 }
 
 function closeModal() {
   $("#modalOverlay").hidden = true;
   modalSaveCallback = null;
+  modalInitialState = "";
 }
 
-$("#modalClose").addEventListener("click", closeModal);
-$("#modalCancel").addEventListener("click", closeModal);
+function tryCloseModal() {
+  if (isModalDirty()) {
+    if (!confirm("You have unsaved changes. Discard and close?")) return;
+  }
+  closeModal();
+}
+
+$("#modalClose").addEventListener("click", tryCloseModal);
+$("#modalCancel").addEventListener("click", tryCloseModal);
 $("#modalOverlay").addEventListener("click", (e) => {
-  if (e.target === $("#modalOverlay")) closeModal();
+  if (e.target === $("#modalOverlay")) tryCloseModal();
 });
 
 $("#modalSave").addEventListener("click", async () => {
