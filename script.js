@@ -239,7 +239,6 @@ function initCourseBottomSheet(grid, courses, sessions) {
   // Create bottom sheet DOM
   const overlay = document.createElement("div");
   overlay.className = "course-sheet-overlay";
-  overlay.setAttribute("hidden", "");
 
   const sheet = document.createElement("div");
   sheet.className = "course-sheet";
@@ -265,6 +264,8 @@ function initCourseBottomSheet(grid, courses, sessions) {
   const sheetDesc = sheet.querySelector(".course-sheet-desc");
   const closeBtn = sheet.querySelector(".course-sheet-close");
 
+  let isOpen = false;
+
   function openSheet(course) {
     sheetImg.src = course.image_url;
     sheetImg.alt = course.name;
@@ -272,21 +273,16 @@ function initCourseBottomSheet(grid, courses, sessions) {
     sheetTitle.textContent = course.name;
     sheetSession.textContent = sessionMap[course.session_id] || "";
     sheetDesc.textContent = course.description || "";
-    overlay.removeAttribute("hidden");
-    requestAnimationFrame(() => {
-      overlay.classList.add("active");
-      document.body.style.overflow = "hidden";
-    });
+    isOpen = true;
+    overlay.classList.add("active");
+    document.body.style.overflow = "hidden";
   }
 
   function closeSheet() {
+    if (!isOpen) return;
+    isOpen = false;
     overlay.classList.remove("active");
     document.body.style.overflow = "";
-    sheet.addEventListener("transitionend", function handler(ev) {
-      if (ev.propertyName !== "transform") return;
-      sheet.removeEventListener("transitionend", handler);
-      overlay.setAttribute("hidden", "");
-    });
   }
 
   // Tap handler — only on mobile
