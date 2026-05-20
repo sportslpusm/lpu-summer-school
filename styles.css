@@ -677,8 +677,9 @@ h1 {
   .hostel-radios { grid-template-columns: 1fr; }
   .submit-bar .button, .hero-actions .button { width: 100%; }
   .submit-bar .button { justify-self: stretch; }
-  .registration-hero { grid-template-columns: 1fr; }
+  .registration-hero { grid-template-columns: 1fr; padding-top: 24px; padding-bottom: 20px; gap: 16px; }
   .reg-hero-info { min-width: 0; }
+  .registration-section .form-progress-wrapper { margin-bottom: 14px; }
   /* Footer contact stacking */
   .contact-links { flex-direction: column; gap: 6px; }
   .site-footer { padding: 32px 16px; }
