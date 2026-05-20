@@ -885,11 +885,12 @@ function showReceipt(data) {
     `<tr><td colspan="2" style="height:12px;border:none"></td></tr>` +
     infoRows.map(([l, v]) => `<tr><td>${l}</td><td>${v}</td></tr>`).join("");
 
-  // Hide form + payment, show receipt
-  form.hidden = true;
-  document.querySelector(".form-progress-wrapper")?.remove();
+  // Close payment modal, restore scroll, hide form, show receipt
   const paySection = document.querySelector("[data-payment-section]");
   if (paySection) paySection.hidden = true;
+  document.body.style.overflow = "";
+  form.hidden = true;
+  document.querySelector(".form-progress-wrapper")?.remove();
   receiptEl.hidden = false;
   receiptEl.scrollIntoView({ behavior: "smooth", block: "start" });
   sessionStorage.removeItem("lpu_pending_reg");
@@ -969,6 +970,12 @@ function showPaymentSection(data) {
   const uploadStatus = section.querySelector("[data-upload-status]");
 
   let selectedFile = null;
+
+  // Explicit click handler — ensures file picker opens on all mobile browsers
+  uploadArea.addEventListener("click", (e) => {
+    e.preventDefault();
+    fileInput.click();
+  });
 
   function compressImage(file, maxDim, quality) {
     return new Promise((resolve) => {
@@ -1057,11 +1064,9 @@ function showPaymentSection(data) {
     }
   });
 
-  // Show section, hide form
-  form.hidden = true;
-  document.querySelector(".form-progress-wrapper")?.remove();
+  // Show modal overlay
   section.hidden = false;
-  section.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.body.style.overflow = "hidden";
 }
 
 // ── Page recovery (if user navigated away during payment) ──────────

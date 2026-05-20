@@ -247,81 +247,83 @@
           </div>
         </form>
 
-        <!-- UPI Payment Section (shown after form submit) -->
-        <section class="payment-section" data-payment-section hidden>
-          <div class="payment-sticky-notice" data-payment-notice>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <span>After paying, you <strong>must upload a payment screenshot</strong> below to complete registration.</span>
-          </div>
-
-          <div class="payment-card">
-            <div class="payment-header">
+        <!-- UPI Payment Modal (shown after form submit) -->
+        <div class="payment-overlay" data-payment-section hidden>
+          <div class="payment-modal">
+            <div class="payment-modal-header">
               <h2>Complete Payment</h2>
-              <p>Ref: <code data-pay-ref></code></p>
+              <span class="payment-ref">Ref: <code data-pay-ref></code></span>
             </div>
 
-            <div class="payment-amount-box">
-              <span>Total Payable</span>
-              <strong data-pay-total>Rs. 0</strong>
-              <div class="payment-fee-split">
-                <small data-pay-split></small>
-              </div>
-            </div>
-
-            <div class="payment-methods">
-              <h3>Pay using UPI app</h3>
-              <p class="payment-hint">Tap a button below to open the app with amount pre-filled.</p>
-              <div class="upi-app-buttons" data-upi-buttons>
-                <a class="upi-app-btn gpay" data-upi-gpay href="#">
-                  <strong>Google Pay</strong>
-                </a>
-                <a class="upi-app-btn phonepe" data-upi-phonepe href="#">
-                  <strong>PhonePe</strong>
-                </a>
-                <a class="upi-app-btn paytm" data-upi-paytm href="#">
-                  <strong>Paytm</strong>
-                </a>
-                <a class="upi-app-btn bhim" data-upi-bhim href="#">
-                  <strong>BHIM UPI</strong>
-                </a>
+            <div class="payment-modal-scroll">
+              <div class="payment-sticky-notice" data-payment-notice>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span>After paying, upload a screenshot below to complete registration.</span>
               </div>
 
-              <div class="upi-divider"><span>or pay manually</span></div>
-
-              <div class="upi-id-box">
-                <label>UPI ID</label>
-                <div class="upi-id-row">
-                  <code data-upi-id></code>
-                  <button type="button" class="copy-upi-btn" data-copy-upi>Copy</button>
+              <div class="payment-amount-box">
+                <span>Total Payable</span>
+                <strong data-pay-total>Rs. 0</strong>
+                <div class="payment-fee-split">
+                  <small data-pay-split></small>
                 </div>
               </div>
 
-              <div class="upi-qr-box">
-                <p>Scan from another device</p>
-                <img data-upi-qr alt="UPI QR Code">
+              <div class="payment-methods">
+                <h3>Pay using UPI app</h3>
+                <p class="payment-hint">Tap a button below to open the app with amount pre-filled.</p>
+                <div class="upi-app-buttons" data-upi-buttons>
+                  <a class="upi-app-btn gpay" data-upi-gpay href="#">
+                    <strong>Google Pay</strong>
+                  </a>
+                  <a class="upi-app-btn phonepe" data-upi-phonepe href="#">
+                    <strong>PhonePe</strong>
+                  </a>
+                  <a class="upi-app-btn paytm" data-upi-paytm href="#">
+                    <strong>Paytm</strong>
+                  </a>
+                  <a class="upi-app-btn bhim" data-upi-bhim href="#">
+                    <strong>BHIM UPI</strong>
+                  </a>
+                </div>
+
+                <div class="upi-divider"><span>or pay manually</span></div>
+
+                <div class="upi-id-box">
+                  <label>UPI ID</label>
+                  <div class="upi-id-row">
+                    <code data-upi-id></code>
+                    <button type="button" class="copy-upi-btn" data-copy-upi>Copy</button>
+                  </div>
+                </div>
+
+                <div class="upi-qr-box">
+                  <p>Scan from another device</p>
+                  <img data-upi-qr alt="UPI QR Code">
+                </div>
+              </div>
+
+              <div class="upload-section">
+                <div class="upload-header">
+                  <h3>Upload Payment Screenshot</h3>
+                  <p>Take a screenshot of your UPI payment confirmation and upload it here.</p>
+                </div>
+                <label class="upload-area" data-upload-area>
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/jpg" data-screenshot-input class="sr-only">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <strong>Tap to select screenshot</strong>
+                  <span>JPG, PNG, or WebP (max 5 MB)</span>
+                </label>
+                <div class="upload-preview" data-upload-preview hidden>
+                  <img data-preview-img alt="Screenshot preview">
+                  <button type="button" class="remove-upload" data-remove-upload>&times; Remove</button>
+                </div>
+                <button class="button primary upload-submit" type="button" data-submit-screenshot disabled>Submit Registration</button>
+                <p class="form-status" role="status" data-upload-status></p>
               </div>
             </div>
           </div>
-
-          <div class="payment-card upload-card">
-            <div class="upload-header">
-              <h3>Upload Payment Screenshot</h3>
-              <p>Take a screenshot of your UPI payment confirmation and upload it here.</p>
-            </div>
-            <label class="upload-area" data-upload-area>
-              <input type="file" accept="image/*" capture="environment" data-screenshot-input hidden>
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              <strong>Tap to select screenshot</strong>
-              <span>JPG, PNG, or WebP (max 5 MB)</span>
-            </label>
-            <div class="upload-preview" data-upload-preview hidden>
-              <img data-preview-img alt="Screenshot preview">
-              <button type="button" class="remove-upload" data-remove-upload>&times; Remove</button>
-            </div>
-            <button class="button primary upload-submit" type="button" data-submit-screenshot disabled>Submit Registration</button>
-            <p class="form-status" role="status" data-upload-status></p>
-          </div>
-        </section>
+        </div>
 
         <!-- Confirmation Section (shown after screenshot upload) -->
         <section class="receipt-section" data-receipt hidden>
