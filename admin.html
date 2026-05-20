@@ -62,10 +62,12 @@
               <option value="pending">Pending</option>
               <option value="confirmed">Confirmed</option>
               <option value="cancelled">Cancelled</option>
+              <option value="rejected">Rejected</option>
             </select>
             <select class="admin-filter" id="regPaymentFilter">
               <option value="all">All Payment</option>
-              <option value="paid">Paid</option>
+              <option value="verification_pending">Needs Verification</option>
+              <option value="paid">Verified</option>
               <option value="unpaid">Unpaid</option>
             </select>
             <span class="toolbar-count" id="regCount"></span>
@@ -83,6 +85,7 @@
                   <th>Sessions</th>
                   <th>Fee</th>
                   <th>Payment</th>
+                  <th>Proof</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>

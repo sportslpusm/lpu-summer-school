@@ -341,6 +341,17 @@ async function loadRegistrations() {
   filterRegistrations();
 }
 
+function paymentBadgeClass(ps) {
+  if (ps === "paid") return "confirmed";
+  if (ps === "verification_pending") return "warning";
+  return "pending";
+}
+function paymentBadgeLabel(ps) {
+  if (ps === "paid") return "verified";
+  if (ps === "verification_pending") return "needs review";
+  return ps || "unpaid";
+}
+
 function filterRegistrations() {
   const status = $("#regStatusFilter").value;
   const payment = $("#regPaymentFilter").value;
@@ -348,8 +359,8 @@ function filterRegistrations() {
 
   let rows = allRegistrations;
   if (status !== "all") rows = rows.filter((r) => r.status === status);
-  if (payment !== "all") rows = rows.filter((r) => (payment === "paid" ? r.payment_status === "paid" : r.payment_status !== "paid"));
-  if (q) rows = rows.filter((r) => [r.student_name, r.guardian_name, r.school_name, r.phone, r.email, r.city].some((v) => v && v.toLowerCase().includes(q)));
+  if (payment !== "all") rows = rows.filter((r) => r.payment_status === payment);
+  if (q) rows = rows.filter((r) => [r.student_name, r.guardian_name, r.school_name, r.phone, r.email, r.city, r.payment_reference].some((v) => v && v.toLowerCase().includes(q)));
 
   renderRegistrations(rows);
   const countEl = $("#regCount");
@@ -375,12 +386,12 @@ function renderRegistrations(rows) {
       <td>${esc(r.phone)}</td>
       <td>${[r.session1_course, r.session2_course, r.session3_course].filter(Boolean).map(c => esc(c)).join(", ") || "\u2014"}</td>
       <td>Rs. ${r.total_fee}</td>
-      <td><span class="badge badge-${r.payment_status === 'paid' ? 'confirmed' : 'pending'}">${r.payment_status || 'unpaid'}</span></td>
+      <td><span class="badge badge-${paymentBadgeClass(r.payment_status)}">${paymentBadgeLabel(r.payment_status)}</span></td>
+      <td>${r.screenshot_url ? `<a href="${esc(r.screenshot_url)}" target="_blank" class="screenshot-thumb" title="View screenshot"><img src="${esc(r.screenshot_url)}" alt="proof"></a>` : "\u2014"}</td>
       <td><span class="badge badge-${r.status}">${r.status}</span></td>
       <td class="row-actions">
         <button onclick="viewRegistration('${r.id}')">View</button>
-        <button onclick="changeRegStatus('${r.id}', 'confirmed')">✓</button>
-        <button onclick="changeRegStatus('${r.id}', 'cancelled')" class="del">✗</button>
+        ${r.payment_status === "verification_pending" ? `<button onclick="approveRegistration('${r.id}')" class="approve-btn" title="Approve">✓</button><button onclick="rejectRegistration('${r.id}')" class="del" title="Reject">✗</button>` : `<button onclick="changeRegStatus('${r.id}', 'confirmed')">✓</button><button onclick="changeRegStatus('${r.id}', 'cancelled')" class="del">✗</button>`}
       </td>
     </tr>
   `).join("");
@@ -392,13 +403,6 @@ window.viewRegistration = async function(id) {
   const rows = await apiGet("registrations", `id=eq.${id}`);
   const r = rows[0];
   const courses = [r.session1_course, r.session2_course, r.session3_course].filter(Boolean);
-
-  // Fetch linked payment record for Razorpay IDs and fee breakdown
-  let payment = null;
-  if (r.payment_id) {
-    const prows = await apiGet("payments", `id=eq.${r.payment_id}`);
-    payment = prows[0] || null;
-  }
 
   const hostelLabel = HOSTEL_LABELS[r.hostel_option] || r.hostel_option || "N/A";
   const hostelAmt = r.hostel_amount || 0;
@@ -418,33 +422,65 @@ window.viewRegistration = async function(id) {
       <div><strong>Courses:</strong> ${courses.map(c => esc(c)).join(", ") || "None"}</div>
       <div><strong>Hostel:</strong> ${esc(hostelLabel)}${hostelAmt ? ` (Rs. ${hostelAmt})` : ""}</div>
       <hr style="border:none;border-top:1px solid #e4e7ec">
-      <div><strong>Base Amount:</strong> Rs. ${payment ? payment.base_amount : "N/A"}</div>
-      <div><strong>GST (18%):</strong> Rs. ${payment ? payment.gst_amount : "N/A"}</div>
       <div><strong>Total Fee:</strong> <strong style="color:#f3700d">Rs. ${r.total_fee}</strong></div>
-      <div><strong>Payment:</strong> <span class="badge badge-${r.payment_status === 'paid' ? 'confirmed' : 'pending'}">${r.payment_status || 'unpaid'}</span></div>
+      <div><strong>Payment Ref:</strong> <code>${esc(r.payment_reference || "N/A")}</code></div>
+      <div><strong>Payment:</strong> <span class="badge badge-${paymentBadgeClass(r.payment_status)}">${paymentBadgeLabel(r.payment_status)}</span></div>
       <div><strong>Status:</strong> <span class="badge badge-${r.status}">${r.status}</span></div>
-      ${payment ? `
+      ${r.screenshot_url ? `
       <hr style="border:none;border-top:1px solid #e4e7ec">
-      <div style="font-size:12px;color:#667085">
-        <div><strong>Razorpay Payment ID:</strong> ${esc(payment.razorpay_payment_id || "N/A")}</div>
-        <div><strong>Razorpay Order ID:</strong> ${esc(payment.razorpay_order_id || "N/A")}</div>
-        <div><strong>Payment Date:</strong> ${payment.updated_at ? new Date(payment.updated_at).toLocaleString("en-IN") : "N/A"}</div>
-      </div>` : ""}
+      <div><strong>Payment Screenshot:</strong></div>
+      <div style="text-align:center"><a href="${esc(r.screenshot_url)}" target="_blank"><img src="${esc(r.screenshot_url)}" style="max-width:100%;max-height:400px;border-radius:8px;border:1px solid #e4e7ec" alt="Payment screenshot"></a></div>` : ""}
+      ${r.verified_at ? `<div style="font-size:12px;color:#667085"><strong>Verified:</strong> ${new Date(r.verified_at).toLocaleString("en-IN")} by ${esc(r.verified_by || "admin")}</div>` : ""}
       <div><strong>Medical:</strong> ${esc(r.medical_note) || "None"}</div>
       <div><strong>Registered:</strong> ${new Date(r.created_at).toLocaleString("en-IN")}</div>
+      ${r.payment_status === "verification_pending" ? `
+      <hr style="border:none;border-top:1px solid #e4e7ec">
+      <div style="display:flex;gap:8px">
+        <button class="btn primary small" onclick="approveRegistration('${r.id}');closeModal()">Approve Payment</button>
+        <button class="btn ghost small" onclick="rejectRegistration('${r.id}');closeModal()">Reject</button>
+      </div>` : ""}
     </div>
   `, null);
   $("#modalSave").hidden = true;
 };
 
+window.approveRegistration = async function(id) {
+  if (!confirm("Approve this payment and confirm registration?")) return;
+  await apiUpdate("registrations", id, {
+    status: "confirmed",
+    payment_status: "paid",
+    verified_by: "admin",
+    verified_at: new Date().toISOString()
+  });
+
+  // Send confirmation email
+  const rows = await apiGet("registrations", `id=eq.${id}`);
+  const reg = rows[0];
+  if (reg && reg.email) {
+    await sendEmail(reg.email, "Registration Confirmed - LPU Summer School", registrationConfirmationEmail(reg));
+  }
+
+  loadRegistrations();
+};
+
+window.rejectRegistration = async function(id) {
+  if (!confirm("Reject this payment? The student will need to re-register.")) return;
+  await apiUpdate("registrations", id, {
+    status: "rejected",
+    payment_status: "failed",
+    verified_by: "admin",
+    verified_at: new Date().toISOString()
+  });
+  loadRegistrations();
+};
+
 window.changeRegStatus = async function(id, status) {
   await apiUpdate("registrations", id, { status });
 
-  // Send confirmation email when status changes to confirmed
   if (status === "confirmed") {
     const rows = await apiGet("registrations", `id=eq.${id}`);
     const reg = rows[0];
-    if (reg.email) {
+    if (reg && reg.email) {
       await sendEmail(reg.email, "Registration Confirmed - LPU Summer School", registrationConfirmationEmail(reg));
     }
   }
@@ -845,6 +881,7 @@ const SETTING_TYPES = {
   hostel_only_fee: "number",
   hostel_food_fee: "number",
   max_seats: "number",
+  upi_id: "text",
 };
 
 function settingInput(key, value) {

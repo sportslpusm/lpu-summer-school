@@ -857,94 +857,231 @@ function showReceipt(data) {
   const table = document.querySelector("[data-receipt-table]");
   if (!receiptEl || !table) return;
 
-  const r = data.receipt || {};
-  // Build program dates string for receipt
-  const cdEl = document.querySelector("[data-countdown]");
   const progDatesEl = document.querySelector('[data-cfg="program-dates"]');
   const progDatesStr = progDatesEl ? progDatesEl.textContent : "";
 
   const rows = [
-    ["Student", `<strong>${esc(r.student_name || "")}</strong> (${esc(r.class_level || "")})`],
-    ["Guardian", esc(r.guardian_name || "")],
-    ["Courses", (r.courses || []).map(c => esc(c)).join(", ")],
-    ["Hostel", esc(r.hostel_label || HOSTEL_LABELS[data.hostel_option] || "No hostel")],
+    ["Student", `<strong>${esc(data.student_name || "")}</strong> (${esc(data.class_level || "")})`],
+    ["Guardian", esc(data.guardian_name || "")],
+    ["Courses", (data.courses || []).map(c => esc(c)).join(", ")],
+    ["Hostel", esc(HOSTEL_LABELS[data.hostel_option] || "No hostel")],
   ];
   if (progDatesStr) rows.push(["Program Dates", esc(progDatesStr)]);
   rows.push(["Daily Timings", "9:00 AM — 5:00 PM"]);
   rows.push(["Venue", "LPU Campus, Phagwara, Punjab"]);
-  rows.push(["Session Fee", formatFee(r.session_fee || 0)]);
-  if ((r.hostel_amount || 0) > 0) rows.push(["Hostel Fee", formatFee(r.hostel_amount)]);
-  rows.push(["GST (18%)", formatFee(r.gst_amount || 0)]);
+  rows.push(["Session Fee", formatFee(data.session_fee || 0)]);
+  if ((data.hostel_amount || 0) > 0) rows.push(["Hostel Fee", formatFee(data.hostel_amount)]);
+  rows.push(["GST (18%)", formatFee(data.gst_amount || 0)]);
 
   const infoRows = [
-    ["Payment ID", `<code>${esc(data.razorpay_payment_id || "")}</code>`],
-    ["Order ID", `<code>${esc(data.razorpay_order_id || "")}</code>`],
+    ["Payment Ref", `<code>${esc(data.payment_reference || "")}</code>`],
     ["Registration ID", `<code>${esc(data.registration_id || "")}</code>`],
-    ["Date", r.timestamp || new Date().toLocaleString("en-IN")],
+    ["Date", new Date().toLocaleString("en-IN")],
   ];
 
   table.innerHTML =
     rows.map(([l, v]) => `<tr><td>${l}</td><td>${v}</td></tr>`).join("") +
-    `<tr class="receipt-total"><td>Total Paid</td><td>${formatFee(r.total_amount || 0)}</td></tr>` +
+    `<tr class="receipt-total"><td>Total Amount</td><td>${formatFee(data.total_amount || 0)}</td></tr>` +
     `<tr><td colspan="2" style="height:12px;border:none"></td></tr>` +
     infoRows.map(([l, v]) => `<tr><td>${l}</td><td>${v}</td></tr>`).join("");
 
+  // Hide form + payment, show receipt
   form.hidden = true;
   document.querySelector(".form-progress-wrapper")?.remove();
+  const paySection = document.querySelector("[data-payment-section]");
+  if (paySection) paySection.hidden = true;
   receiptEl.hidden = false;
   receiptEl.scrollIntoView({ behavior: "smooth", block: "start" });
-  sessionStorage.removeItem("lpu_pending_order");
+  sessionStorage.removeItem("lpu_pending_reg");
 }
 
-// ── UPI flow recovery ───────────────────────────────────────────────
-function savePendingOrder(orderId, registrationData) {
+// ── UPI Payment Section ────────────────────────────────────────────
+let pendingRegistration = null;
+
+function showPaymentSection(data) {
+  const section = document.querySelector("[data-payment-section]");
+  if (!section) return;
+
+  pendingRegistration = data;
+
+  // Save pending state for page recovery
   try {
-    sessionStorage.setItem("lpu_pending_order", JSON.stringify({
-      order_id: orderId,
-      registration_data: registrationData,
+    sessionStorage.setItem("lpu_pending_reg", JSON.stringify({
+      ...data,
       timestamp: Date.now()
     }));
   } catch (_) {}
-}
 
-async function checkPendingOrder() {
-  try {
-    const raw = sessionStorage.getItem("lpu_pending_order");
-    if (!raw) return;
-    const pending = JSON.parse(raw);
-    // Expire after 30 minutes
-    if (Date.now() - pending.timestamp > 30 * 60 * 1000) {
-      sessionStorage.removeItem("lpu_pending_order");
+  // Populate fields
+  section.querySelector("[data-pay-ref]").textContent = data.payment_reference;
+  section.querySelector("[data-pay-total]").textContent = formatFee(data.total_amount);
+
+  let splitText = `Session fee: ${formatFee(data.session_fee)}`;
+  if (data.hostel_amount > 0) splitText += ` + Hostel: ${formatFee(data.hostel_amount)}`;
+  splitText += ` + GST 18%: ${formatFee(data.gst_amount)}`;
+  section.querySelector("[data-pay-split]").textContent = splitText;
+
+  // UPI ID
+  section.querySelector("[data-upi-id]").textContent = data.upi_id;
+
+  // QR code
+  const qrImg = section.querySelector("[data-upi-qr]");
+  if (data.qr_data_url) {
+    qrImg.src = data.qr_data_url;
+    qrImg.closest(".upi-qr-box").hidden = false;
+  } else {
+    qrImg.closest(".upi-qr-box").hidden = true;
+  }
+
+  // Deep-link buttons
+  const upiBase = data.upi_url;
+  section.querySelector("[data-upi-gpay]").href = upiBase.replace("upi://", "tez://upi/");
+  section.querySelector("[data-upi-phonepe]").href = upiBase.replace("upi://", "phonepe://");
+  section.querySelector("[data-upi-paytm]").href = upiBase.replace("upi://", "paytmmp://");
+  section.querySelector("[data-upi-bhim]").href = upiBase;
+
+  // Copy UPI button
+  const copyBtn = section.querySelector("[data-copy-upi]");
+  copyBtn.addEventListener("click", () => {
+    navigator.clipboard.writeText(data.upi_id).then(() => {
+      copyBtn.textContent = "Copied!";
+      setTimeout(() => { copyBtn.textContent = "Copy"; }, 2000);
+    }).catch(() => {
+      // Fallback
+      const ta = document.createElement("textarea");
+      ta.value = data.upi_id;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+      copyBtn.textContent = "Copied!";
+      setTimeout(() => { copyBtn.textContent = "Copy"; }, 2000);
+    });
+  });
+
+  // Screenshot upload
+  const fileInput = section.querySelector("[data-screenshot-input]");
+  const uploadArea = section.querySelector("[data-upload-area]");
+  const previewWrap = section.querySelector("[data-upload-preview]");
+  const previewImg = section.querySelector("[data-preview-img]");
+  const removeBtn = section.querySelector("[data-remove-upload]");
+  const submitScreenshotBtn = section.querySelector("[data-submit-screenshot]");
+  const uploadStatus = section.querySelector("[data-upload-status]");
+
+  let selectedFile = null;
+
+  function compressImage(file, maxDim, quality) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim) {
+          const ratio = Math.min(maxDim / w, maxDim / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        canvas.toBlob((blob) => resolve(blob), "image/jpeg", quality);
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      uploadStatus.textContent = "File too large. Please select a smaller image.";
+      uploadStatus.classList.add("error");
       return;
     }
-    // Try to verify the order (idempotent — server checks if already processed)
-    const verifyRes = await fetch(`${SUPABASE_URL}/functions/v1/verify-payment`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        razorpay_order_id: pending.order_id,
-        razorpay_payment_id: "recovery_check",
-        razorpay_signature: "recovery_check",
-        registration_data: pending.registration_data
-      })
-    });
-    if (verifyRes.ok) {
-      const result = await verifyRes.json();
-      if (result.success && result.already_processed) {
-        showReceipt({
-          ...result,
-          hostel_option: pending.registration_data.hostel_option
-        });
+
+    uploadStatus.textContent = "";
+    uploadStatus.classList.remove("error");
+
+    // Compress before preview
+    const compressed = await compressImage(file, 1200, 0.8);
+    selectedFile = new File([compressed], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" });
+    previewImg.src = URL.createObjectURL(compressed);
+    uploadArea.hidden = true;
+    previewWrap.hidden = false;
+    submitScreenshotBtn.disabled = false;
+  });
+
+  removeBtn.addEventListener("click", () => {
+    selectedFile = null;
+    fileInput.value = "";
+    uploadArea.hidden = false;
+    previewWrap.hidden = true;
+    submitScreenshotBtn.disabled = true;
+  });
+
+  submitScreenshotBtn.addEventListener("click", async () => {
+    if (!selectedFile || !pendingRegistration) return;
+
+    submitScreenshotBtn.disabled = true;
+    submitScreenshotBtn.textContent = "Uploading...";
+    uploadStatus.textContent = "";
+    uploadStatus.classList.remove("error");
+
+    try {
+      const fd = new FormData();
+      fd.append("registration_id", pendingRegistration.registration_id);
+      fd.append("payment_reference", pendingRegistration.payment_reference);
+      fd.append("screenshot", selectedFile);
+
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/upload-screenshot`, {
+        method: "POST",
+        body: fd
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Upload failed");
       }
+
+      // Show receipt/confirmation
+      showReceipt({
+        ...pendingRegistration,
+        hostel_option: pendingRegistration.hostel_option || "none"
+      });
+    } catch (err) {
+      uploadStatus.textContent = err.message;
+      uploadStatus.classList.add("error");
+      submitScreenshotBtn.disabled = false;
+      submitScreenshotBtn.textContent = "Submit Registration";
     }
-    // If not processed, clear pending (user can re-submit)
-    if (!verifyRes.ok) sessionStorage.removeItem("lpu_pending_order");
+  });
+
+  // Show section, hide form
+  form.hidden = true;
+  document.querySelector(".form-progress-wrapper")?.remove();
+  section.hidden = false;
+  section.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// ── Page recovery (if user navigated away during payment) ──────────
+function checkPendingRegistration() {
+  try {
+    const raw = sessionStorage.getItem("lpu_pending_reg");
+    if (!raw) return;
+    const pending = JSON.parse(raw);
+    // Expire after 2 hours
+    if (Date.now() - pending.timestamp > 2 * 60 * 60 * 1000) {
+      sessionStorage.removeItem("lpu_pending_reg");
+      return;
+    }
+    showPaymentSection(pending);
   } catch (_) {
-    sessionStorage.removeItem("lpu_pending_order");
+    sessionStorage.removeItem("lpu_pending_reg");
   }
 }
 
-if (form) checkPendingOrder();
+if (form) checkPendingRegistration();
 
 // ── Form submission ─────────────────────────────────────────────────
 form?.addEventListener("submit", async (event) => {
@@ -968,15 +1105,10 @@ form?.addEventListener("submit", async (event) => {
 
   const selected = selectedSessions();
   const formData = new FormData(form);
-  const sessionFee = feeBySessionCount[selected.length] ?? 0;
-  const hostelFee = getHostelFee();
   const hostelOption = formData.get("hostel");
-  const baseFee = sessionFee + hostelFee;
-  const gstAmount = Math.round(baseFee * GST_RATE);
-  const totalFee = baseFee + gstAmount;
 
   submitButton.disabled = true;
-  submitButton.textContent = "Processing...";
+  submitButton.textContent = "Creating registration...";
   statusMessage.classList.remove("error");
   statusMessage.textContent = "";
 
@@ -993,117 +1125,34 @@ form?.addEventListener("submit", async (event) => {
     session2_course: formData.get("session2Course") || null,
     session3_course: formData.get("session3Course") || null,
     hostel_option: hostelOption,
-    hostel_amount: hostelFee,
-    medical_note: formData.get("medicalNote") || null,
-    base_amount: sessionFee,
-    gst_amount: gstAmount,
-    total_amount: totalFee
+    medical_note: formData.get("medicalNote") || null
   };
 
   try {
-    // Step 1: Create Razorpay order (now includes hostel)
-    const orderRes = await fetch(`${SUPABASE_URL}/functions/v1/create-order`, {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/create-registration`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        session_count: selected.length,
-        student_name: registrationData.student_name,
-        email: registrationData.email,
-        phone: registrationData.phone,
-        hostel_option: hostelOption
-      })
+      body: JSON.stringify(registrationData)
     });
 
-    if (!orderRes.ok) {
-      const err = await orderRes.json();
-      throw new Error(err.error || "Failed to create payment order");
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || "Failed to create registration");
     }
 
-    const order = await orderRes.json();
-
-    // Use server-validated amounts
-    registrationData.base_amount = order.base_amount;
-    registrationData.gst_amount = order.gst_amount;
-    registrationData.total_amount = order.total_amount;
-
-    // Save for UPI recovery before opening Razorpay
-    savePendingOrder(order.order_id, registrationData);
-
-    // Step 2: Open Razorpay checkout
-    const options = {
-      key: order.key_id,
-      amount: order.amount,
-      currency: order.currency,
-      name: "LPU Summer School 2026",
-      description: `Registration (${selected.length} session${selected.length > 1 ? "s" : ""}) + 18% GST`,
-      order_id: order.order_id,
-      prefill: {
-        name: registrationData.guardian_name,
-        email: registrationData.email,
-        contact: registrationData.phone
-      },
-      notes: {
-        student_name: registrationData.student_name,
-        sessions: selected.length
-      },
-      theme: { color: "#f3700d" },
-      handler: async function (response) {
-        submitButton.textContent = "Verifying payment...";
-        try {
-          const verifyRes = await fetch(`${SUPABASE_URL}/functions/v1/verify-payment`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              registration_data: registrationData
-            })
-          });
-
-          if (!verifyRes.ok) {
-            const err = await verifyRes.json();
-            throw new Error(err.error || "Payment verification failed");
-          }
-
-          const result = await verifyRes.json();
-          showReceipt({
-            ...result,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_order_id: response.razorpay_order_id,
-            hostel_option: hostelOption
-          });
-        } catch (verifyErr) {
-          statusMessage.classList.add("error");
-          statusMessage.textContent = `Payment received but verification failed: ${verifyErr.message}. Please contact us with Payment ID: ${response.razorpay_payment_id}`;
-          submitButton.textContent = "Pay & Register";
-          updateSubmitState();
-        }
-      },
-      modal: {
-        ondismiss: function () {
-          submitButton.textContent = "Pay & Register";
-          updateSubmitState();
-          statusMessage.textContent = "Payment cancelled. You can try again.";
-        }
-      }
-    };
-
-    const rzp = new Razorpay(options);
-    rzp.on("payment.failed", function (response) {
-      submitButton.textContent = "Pay & Register";
-      updateSubmitState();
-      statusMessage.classList.add("error");
-      statusMessage.textContent = `Payment failed: ${response.error.description}. Please try again.`;
-      sessionStorage.removeItem("lpu_pending_order");
+    const result = await res.json();
+    showPaymentSection({
+      ...result,
+      student_name: registrationData.student_name,
+      class_level: registrationData.class_level,
+      guardian_name: registrationData.guardian_name,
+      hostel_option: hostelOption
     });
-    rzp.open();
   } catch (error) {
     statusMessage.classList.add("error");
     statusMessage.textContent = `Something went wrong: ${error.message}. Please try again.`;
-    submitButton.textContent = "Pay & Register";
+    submitButton.textContent = "Proceed to Payment";
     updateSubmitState();
-    sessionStorage.removeItem("lpu_pending_order");
   }
 });
 
