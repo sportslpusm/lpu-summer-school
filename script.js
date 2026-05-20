@@ -898,6 +898,46 @@ function showReceipt(data) {
 
 // ── UPI Payment Section ────────────────────────────────────────────
 let pendingRegistration = null;
+let paymentModalBound = false; // guard against duplicate event binding
+
+// Body-level file input (outside modal — avoids overflow/clip/backdrop mobile bugs)
+const screenshotInput = document.getElementById("screenshotFileInput");
+
+function compressImage(file, maxDim, quality) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        let w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim) {
+          const ratio = Math.min(maxDim / w, maxDim / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        canvas.toBlob((blob) => {
+          URL.revokeObjectURL(url);
+          if (!blob) { reject(new Error("Image compression failed")); return; }
+          resolve(blob);
+        }, "image/jpeg", quality);
+      } catch (e) {
+        URL.revokeObjectURL(url);
+        reject(e);
+      }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Could not read image. Try a different file.")); };
+    img.src = url;
+  });
+}
+
+function setUploadState(section, state) {
+  const stateEl = section.querySelector("[data-upload-state]");
+  if (stateEl) stateEl.setAttribute("data-upload-state", state);
+}
 
 function showPaymentSection(data) {
   const section = document.querySelector("[data-payment-section]");
@@ -941,130 +981,148 @@ function showPaymentSection(data) {
   section.querySelector("[data-upi-paytm]").href = upiBase.replace("upi://", "paytmmp://");
   section.querySelector("[data-upi-bhim]").href = upiBase;
 
-  // Copy UPI button
-  const copyBtn = section.querySelector("[data-copy-upi]");
-  copyBtn.addEventListener("click", () => {
-    navigator.clipboard.writeText(data.upi_id).then(() => {
-      copyBtn.textContent = "Copied!";
-      setTimeout(() => { copyBtn.textContent = "Copy"; }, 2000);
-    }).catch(() => {
-      // Fallback
-      const ta = document.createElement("textarea");
-      ta.value = data.upi_id;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      ta.remove();
-      copyBtn.textContent = "Copied!";
-      setTimeout(() => { copyBtn.textContent = "Copy"; }, 2000);
-    });
-  });
-
-  // Screenshot upload
-  const fileInput = section.querySelector("[data-screenshot-input]");
-  const uploadArea = section.querySelector("[data-upload-area]");
-  const previewWrap = section.querySelector("[data-upload-preview]");
-  const previewImg = section.querySelector("[data-preview-img]");
-  const removeBtn = section.querySelector("[data-remove-upload]");
-  const submitScreenshotBtn = section.querySelector("[data-submit-screenshot]");
+  // Reset upload state
+  setUploadState(section, "pick");
+  const submitBtn = section.querySelector("[data-submit-screenshot]");
   const uploadStatus = section.querySelector("[data-upload-status]");
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Submit Registration"; }
+  if (uploadStatus) { uploadStatus.textContent = ""; uploadStatus.classList.remove("error"); }
 
-  let selectedFile = null;
+  // Bind events only once
+  if (!paymentModalBound) {
+    paymentModalBound = true;
+    let selectedFile = null;
 
-  // Click handler — input is a sibling div now, not inside a label
-  uploadArea.addEventListener("click", () => fileInput.click());
-
-  function compressImage(file, maxDim, quality) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        let w = img.width, h = img.height;
-        if (w > maxDim || h > maxDim) {
-          const ratio = Math.min(maxDim / w, maxDim / h);
-          w = Math.round(w * ratio);
-          h = Math.round(h * ratio);
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
-        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-        canvas.toBlob((blob) => resolve(blob), "image/jpeg", quality);
-      };
-      img.src = URL.createObjectURL(file);
-    });
-  }
-
-  fileInput.addEventListener("change", async () => {
-    const file = fileInput.files[0];
-    if (!file) return;
-
-    if (file.size > 10 * 1024 * 1024) {
-      uploadStatus.textContent = "File too large. Please select a smaller image.";
-      uploadStatus.classList.add("error");
-      return;
-    }
-
-    uploadStatus.textContent = "";
-    uploadStatus.classList.remove("error");
-
-    // Compress before preview
-    const compressed = await compressImage(file, 1200, 0.8);
-    selectedFile = new File([compressed], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" });
-    previewImg.src = URL.createObjectURL(compressed);
-    uploadArea.hidden = true;
-    previewWrap.hidden = false;
-    submitScreenshotBtn.disabled = false;
-  });
-
-  removeBtn.addEventListener("click", () => {
-    selectedFile = null;
-    fileInput.value = "";
-    uploadArea.hidden = false;
-    previewWrap.hidden = true;
-    submitScreenshotBtn.disabled = true;
-  });
-
-  submitScreenshotBtn.addEventListener("click", async () => {
-    if (!selectedFile || !pendingRegistration) return;
-
-    submitScreenshotBtn.disabled = true;
-    submitScreenshotBtn.textContent = "Uploading...";
-    uploadStatus.textContent = "";
-    uploadStatus.classList.remove("error");
-
-    try {
-      const fd = new FormData();
-      fd.append("registration_id", pendingRegistration.registration_id);
-      fd.append("payment_reference", pendingRegistration.payment_reference);
-      fd.append("screenshot", selectedFile);
-
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/upload-screenshot`, {
-        method: "POST",
-        body: fd
+    // Copy UPI button
+    const copyBtn = section.querySelector("[data-copy-upi]");
+    copyBtn.addEventListener("click", () => {
+      const upiId = section.querySelector("[data-upi-id]").textContent;
+      navigator.clipboard.writeText(upiId).then(() => {
+        copyBtn.textContent = "Copied!";
+        setTimeout(() => { copyBtn.textContent = "Copy"; }, 2000);
+      }).catch(() => {
+        const ta = document.createElement("textarea");
+        ta.value = upiId;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+        copyBtn.textContent = "Copied!";
+        setTimeout(() => { copyBtn.textContent = "Copy"; }, 2000);
       });
+    });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Upload failed");
+    // Upload area click → open body-level file input
+    const uploadArea = section.querySelector("[data-upload-area]");
+    uploadArea.addEventListener("click", () => {
+      screenshotInput.value = "";
+      screenshotInput.click();
+    });
+
+    // File selected
+    screenshotInput.addEventListener("change", async () => {
+      const file = screenshotInput.files[0];
+      if (!file) return;
+
+      const status = section.querySelector("[data-upload-status]");
+      const btn = section.querySelector("[data-submit-screenshot]");
+
+      // Validate type
+      const allowed = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowed.includes(file.type)) {
+        status.textContent = "Unsupported file type. Please use JPG, PNG, or WebP.";
+        status.classList.add("error");
+        return;
       }
 
-      // Show receipt/confirmation
-      showReceipt({
-        ...pendingRegistration,
-        hostel_option: pendingRegistration.hostel_option || "none"
-      });
-    } catch (err) {
-      uploadStatus.textContent = err.message;
-      uploadStatus.classList.add("error");
-      submitScreenshotBtn.disabled = false;
-      submitScreenshotBtn.textContent = "Submit Registration";
-    }
-  });
+      // Validate size (10 MB raw limit — will compress down)
+      if (file.size > 10 * 1024 * 1024) {
+        status.textContent = "File too large (max 10 MB). Please select a smaller image.";
+        status.classList.add("error");
+        return;
+      }
 
-  // Cancel / close button
-  const closeBtn = section.querySelector("[data-payment-close]");
-  if (closeBtn) {
-    closeBtn.addEventListener("click", () => {
+      status.textContent = "";
+      status.classList.remove("error");
+
+      // Show processing state
+      setUploadState(section, "processing");
+
+      try {
+        const compressed = await compressImage(file, 1200, 0.8);
+        selectedFile = new File([compressed], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" });
+
+        // Show preview
+        const previewImg = section.querySelector("[data-preview-img]");
+        const filenameEl = section.querySelector("[data-upload-filename]");
+        const blobUrl = URL.createObjectURL(compressed);
+        previewImg.src = blobUrl;
+        filenameEl.textContent = `${file.name} (${(selectedFile.size / 1024).toFixed(0)} KB)`;
+
+        setUploadState(section, "ready");
+        btn.disabled = false;
+      } catch (err) {
+        setUploadState(section, "pick");
+        status.textContent = err.message || "Could not process image. Try a different file.";
+        status.classList.add("error");
+        selectedFile = null;
+      }
+    });
+
+    // Remove / retry
+    section.querySelector("[data-remove-upload]").addEventListener("click", () => {
+      selectedFile = null;
+      screenshotInput.value = "";
+      setUploadState(section, "pick");
+      const btn = section.querySelector("[data-submit-screenshot]");
+      const status = section.querySelector("[data-upload-status]");
+      btn.disabled = true;
+      status.textContent = "";
+      status.classList.remove("error");
+    });
+
+    // Submit screenshot
+    section.querySelector("[data-submit-screenshot]").addEventListener("click", async () => {
+      if (!selectedFile || !pendingRegistration) return;
+
+      const btn = section.querySelector("[data-submit-screenshot]");
+      const status = section.querySelector("[data-upload-status]");
+
+      btn.disabled = true;
+      btn.textContent = "Uploading...";
+      status.textContent = "";
+      status.classList.remove("error");
+
+      try {
+        const fd = new FormData();
+        fd.append("registration_id", pendingRegistration.registration_id);
+        fd.append("payment_reference", pendingRegistration.payment_reference);
+        fd.append("screenshot", selectedFile);
+
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/upload-screenshot`, {
+          method: "POST",
+          body: fd
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "Upload failed. Please try again.");
+        }
+
+        showReceipt({
+          ...pendingRegistration,
+          hostel_option: pendingRegistration.hostel_option || "none"
+        });
+      } catch (err) {
+        status.textContent = err.message;
+        status.classList.add("error");
+        btn.disabled = false;
+        btn.textContent = "Submit Registration";
+      }
+    });
+
+    // Cancel / close button
+    section.querySelector("[data-payment-close]")?.addEventListener("click", () => {
       if (!confirm("Cancel payment? Your registration is saved — you can upload the screenshot later by revisiting this page.")) return;
       section.hidden = true;
       document.body.style.overflow = "";

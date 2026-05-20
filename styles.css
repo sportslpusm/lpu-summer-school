@@ -689,24 +689,63 @@ h1 {
 .upload-section .upload-header { padding: 20px 24px 0; }
 .upload-section h3 { margin: 0 0 4px; font-size: 1rem; }
 .upload-section .upload-header p { margin: 0; font-size: 0.82rem; color: var(--muted); }
-.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+
+/* Upload state machine — only the active child is visible */
+.upload-state { margin: 14px 24px; }
+.upload-state .upload-area,
+.upload-state .upload-processing,
+.upload-state .upload-ready { display: none; }
+[data-upload-state="pick"] .upload-area { display: flex; }
+[data-upload-state="processing"] .upload-processing { display: flex; }
+[data-upload-state="ready"] .upload-ready { display: flex; }
+
 .upload-area {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-  margin: 14px 24px; padding: 28px 16px; border: 2px dashed var(--line); border-radius: 10px;
+  flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  padding: 28px 16px; border: 2px dashed var(--line); border-radius: 10px;
   cursor: pointer; text-align: center; transition: border-color 200ms ease, background 200ms ease;
 }
 .upload-area:hover { border-color: var(--orange); background: #fff7f0; }
 .upload-area svg { color: var(--muted); }
 .upload-area strong { font-size: 0.88rem; color: var(--ink); }
 .upload-area span { font-size: 0.75rem; color: var(--muted); }
-.upload-preview { position: relative; margin: 14px 24px; text-align: center; }
-.upload-preview img { max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid var(--line); }
-.remove-upload {
-  position: absolute; top: 6px; right: 6px;
-  width: 28px; height: 28px; border: none; border-radius: 50%;
-  background: rgba(0,0,0,0.6); color: var(--white); font-size: 1rem; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
+
+/* Processing spinner */
+.upload-processing {
+  align-items: center; justify-content: center; gap: 10px;
+  padding: 28px 16px; border: 2px solid var(--line); border-radius: 10px;
+  color: var(--muted); font-size: 0.85rem; font-weight: 600;
 }
+.upload-spinner {
+  width: 22px; height: 22px; border: 3px solid var(--line); border-top-color: var(--orange);
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Ready state — thumbnail + filename + remove */
+.upload-ready {
+  align-items: center; gap: 12px; padding: 12px 14px;
+  background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px;
+}
+.upload-ready img {
+  width: 56px; height: 56px; object-fit: cover; border-radius: 6px;
+  border: 1px solid var(--line); flex-shrink: 0;
+}
+.upload-file-info { flex: 1; min-width: 0; }
+.upload-filename {
+  display: block; font-size: 0.78rem; color: var(--ink); font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.upload-success-badge {
+  display: inline-block; margin-top: 4px; font-size: 0.7rem; font-weight: 800;
+  color: #065f46; background: #d1fae5; padding: 2px 8px; border-radius: 99px;
+}
+.upload-remove-btn {
+  width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 50%;
+  background: var(--white); color: var(--muted); font-size: 1.1rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: border-color 150ms, color 150ms;
+}
+.upload-remove-btn:hover { border-color: var(--red); color: var(--red); }
 .upload-submit { margin: 14px 24px 20px; width: calc(100% - 48px); }
 
 /* Receipt section */
@@ -787,8 +826,7 @@ h1 {
   .payment-modal { max-width: 100%; max-height: 100vh; border-radius: 0; }
   .payment-modal-header { padding: 14px 16px; }
   .payment-methods { padding: 16px; }
-  .upload-area { margin: 14px 16px; }
-  .upload-preview { margin: 14px 16px; }
+  .upload-state { margin: 14px 16px; }
   .upload-submit { margin: 14px 16px 20px; width: calc(100% - 32px); }
   .reg-hero-info { min-width: 0; }
   .registration-section .form-progress-wrapper { margin-bottom: 14px; }

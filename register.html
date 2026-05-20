@@ -311,18 +311,28 @@
                   <h3>Upload Payment Screenshot</h3>
                   <p>Take a screenshot of your UPI payment confirmation and upload it here.</p>
                 </div>
-                <input type="file" accept="image/jpeg,image/png,image/webp,image/jpg" data-screenshot-input class="sr-only">
-                <div class="upload-area" role="button" tabindex="0" data-upload-area>
-                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                  <strong>Tap to select screenshot</strong>
-                  <span>JPG, PNG, or WebP (max 5 MB)</span>
+                <!-- States: pick → processing → ready → uploading → done/error -->
+                <div class="upload-state" data-upload-state="pick">
+                  <div class="upload-area" role="button" tabindex="0" data-upload-area>
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <strong>Tap to select screenshot</strong>
+                    <span>JPG, PNG, or WebP (max 5 MB)</span>
+                  </div>
+                  <div class="upload-processing" data-upload-processing>
+                    <div class="upload-spinner"></div>
+                    <span>Processing image...</span>
+                  </div>
+                  <div class="upload-ready" data-upload-ready>
+                    <img data-preview-img alt="Screenshot preview">
+                    <div class="upload-file-info">
+                      <span class="upload-filename" data-upload-filename></span>
+                      <span class="upload-success-badge">Ready to submit</span>
+                    </div>
+                    <button type="button" class="upload-remove-btn" data-remove-upload>&times;</button>
+                  </div>
                 </div>
-                <div class="upload-preview" data-upload-preview hidden>
-                  <img data-preview-img alt="Screenshot preview">
-                  <button type="button" class="remove-upload" data-remove-upload>&times; Remove</button>
-                </div>
-                <button class="button primary upload-submit" type="button" data-submit-screenshot disabled>Submit Registration</button>
                 <p class="form-status" role="status" data-upload-status></p>
+                <button class="button primary upload-submit" type="button" data-submit-screenshot disabled>Submit Registration</button>
               </div>
             </div>
           </div>
@@ -407,6 +417,9 @@
         </div>
       </div>
     </div>
+
+    <!-- File input at body level — outside modal to avoid mobile overflow/clip issues -->
+    <input type="file" id="screenshotFileInput" accept="image/jpeg,image/png,image/webp,image/jpg" style="position:fixed;top:-200px;left:-200px;opacity:0;pointer-events:none;">
 
     <script src="script.js"></script>
   </body>
