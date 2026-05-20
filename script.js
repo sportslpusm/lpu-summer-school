@@ -971,11 +971,8 @@ function showPaymentSection(data) {
 
   let selectedFile = null;
 
-  // Explicit click handler — ensures file picker opens on all mobile browsers
-  uploadArea.addEventListener("click", (e) => {
-    e.preventDefault();
-    fileInput.click();
-  });
+  // Click handler — input is a sibling div now, not inside a label
+  uploadArea.addEventListener("click", () => fileInput.click());
 
   function compressImage(file, maxDim, quality) {
     return new Promise((resolve) => {
@@ -1063,6 +1060,16 @@ function showPaymentSection(data) {
       submitScreenshotBtn.textContent = "Submit Registration";
     }
   });
+
+  // Cancel / close button
+  const closeBtn = section.querySelector("[data-payment-close]");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      if (!confirm("Cancel payment? Your registration is saved — you can upload the screenshot later by revisiting this page.")) return;
+      section.hidden = true;
+      document.body.style.overflow = "";
+    });
+  }
 
   // Show modal overlay
   section.hidden = false;

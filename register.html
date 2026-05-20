@@ -251,8 +251,11 @@
         <div class="payment-overlay" data-payment-section hidden>
           <div class="payment-modal">
             <div class="payment-modal-header">
-              <h2>Complete Payment</h2>
-              <span class="payment-ref">Ref: <code data-pay-ref></code></span>
+              <div>
+                <h2>Complete Payment</h2>
+                <span class="payment-ref">Ref: <code data-pay-ref></code></span>
+              </div>
+              <button type="button" class="payment-close" data-payment-close aria-label="Close payment">&times;</button>
             </div>
 
             <div class="payment-modal-scroll">
@@ -308,12 +311,12 @@
                   <h3>Upload Payment Screenshot</h3>
                   <p>Take a screenshot of your UPI payment confirmation and upload it here.</p>
                 </div>
-                <label class="upload-area" data-upload-area>
-                  <input type="file" accept="image/jpeg,image/png,image/webp,image/jpg" data-screenshot-input class="sr-only">
+                <input type="file" accept="image/jpeg,image/png,image/webp,image/jpg" data-screenshot-input class="sr-only">
+                <div class="upload-area" role="button" tabindex="0" data-upload-area>
                   <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                   <strong>Tap to select screenshot</strong>
                   <span>JPG, PNG, or WebP (max 5 MB)</span>
-                </label>
+                </div>
                 <div class="upload-preview" data-upload-preview hidden>
                   <img data-preview-img alt="Screenshot preview">
                   <button type="button" class="remove-upload" data-remove-upload>&times; Remove</button>
