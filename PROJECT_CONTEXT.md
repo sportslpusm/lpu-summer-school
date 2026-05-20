@@ -119,10 +119,10 @@ Registration page with:
 - Sticky submit/fee summary.
 - UPI payment modal.
 - Screenshot upload state machine.
-- Pending-verification receipt.
+- Pending-verification receipt modal shown after screenshot upload.
 - Body-level hidden file input for mobile upload reliability.
 
-Current working tree note: `register.html` has a pre-existing local modification adding `blob:` to the CSP `img-src` so payment screenshot previews can render from object URLs.
+`register.html` CSP allows `blob:` in `img-src` so payment screenshot previews can render from object URLs.
 
 ### `admin.html`
 
@@ -428,7 +428,7 @@ Important: REST fetch failures are mostly silent and leave hardcoded HTML/JS fal
 13. Browser attempts compression only after preview/decode succeeds; large images and HEIC/HEIF are converted to JPEG when possible.
 14. If compression/blob creation fails after a valid preview, the browser falls back to the original validated image instead of blocking submission.
 15. Browser posts the screenshot to `upload-screenshot`.
-16. UI shows a pending-verification receipt and clears/revokes upload preview state.
+16. UI shows a fixed pending-verification receipt modal, keeps the background locked, and clears/revokes upload preview state.
 
 ## Payment Verification Flow
 
@@ -556,7 +556,6 @@ Missing deployment details:
 - The displayed seats-left number is simulated from time and does not use `site_config.max_seats` or actual registrations.
 - Social proof popups are generated fake registration notifications. This is a trust/ethics and UX risk.
 - Screenshot upload currently includes detailed temporary console logging for file metadata, preview/decode/compression/upload states. Remove or gate these logs after the mobile upload issue is confirmed fixed in production.
-- `register.html` print receipt button uses inline `onclick` that may be blocked by CSP.
 - `admin.html` allows `script-src 'unsafe-inline'` to support inline handlers, which increases XSS impact if any escaping is missed.
 - Admin auth token is stored in `localStorage`; XSS would expose it.
 - Admin image uploads have no visible client-side size/compression limits.

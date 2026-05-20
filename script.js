@@ -892,13 +892,17 @@ function showReceipt(data) {
   uploadSelection.selectedFile = null;
   uploadSelection.previewVisible = false;
   uploadSelection.uploadInProgress = false;
-  document.body.style.overflow = "";
+  document.body.style.overflow = "hidden";
   form.hidden = true;
   document.querySelector(".form-progress-wrapper")?.remove();
   receiptEl.hidden = false;
-  receiptEl.scrollIntoView({ behavior: "smooth", block: "start" });
+  requestAnimationFrame(() => receiptEl.focus({ preventScroll: true }));
   sessionStorage.removeItem("lpu_pending_reg");
 }
+
+document.querySelector("[data-print-receipt]")?.addEventListener("click", () => {
+  window.print();
+});
 
 // ── UPI Payment Section ────────────────────────────────────────────
 let pendingRegistration = null;

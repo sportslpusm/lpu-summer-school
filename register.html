@@ -338,11 +338,11 @@
           </div>
         </div>
 
-        <!-- Confirmation Section (shown after screenshot upload) -->
-        <section class="receipt-section" data-receipt hidden>
-          <div class="receipt-card">
+        <!-- Confirmation Modal (shown after screenshot upload) -->
+        <section class="receipt-section" data-receipt hidden role="dialog" aria-modal="true" aria-labelledby="receiptTitle" tabindex="-1">
+          <div class="receipt-card" role="document">
             <div class="receipt-header">
-              <h2>Registration Submitted</h2>
+              <h2 id="receiptTitle">Registration Submitted</h2>
               <p>LPU Summer School 2026</p>
             </div>
             <div class="receipt-body">
@@ -351,7 +351,10 @@
               <p class="receipt-note">Your payment screenshot is under review. You will receive a confirmation email once verified.</p>
               <p class="receipt-contact">For queries: summerschool@lpu.co.in | +91 860 723 4098</p>
             </div>
-            <button class="button primary" onclick="window.print()">Print Summary</button>
+            <div class="receipt-actions">
+              <button class="button primary" type="button" data-print-receipt>Print Summary</button>
+              <a class="button ghost" href="index.html">Back to Website</a>
+            </div>
           </div>
         </section>
       </section>
