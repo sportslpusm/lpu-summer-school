@@ -265,13 +265,13 @@ h1 {
 .section-heading { max-width: 940px; margin-bottom: 34px; }
 .section-heading.center { margin-inline: auto; text-align: center; }
 .section-heading.split { display: flex; max-width: none; align-items: end; justify-content: space-between; gap: 24px; }
-.section-heading h2, .fee-shell h2, .recognition h2, .registration-hero h1 {
+.section-heading h2, .fee-shell h2, .recognition h2 {
   margin: 0;
   font-size: clamp(2.2rem, 5vw, 4.7rem);
   line-height: 1;
   letter-spacing: 0;
 }
-.section-heading p:not(.eyebrow), .fee-shell p, .registration-hero p { color: var(--muted); line-height: 1.65; }
+.section-heading p:not(.eyebrow), .fee-shell p { color: var(--muted); line-height: 1.65; }
 .story { background: var(--white); }
 .story-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 .story-grid article, .track-card, .session-card, .fee-table, .form-block {
@@ -459,56 +459,57 @@ h1 {
 }
 
 .registration-hero {
-  padding: clamp(28px, 4vw, 44px) clamp(18px, 4vw, 58px) clamp(20px, 3vw, 32px);
-  background: var(--ink);
-  color: var(--white);
-  text-align: center;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: clamp(24px, 4vw, 56px);
+  padding: clamp(36px, 5vw, 64px) clamp(22px, 4vw, 64px) clamp(32px, 4vw, 52px);
+  background:
+    linear-gradient(90deg, rgba(243, 112, 13, 0.08), transparent 42%),
+    radial-gradient(circle at 78% 34%, rgba(243, 112, 13, 0.14), transparent 30%),
+    linear-gradient(135deg, #fffaf6 0%, #ffffff 50%, #fff2e8 100%);
 }
-.registration-hero .label { background: var(--orange); color: var(--white); font-size: 0.78rem; }
+.registration-hero .label { font-size: 0.78rem; }
 .registration-hero h1 {
-  max-width: 600px;
-  margin: 0 auto;
-  color: var(--white);
-  font-size: clamp(1.6rem, 4vw, 2.4rem);
-  line-height: 1.1;
+  max-width: 14ch;
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(2rem, 4.5vw, 3.2rem);
+  line-height: 1.02;
 }
 .reg-hero-sub {
-  max-width: 480px;
-  margin: 10px auto 0;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.88rem;
-  line-height: 1.5;
+  max-width: 440px;
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
 }
-.reg-meta {
+.reg-hero-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  min-width: 280px;
+}
+.reg-info-item {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px 16px;
-  margin-top: 16px;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 16px rgba(17, 24, 39, 0.05);
 }
-.reg-meta-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.55);
+.reg-info-item svg { flex-shrink: 0; margin-top: 2px; color: var(--orange); }
+.reg-info-item span { display: block; font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.02em; }
+.reg-info-item strong { display: block; margin-top: 2px; font-size: 0.88rem; font-weight: 800; color: var(--ink); }
+.reg-info-deadline {
+  grid-column: 1 / -1;
+  background: #fff7f0;
+  border-color: var(--peach);
 }
-.reg-meta-item svg { color: var(--orange); }
-.reg-meta-item strong { color: var(--white); font-weight: 800; }
-.reg-meta-deadline {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 12px;
-  border-radius: 6px;
-  background: rgba(243, 112, 13, 0.18);
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--orange);
-}
-.reg-meta-deadline svg { color: var(--orange); }
-.reg-meta-deadline strong { color: var(--white); }
+.reg-info-deadline svg { color: var(--orange); }
+.reg-info-deadline strong { color: var(--orange); }
 .register-page .nav-cta { display: none; }
 .gst-line { font-size: 0.82rem; color: var(--muted); font-weight: 600; margin-top: 4px; }
 .registration-section { padding-top: 0; padding-bottom: clamp(40px, 5vw, 72px); background: var(--paper); }
@@ -676,7 +677,8 @@ h1 {
   .hostel-radios { grid-template-columns: 1fr; }
   .submit-bar .button, .hero-actions .button { width: 100%; }
   .submit-bar .button { justify-self: stretch; }
-  .registration-hero h1 { font-size: clamp(1.8rem, 9vw, 2.6rem); }
+  .registration-hero { grid-template-columns: 1fr; }
+  .reg-hero-info { min-width: 0; }
   /* Footer contact stacking */
   .contact-links { flex-direction: column; gap: 6px; }
   .site-footer { padding: 32px 16px; }
