@@ -888,6 +888,10 @@ function showReceipt(data) {
   // Close payment modal, restore scroll, hide form, show receipt
   const paySection = document.querySelector("[data-payment-section]");
   if (paySection) paySection.hidden = true;
+  revokePreviewUrl("receipt displayed");
+  uploadSelection.selectedFile = null;
+  uploadSelection.previewVisible = false;
+  uploadSelection.uploadInProgress = false;
   document.body.style.overflow = "";
   form.hidden = true;
   document.querySelector(".form-progress-wrapper")?.remove();
@@ -903,40 +907,287 @@ let paymentModalBound = false; // guard against duplicate event binding
 // Body-level file input (outside modal — avoids overflow/clip/backdrop mobile bugs)
 const screenshotInput = document.getElementById("screenshotFileInput");
 
-function compressImage(file, maxDim, quality) {
+const UPLOAD_LOG_PREFIX = "[LPU screenshot upload]";
+const MAX_SCREENSHOT_BYTES = 10 * 1024 * 1024;
+const COMPRESSION_THRESHOLD_BYTES = 4 * 1024 * 1024;
+const COMPRESSION_MAX_DIMENSION = 1600;
+const COMPRESSION_QUALITY = 0.82;
+const ACCEPTED_SCREENSHOT_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"]);
+const EXTENSION_TYPE_MAP = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  heic: "image/heic",
+  heif: "image/heif"
+};
+
+const uploadSelection = {
+  token: 0,
+  selectedFile: null,
+  previewUrl: null,
+  previewVisible: false,
+  uploadInProgress: false
+};
+
+function uploadLog(level, message, data) {
+  const fn = console[level] || console.log;
+  if (data !== undefined) {
+    fn.call(console, `${UPLOAD_LOG_PREFIX} ${message}`, data);
+  } else {
+    fn.call(console, `${UPLOAD_LOG_PREFIX} ${message}`);
+  }
+}
+
+function fileExtension(name) {
+  const match = String(name || "").toLowerCase().match(/\.([a-z0-9]+)$/);
+  return match ? match[1] : "";
+}
+
+function inferImageType(file) {
+  return file?.type || EXTENSION_TYPE_MAP[fileExtension(file?.name)] || "";
+}
+
+function describeFile(file) {
+  if (!file) return null;
+  return {
+    name: file.name || "(unnamed)",
+    type: file.type || "(empty)",
+    inferredType: inferImageType(file) || "(unknown)",
+    size: file.size || 0,
+    lastModified: file.lastModified || null
+  };
+}
+
+function validateScreenshotFile(file) {
+  uploadLog("info", "selected file metadata", describeFile(file));
+
+  if (!file || !file.size) {
+    throw new Error("No readable image was selected. Please choose the screenshot again.");
+  }
+
+  const type = inferImageType(file);
+  if (!type || !ACCEPTED_SCREENSHOT_TYPES.has(type)) {
+    throw new Error("Unsupported image type. Please upload a JPG, PNG, WebP, or HEIC screenshot.");
+  }
+
+  if (file.size > MAX_SCREENSHOT_BYTES) {
+    throw new Error("File too large. Please upload a screenshot under 10 MB.");
+  }
+
+  return type;
+}
+
+function setUploadState(section, state, reason) {
+  const stateEl = section.querySelector("[data-upload-state]");
+  if (stateEl) stateEl.setAttribute("data-upload-state", state);
+  uploadLog("debug", "state transition", { state, reason: reason || "" });
+}
+
+function setUploadStatus(section, message, isError) {
+  const status = section.querySelector("[data-upload-status]");
+  if (!status) return;
+  status.textContent = message || "";
+  status.classList.toggle("error", Boolean(isError));
+}
+
+function setUploadSubmitEnabled(section, enabled) {
+  const btn = section.querySelector("[data-submit-screenshot]");
+  if (!btn) return;
+  btn.disabled = !enabled;
+}
+
+function revokePreviewUrl(reason) {
+  if (!uploadSelection.previewUrl) return;
+  uploadLog("debug", "revoking preview object URL", { reason: reason || "" });
+  URL.revokeObjectURL(uploadSelection.previewUrl);
+  uploadSelection.previewUrl = null;
+}
+
+function resetUploadSelection(section, reason, options = {}) {
+  uploadSelection.token += 1;
+  uploadSelection.selectedFile = null;
+  uploadSelection.previewVisible = false;
+  uploadSelection.uploadInProgress = false;
+  revokePreviewUrl(reason);
+
+  const previewImg = section.querySelector("[data-preview-img]");
+  const filenameEl = section.querySelector("[data-upload-filename]");
+  const submitBtn = section.querySelector("[data-submit-screenshot]");
+
+  if (previewImg) {
+    previewImg.removeAttribute("src");
+    previewImg.onload = null;
+    previewImg.onerror = null;
+  }
+  if (filenameEl) filenameEl.textContent = "";
+  if (screenshotInput) screenshotInput.value = "";
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submit Registration";
+  }
+  if (!options.keepStatus) setUploadStatus(section, "", false);
+  setUploadState(section, "pick", reason);
+}
+
+function waitForImageLoad(img, url, token, file) {
   return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
     img.onload = () => {
-      try {
-        let w = img.width, h = img.height;
-        if (w > maxDim || h > maxDim) {
-          const ratio = Math.min(maxDim / w, maxDim / h);
-          w = Math.round(w * ratio);
-          h = Math.round(h * ratio);
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
-        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-        canvas.toBlob((blob) => {
-          URL.revokeObjectURL(url);
-          if (!blob) { reject(new Error("Image compression failed")); return; }
-          resolve(blob);
-        }, "image/jpeg", quality);
-      } catch (e) {
-        URL.revokeObjectURL(url);
-        reject(e);
+      if (token !== uploadSelection.token) {
+        reject(new Error("Selection changed before preview finished loading."));
+        return;
       }
+      const width = img.naturalWidth || img.width || 0;
+      const height = img.naturalHeight || img.height || 0;
+      if (!width || !height) {
+        reject(new Error("Image preview loaded without dimensions."));
+        return;
+      }
+      resolve({ width, height });
     };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Could not read image. Try a different file.")); };
+
+    img.onerror = () => {
+      uploadLog("error", "image decode failure", { url, file: describeFile(file) });
+      reject(new Error("Could not preview this image. Please try a JPG or PNG screenshot."));
+    };
+
     img.src = url;
   });
 }
 
-function setUploadState(section, state) {
-  const stateEl = section.querySelector("[data-upload-state]");
-  if (stateEl) stateEl.setAttribute("data-upload-state", state);
+function shouldCompress(file, imageMeta, type) {
+  return (
+    file.size > COMPRESSION_THRESHOLD_BYTES ||
+    imageMeta.width > COMPRESSION_MAX_DIMENSION ||
+    imageMeta.height > COMPRESSION_MAX_DIMENSION ||
+    type === "image/heic" ||
+    type === "image/heif"
+  );
+}
+
+function canvasToBlob(canvas, type, quality) {
+  return new Promise((resolve, reject) => {
+    try {
+      canvas.toBlob((blob) => {
+        if (!blob || !blob.size) {
+          uploadLog("error", "blob creation failure", { type, quality, width: canvas.width, height: canvas.height });
+          reject(new Error("Compressed image blob was empty."));
+          return;
+        }
+        resolve(blob);
+      }, type, quality);
+    } catch (err) {
+      uploadLog("error", "blob creation failure", err);
+      reject(err);
+    }
+  });
+}
+
+async function compressLoadedPreview(previewImg, originalFile) {
+  const sourceWidth = previewImg.naturalWidth || previewImg.width;
+  const sourceHeight = previewImg.naturalHeight || previewImg.height;
+  let targetWidth = sourceWidth;
+  let targetHeight = sourceHeight;
+
+  if (targetWidth > COMPRESSION_MAX_DIMENSION || targetHeight > COMPRESSION_MAX_DIMENSION) {
+    const ratio = Math.min(COMPRESSION_MAX_DIMENSION / targetWidth, COMPRESSION_MAX_DIMENSION / targetHeight);
+    targetWidth = Math.max(1, Math.round(targetWidth * ratio));
+    targetHeight = Math.max(1, Math.round(targetHeight * ratio));
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    uploadLog("error", "compression failure", "Could not create canvas context.");
+    throw new Error("Could not create canvas context.");
+  }
+
+  ctx.drawImage(previewImg, 0, 0, targetWidth, targetHeight);
+  const blob = await canvasToBlob(canvas, "image/jpeg", COMPRESSION_QUALITY);
+
+  uploadLog("info", "compression result", {
+    original: describeFile(originalFile),
+    compressed: { type: blob.type, size: blob.size, width: targetWidth, height: targetHeight }
+  });
+
+  if (blob.size >= originalFile.size && originalFile.type !== "image/heic" && originalFile.type !== "image/heif") {
+    uploadLog("info", "compression skipped because result was not smaller", { originalSize: originalFile.size, compressedSize: blob.size });
+    return originalFile;
+  }
+
+  return new File([blob], String(originalFile.name || "payment-screenshot").replace(/\.[^.]+$/, "") + ".jpg", {
+    type: "image/jpeg",
+    lastModified: Date.now()
+  });
+}
+
+function normalizeOriginalFile(file, inferredType) {
+  if (file.type) return file;
+  return new File([file], file.name || "payment-screenshot", {
+    type: inferredType,
+    lastModified: file.lastModified || Date.now()
+  });
+}
+
+async function prepareScreenshotUpload(file, previewImg, imageMeta, inferredType) {
+  const originalFile = normalizeOriginalFile(file, inferredType);
+  if (!shouldCompress(originalFile, imageMeta, inferredType)) {
+    uploadLog("info", "using original image without compression", describeFile(originalFile));
+    return originalFile;
+  }
+
+  try {
+    return await compressLoadedPreview(previewImg, originalFile);
+  } catch (err) {
+    uploadLog("warn", "compression failure; falling back to original validated image", {
+      error: err?.message || String(err),
+      file: describeFile(originalFile)
+    });
+    return originalFile;
+  }
+}
+
+async function preparePreviewAndUploadFile(section, file, token) {
+  const inferredType = validateScreenshotFile(file);
+  const previewImg = section.querySelector("[data-preview-img]");
+  const filenameEl = section.querySelector("[data-upload-filename]");
+
+  if (!previewImg || !filenameEl) {
+    throw new Error("Upload preview UI is not available.");
+  }
+
+  const previewUrl = URL.createObjectURL(file);
+  revokePreviewUrl("new selection");
+  uploadSelection.previewUrl = previewUrl;
+  uploadSelection.selectedFile = null;
+  uploadSelection.previewVisible = false;
+
+  let imageMeta;
+  try {
+    imageMeta = await waitForImageLoad(previewImg, previewUrl, token, file);
+    uploadSelection.previewVisible = true;
+    uploadLog("info", "preview generation success", { file: describeFile(file), image: imageMeta });
+  } catch (err) {
+    uploadLog("error", "preview generation failure", { error: err?.message || String(err), file: describeFile(file) });
+    revokePreviewUrl("preview failure");
+    throw err;
+  }
+
+  if (token !== uploadSelection.token) {
+    throw new Error("Selection changed while processing image.");
+  }
+
+  const uploadFile = await prepareScreenshotUpload(file, previewImg, imageMeta, inferredType);
+
+  if (token !== uploadSelection.token) {
+    throw new Error("Selection changed while preparing upload.");
+  }
+
+  uploadSelection.selectedFile = uploadFile;
+  filenameEl.textContent = `${file.name || "Selected screenshot"} (${(uploadFile.size / 1024).toFixed(0)} KB upload)`;
+  return uploadFile;
 }
 
 function showPaymentSection(data) {
@@ -981,17 +1232,11 @@ function showPaymentSection(data) {
   section.querySelector("[data-upi-paytm]").href = upiBase.replace("upi://", "paytmmp://");
   section.querySelector("[data-upi-bhim]").href = upiBase;
 
-  // Reset upload state
-  setUploadState(section, "pick");
-  const submitBtn = section.querySelector("[data-submit-screenshot]");
-  const uploadStatus = section.querySelector("[data-upload-status]");
-  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Submit Registration"; }
-  if (uploadStatus) { uploadStatus.textContent = ""; uploadStatus.classList.remove("error"); }
+  resetUploadSelection(section, "payment section opened");
 
   // Bind events only once
   if (!paymentModalBound) {
     paymentModalBound = true;
-    let selectedFile = null;
 
     // Copy UPI button
     const copyBtn = section.querySelector("[data-copy-upi]");
@@ -1014,84 +1259,59 @@ function showPaymentSection(data) {
 
     // Upload area click → open body-level file input
     const uploadArea = section.querySelector("[data-upload-area]");
-    uploadArea.addEventListener("click", () => {
+    const openFilePicker = () => {
+      if (!screenshotInput || uploadSelection.uploadInProgress) return;
       screenshotInput.value = "";
       screenshotInput.click();
+    };
+    uploadArea.addEventListener("click", openFilePicker);
+    uploadArea.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openFilePicker();
+      }
     });
 
     // File selected
     screenshotInput.addEventListener("change", async () => {
       const file = screenshotInput.files[0];
-      if (!file) return;
-
-      const status = section.querySelector("[data-upload-status]");
-      const btn = section.querySelector("[data-submit-screenshot]");
-
-      // Validate type
-      const allowed = ["image/jpeg", "image/png", "image/webp"];
-      if (!allowed.includes(file.type)) {
-        status.textContent = "Unsupported file type. Please use JPG, PNG, or WebP.";
-        status.classList.add("error");
-        return;
-      }
-
-      // Validate size (10 MB raw limit — will compress down)
-      if (file.size > 10 * 1024 * 1024) {
-        status.textContent = "File too large (max 10 MB). Please select a smaller image.";
-        status.classList.add("error");
-        return;
-      }
-
-      status.textContent = "";
-      status.classList.remove("error");
-
-      // Show processing state
-      setUploadState(section, "processing");
+      resetUploadSelection(section, "new file selected");
+      const token = uploadSelection.token;
 
       try {
-        const compressed = await compressImage(file, 1200, 0.8);
-        selectedFile = new File([compressed], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" });
-
-        // Show preview
-        const previewImg = section.querySelector("[data-preview-img]");
-        const filenameEl = section.querySelector("[data-upload-filename]");
-        const blobUrl = URL.createObjectURL(compressed);
-        previewImg.src = blobUrl;
-        filenameEl.textContent = `${file.name} (${(selectedFile.size / 1024).toFixed(0)} KB)`;
-
-        setUploadState(section, "ready");
-        btn.disabled = false;
+        setUploadState(section, "processing", "file selected");
+        const uploadFile = await preparePreviewAndUploadFile(section, file, token);
+        if (token !== uploadSelection.token) return;
+        setUploadState(section, "ready", "preview visible and upload file prepared");
+        setUploadSubmitEnabled(section, Boolean(uploadFile && uploadSelection.previewVisible));
+        setUploadStatus(section, "", false);
       } catch (err) {
-        setUploadState(section, "pick");
-        status.textContent = err.message || "Could not process image. Try a different file.";
-        status.classList.add("error");
-        selectedFile = null;
+        if (token !== uploadSelection.token) return;
+        uploadLog("error", "selection handling failure", { error: err?.message || String(err), file: describeFile(file) });
+        resetUploadSelection(section, "selection failed", { keepStatus: true });
+        setUploadStatus(section, err?.message || "Could not process image. Try a different file.", true);
       }
+      return;
+
     });
 
     // Remove / retry
     section.querySelector("[data-remove-upload]").addEventListener("click", () => {
-      selectedFile = null;
-      screenshotInput.value = "";
-      setUploadState(section, "pick");
-      const btn = section.querySelector("[data-submit-screenshot]");
-      const status = section.querySelector("[data-upload-status]");
-      btn.disabled = true;
-      status.textContent = "";
-      status.classList.remove("error");
+      resetUploadSelection(section, "user removed selected screenshot");
     });
 
     // Submit screenshot
     section.querySelector("[data-submit-screenshot]").addEventListener("click", async () => {
-      if (!selectedFile || !pendingRegistration) return;
+      const selectedFile = uploadSelection.selectedFile;
+      if (!selectedFile || !uploadSelection.previewVisible || !pendingRegistration || uploadSelection.uploadInProgress) return;
 
       const btn = section.querySelector("[data-submit-screenshot]");
-      const status = section.querySelector("[data-upload-status]");
 
       btn.disabled = true;
       btn.textContent = "Uploading...";
-      status.textContent = "";
-      status.classList.remove("error");
+      uploadSelection.uploadInProgress = true;
+      setUploadState(section, "uploading", "submit clicked");
+      setUploadStatus(section, "", false);
 
       try {
         const fd = new FormData();
@@ -1099,31 +1319,46 @@ function showPaymentSection(data) {
         fd.append("payment_reference", pendingRegistration.payment_reference);
         fd.append("screenshot", selectedFile);
 
+        uploadLog("info", "submitting screenshot", {
+          registration_id: pendingRegistration.registration_id,
+          payment_reference: pendingRegistration.payment_reference,
+          file: describeFile(selectedFile)
+        });
+
         const res = await fetch(`${SUPABASE_URL}/functions/v1/upload-screenshot`, {
           method: "POST",
           body: fd
         });
 
         if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || "Upload failed. Please try again.");
+          const bodyText = await res.text().catch(() => "");
+          let err = {};
+          try { err = bodyText ? JSON.parse(bodyText) : {}; } catch (_) {}
+          uploadLog("error", "backend upload rejection", { status: res.status, body: bodyText, file: describeFile(selectedFile) });
+          throw new Error(err.error || err.message || "Upload failed. Please try again.");
         }
 
+        setUploadState(section, "done", "upload accepted by backend");
+        uploadLog("info", "backend upload accepted");
         showReceipt({
           ...pendingRegistration,
           hostel_option: pendingRegistration.hostel_option || "none"
         });
       } catch (err) {
-        status.textContent = err.message;
-        status.classList.add("error");
+        uploadLog("error", "upload submission failure", { error: err?.message || String(err), file: describeFile(selectedFile) });
+        setUploadStatus(section, err.message, true);
+        setUploadState(section, "ready", "upload failed; keeping preview ready");
         btn.disabled = false;
         btn.textContent = "Submit Registration";
+      } finally {
+        uploadSelection.uploadInProgress = false;
       }
     });
 
     // Cancel / close button
     section.querySelector("[data-payment-close]")?.addEventListener("click", () => {
       if (!confirm("Cancel payment? Your registration is saved — you can upload the screenshot later by revisiting this page.")) return;
+      resetUploadSelection(section, "payment modal closed");
       section.hidden = true;
       document.body.style.overflow = "";
     });

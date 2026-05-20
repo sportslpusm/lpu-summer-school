@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://bynpuhoysivxxlblxica.supabase.co; font-src 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: blob:; connect-src 'self' https://bynpuhoysivxxlblxica.supabase.co; font-src 'self';">
     <meta name="description" content="Register for LPU Summer School 2026. Select one class from each chosen session.">
     <title>Register | LPU Summer School 2026</title>
     <link rel="stylesheet" href="styles.css">
@@ -316,7 +316,7 @@
                   <div class="upload-area" role="button" tabindex="0" data-upload-area>
                     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                     <strong>Tap to select screenshot</strong>
-                    <span>JPG, PNG, or WebP (max 5 MB)</span>
+                    <span>JPG, PNG, WebP, or HEIC (max 10 MB)</span>
                   </div>
                   <div class="upload-processing" data-upload-processing>
                     <div class="upload-spinner"></div>
@@ -419,7 +419,7 @@
     </div>
 
     <!-- File input at body level — outside modal to avoid mobile overflow/clip issues -->
-    <input type="file" id="screenshotFileInput" accept="image/jpeg,image/png,image/webp,image/jpg" style="position:fixed;top:-200px;left:-200px;opacity:0;pointer-events:none;">
+    <input type="file" id="screenshotFileInput" accept="image/*,.heic,.heif" style="position:fixed;top:-200px;left:-200px;opacity:0;pointer-events:none;">
 
     <script src="script.js"></script>
   </body>

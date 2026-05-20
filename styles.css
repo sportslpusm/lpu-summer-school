@@ -698,6 +698,8 @@ h1 {
 [data-upload-state="pick"] .upload-area { display: flex; }
 [data-upload-state="processing"] .upload-processing { display: flex; }
 [data-upload-state="ready"] .upload-ready { display: flex; }
+[data-upload-state="uploading"] .upload-ready { display: flex; }
+[data-upload-state="done"] .upload-ready { display: flex; }
 
 .upload-area {
   flex-direction: column; align-items: center; justify-content: center; gap: 6px;
