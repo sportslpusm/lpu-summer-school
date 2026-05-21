@@ -4650,4 +4650,25 @@ button:focus-visible, .button:focus-visible, a:focus-visible {
     width: 50px;
     height: 50px;
   }
+  .hero-inline-media {
+    width: calc(100% + 40px);
+    margin: 0 0 8px -20px;
+    padding: 0 12vw;
+    box-sizing: border-box;
+    overflow-x: auto;
+    scroll-padding-inline: 12vw;
+    scroll-snap-type: x mandatory;
+    mask-image: none;
+  }
+  .hero-media-track {
+    gap: 8px;
+  }
+  .hero-strip-card {
+    width: 76vw;
+    height: auto;
+    flex: 0 0 76vw;
+    aspect-ratio: 16 / 9;
+    scroll-snap-align: center;
+    border-radius: 12px;
+  }
 }

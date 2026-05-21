@@ -1074,6 +1074,31 @@ function heroGalleryCards() {
   return heroGalleryTrack ? Array.from(heroGalleryTrack.querySelectorAll(".hero-strip-card")) : [];
 }
 
+function heroGalleryScrollLeftForCard(card) {
+  if (!heroGalleryRoot || !card) return 0;
+  const rootRect = heroGalleryRoot.getBoundingClientRect();
+  const cardRect = card.getBoundingClientRect();
+  const centeredLeft = heroGalleryRoot.scrollLeft + cardRect.left - rootRect.left - ((heroGalleryRoot.clientWidth - cardRect.width) / 2);
+  const maxScroll = Math.max(0, heroGalleryRoot.scrollWidth - heroGalleryRoot.clientWidth);
+  return Math.min(maxScroll, Math.max(0, centeredLeft));
+}
+
+function getInitialHeroGalleryIndex(cards) {
+  if (cards.length > 2 && window.matchMedia("(max-width: 767px)").matches) return 1;
+  return 0;
+}
+
+function scrollHeroGalleryToIndex(index, behavior = "smooth") {
+  const cards = heroGalleryCards();
+  if (!heroGalleryRoot || !cards.length) return;
+  const safeIndex = Math.max(0, Math.min(index, cards.length - 1));
+  heroGalleryIndex = safeIndex;
+  heroGalleryRoot.scrollTo({
+    left: heroGalleryScrollLeftForCard(cards[safeIndex]),
+    behavior,
+  });
+}
+
 function stopHeroGalleryAutoScroll() {
   clearInterval(heroGalleryAutoTimer);
   heroGalleryAutoTimer = null;
@@ -1088,14 +1113,11 @@ function startHeroGalleryAutoScroll() {
   heroGalleryAutoTimer = setInterval(() => {
     const currentCards = heroGalleryCards();
     if (currentCards.length < 2) return;
-    heroGalleryIndex = (heroGalleryIndex + 1) % currentCards.length;
-    const nextCard = currentCards[heroGalleryIndex];
-    const maxScroll = Math.max(0, heroGalleryRoot.scrollWidth - heroGalleryRoot.clientWidth);
-    const nextLeft = Math.min(maxScroll, Math.max(0, nextCard.offsetLeft - heroGalleryTrack.offsetLeft));
-    heroGalleryRoot.scrollTo({
-      left: nextLeft,
-      behavior: "smooth",
-    });
+    const hasSidePeeks = currentCards.length > 2 && window.matchMedia("(max-width: 767px)").matches;
+    const firstMainIndex = hasSidePeeks ? 1 : 0;
+    const lastMainIndex = hasSidePeeks ? currentCards.length - 2 : currentCards.length - 1;
+    const nextIndex = heroGalleryIndex >= lastMainIndex ? firstMainIndex : heroGalleryIndex + 1;
+    scrollHeroGalleryToIndex(nextIndex, "smooth");
   }, 3200);
 }
 
@@ -1138,8 +1160,8 @@ function renderHeroGalleryStrip(images) {
   };
 
   images.forEach((image) => renderImage(image));
-  heroGalleryIndex = 0;
-  if (heroGalleryRoot) heroGalleryRoot.scrollLeft = 0;
+  heroGalleryIndex = getInitialHeroGalleryIndex(heroGalleryCards());
+  requestAnimationFrame(() => scrollHeroGalleryToIndex(heroGalleryIndex, "auto"));
   startHeroGalleryAutoScroll();
 }
 
