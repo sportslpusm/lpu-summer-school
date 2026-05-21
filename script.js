@@ -1089,10 +1089,12 @@ function startHeroGalleryAutoScroll() {
     const currentCards = heroGalleryCards();
     if (currentCards.length < 2) return;
     heroGalleryIndex = (heroGalleryIndex + 1) % currentCards.length;
-    currentCards[heroGalleryIndex].scrollIntoView({
+    const nextCard = currentCards[heroGalleryIndex];
+    const maxScroll = Math.max(0, heroGalleryRoot.scrollWidth - heroGalleryRoot.clientWidth);
+    const nextLeft = Math.min(maxScroll, Math.max(0, nextCard.offsetLeft - heroGalleryTrack.offsetLeft));
+    heroGalleryRoot.scrollTo({
+      left: nextLeft,
       behavior: "smooth",
-      block: "nearest",
-      inline: "start"
     });
   }, 3200);
 }
