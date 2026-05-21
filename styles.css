@@ -4043,6 +4043,20 @@ button:focus-visible, .button:focus-visible, a:focus-visible {
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
+.hero[data-program-hero].is-urgency-pending .hero-countdown div {
+  color: rgba(6, 28, 59, 0.7);
+  background: rgba(6, 28, 59, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(6, 28, 59, 0.08);
+}
+.hero[data-program-hero].is-urgency-pending .hero-countdown span {
+  color: rgba(6, 28, 59, 0.48);
+}
+.hero[data-program-hero].is-urgency-pending .hero-seats strong {
+  margin-top: 6px;
+  color: var(--hero-navy);
+  font-size: 1.65rem;
+  letter-spacing: 0.02em;
+}
 .hero-inline-media {
   display: flex;
   width: calc(100% + 128px);
@@ -4705,6 +4719,9 @@ button:focus-visible, .button:focus-visible, a:focus-visible {
   }
   .hero-seats strong {
     font-size: 2rem;
+  }
+  .hero[data-program-hero].is-urgency-pending .hero-seats strong {
+    font-size: 1.35rem;
   }
   .hero-seats p {
     display: none;

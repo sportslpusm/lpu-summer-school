@@ -29,6 +29,7 @@ const heroProgramName = document.querySelector("[data-hero-program-name]");
 const heroProgramDescription = document.querySelector("[data-hero-description]");
 const heroProgramContext = document.querySelector("[data-hero-cta-context]");
 const heroProgramDeadlineLabel = document.querySelector("[data-hero-deadline-label]");
+const heroProgramSeatsLabel = document.querySelector("[data-hero-seats-label]");
 const heroProgramBgImage = document.querySelector("[data-hero-bg-image]");
 const heroProgramTabs = document.querySelectorAll("[data-program-option]");
 const heroProgramFacts = {
@@ -310,9 +311,15 @@ function setCountdownPartText(countdown, value) {
 function updateHeroUrgency(program) {
   const urgency = program?.urgency || {};
   const deadline = urgency.deadline || "";
+  const deadlineDate = deadline ? new Date(deadline) : null;
+  const hasAnnouncedDeadline = Boolean(deadlineDate && !Number.isNaN(deadlineDate.getTime()));
 
   if (heroProgramDeadlineLabel) {
     heroProgramDeadlineLabel.textContent = urgency.deadlineLabel || "To be announced";
+  }
+
+  if (heroProgramSeatsLabel) {
+    heroProgramSeatsLabel.textContent = hasAnnouncedDeadline ? "Seats Left" : "Seats Update";
   }
 
   document.querySelectorAll("[data-countdown]").forEach((countdown) => {
@@ -323,6 +330,8 @@ function updateHeroUrgency(program) {
   });
 
   if (heroProgramRoot) {
+    heroProgramRoot.classList.toggle("is-urgency-pending", !hasAnnouncedDeadline);
+    heroProgramRoot.dataset.urgencyPending = hasAnnouncedDeadline ? "false" : "true";
     heroProgramRoot.dataset.seatsBase = String(urgency.seatsBase || 24);
     heroProgramRoot.dataset.seatsMin = String(urgency.seatsMin || 6);
     heroProgramRoot.dataset.heroSeatsNote = urgency.note || "";
@@ -1032,6 +1041,19 @@ function updateSeatsLeft() {
   const cdEl = document.querySelector("[data-program-hero] [data-countdown]") || document.querySelector("[data-countdown]");
   const deadlineRaw = urgency.deadline || (cdEl ? cdEl.dataset.deadline : "");
   const deadline = deadlineRaw ? new Date(deadlineRaw) : null;
+  const hasAnnouncedDeadline = Boolean(deadline && !Number.isNaN(deadline.getTime()));
+
+  if (!hasAnnouncedDeadline) {
+    seatsLeftItems.forEach((item) => {
+      item.textContent = "TBA";
+      item.style.color = "";
+    });
+    seatsNotes.forEach((note) => {
+      note.textContent = "Seats will be announced with the final program schedule.";
+    });
+    return;
+  }
+
   const start = new Date("2026-05-02T00:00:00+05:30");
   const now = new Date();
   const seatsBase = Number(heroProgramRoot?.dataset.seatsBase || urgency.seatsBase || 24);
