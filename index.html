@@ -35,48 +35,133 @@
     </header>
 
     <main>
-      <section class="hero" id="home">
+      <section class="hero" id="home" data-program-hero>
+        <div class="hero-bg-media" aria-hidden="true">
+          <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779163726439-f0drdpdqahd.png" alt="" data-hero-bg-image>
+        </div>
         <div class="hero-copy-block">
-          <p class="label">LPU Summer School 2026</p>
+          <span class="hero-kicker">Learn. Build. Showcase.</span>
           <h1>LPU Summer School 2026</h1>
-          <p class="hero-copy">A two-week on-campus experience where students choose session-wise classes, work with mentors, build visible outcomes, and present their best work in a grand showcase.</p>
+          <div class="hero-dynamic-copy" data-hero-content aria-live="polite">
+            <p class="hero-program-name" data-hero-program-name>2 Week Campus Program</p>
+            <p class="hero-copy" data-hero-description>A focused two-week LPU campus journey where students choose sessions, learn with mentors, build visible outcomes, and present their best work in a grand showcase.</p>
+            <p class="hero-cta-context" data-hero-cta-context>For students ready to learn by doing inside a vibrant university campus.</p>
+          </div>
+
           <div class="hero-actions">
             <a class="button primary" href="register.html">Register Now</a>
             <a class="button ghost" href="#tracks">Explore Tracks</a>
           </div>
-          <div class="quick-facts" aria-label="Program quick facts">
-            <div><strong>Grades 6-12</strong><span>Eligibility</span></div>
-            <div><strong>2 Weeks</strong><span>Duration</span></div>
-            <div><strong>On Campus</strong><span>LPU, Punjab</span></div>
-          </div>
-          <div class="urgency-panel" aria-label="Registration urgency">
-            <div class="countdown-card">
-              <span>Last registration date</span>
-              <strong data-cfg="deadline-label">10 June 2026</strong>
-              <div class="countdown" data-countdown data-deadline="2026-06-10T23:59:59+05:30">
-                <div><strong data-days>--</strong><span>Days</span></div>
-                <div><strong data-hours>--</strong><span>Hours</span></div>
-                <div><strong data-minutes>--</strong><span>Minutes</span></div>
-                <div><strong data-seconds>--</strong><span>Seconds</span></div>
-              </div>
-            </div>
-            <div class="seats-card">
-              <span>Seats left</span>
-              <strong data-seats-left>27</strong>
-              <p data-seats-note>Limited batch size for better mentoring.</p>
-            </div>
-          </div>
-        </div>
 
-        <div class="hero-visual" aria-label="Summer school preview" data-hero-gallery>
-          <div class="hero-image large">
-            <img data-gallery-main src="https://static.wixstatic.com/media/ccbabc_5fba4c052e4a4ebe89a4756ed43488b4~mv2.png" alt="Sports activity at LPU Summer School">
+          <p class="hero-programs-label">Courses You Can Pick</p>
+          <div class="program-selector" role="tablist" aria-label="Choose a summer school program">
+            <button class="program-tab active" type="button" role="tab" aria-selected="true" data-program-option="campus">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779163726439-f0drdpdqahd.png" alt="">
+              <span>2 Week Campus Program</span>
+              <small>15 to 27 June 2026</small>
+            </button>
+            <button class="program-tab" type="button" role="tab" aria-selected="false" data-program-option="online">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188840605-uiunxfem2bh.png" alt="">
+              <span>Online Course</span>
+              <small>Date to be decided</small>
+            </button>
+            <button class="program-tab" type="button" role="tab" aria-selected="false" data-program-option="staff-camp">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779089835922-qm6ldbzss5.png" alt="">
+              <span>LPU Staff Kid Summer Camp</span>
+              <small>6 to 27 June 2026</small>
+            </button>
+            <button class="program-tab" type="button" role="tab" aria-selected="false" data-program-option="skills">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779191793080-mgw718dwqh9.png" alt="">
+              <span>Tailor-Made Skills Workshop</span>
+              <small>Date to be decided</small>
+            </button>
+            <button class="program-tab" type="button" role="tab" aria-selected="false" data-program-option="immersion">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188603214-x7q34c5kfq.png" alt="">
+              <span>LPU Immersion Program</span>
+              <small>15 to 27 June 2026</small>
+            </button>
           </div>
-          <div class="hero-image small top">
-            <img data-gallery-side-a src="https://static.wixstatic.com/media/ccbabc_273ed44bcc2c4ebfb90688491c10349a~mv2.png" alt="Artificial intelligence workshop">
+
+          <div class="hero-bottom-deck">
+            <dl class="hero-meta-row" aria-label="Selected program details">
+              <div><dt>Dates</dt><dd data-hero-meta="dates">15&ndash;27 June 2026</dd></div>
+              <div><dt>Mode</dt><dd data-hero-meta="mode">On Campus</dd></div>
+              <div><dt>Duration</dt><dd data-hero-meta="duration">2 weeks</dd></div>
+              <div><dt>Location</dt><dd data-hero-meta="location">LPU Campus, Phagwara</dd></div>
+            </dl>
           </div>
-          <div class="hero-image small bottom">
-            <img data-gallery-side-b src="https://static.wixstatic.com/media/ccbabc_c16d7be2eaca45aaa00b639715071b55~mv2.png" alt="Theatre and acting workshop">
+
+          <div class="hero-urgency" aria-label="Registration urgency">
+            <div class="hero-deadline">
+              <span>Last Registration Date</span>
+              <strong data-cfg="deadline-label" data-hero-deadline-label>14 June 2026</strong>
+            </div>
+            <span class="hero-urgency-divider" aria-hidden="true"></span>
+            <div class="countdown hero-countdown" data-countdown data-hero-countdown data-deadline="2026-06-14T23:59:59+05:30">
+              <div><strong data-days>--</strong><span>Days</span></div>
+              <div><strong data-hours>--</strong><span>Hrs</span></div>
+              <div><strong data-minutes>--</strong><span>Mins</span></div>
+              <div><strong data-seconds>--</strong><span>Secs</span></div>
+            </div>
+            <span class="hero-urgency-divider" aria-hidden="true"></span>
+            <div class="hero-seats">
+              <span>Seats Left</span>
+              <strong data-seats-left>15</strong>
+              <p data-seats-note>Final seats moving fast. Register today.</p>
+            </div>
+          </div>
+
+        </div>
+        <div class="hero-inline-media" aria-label="LPU Summer School highlights" data-hero-gallery>
+          <div class="hero-media-track">
+            <figure class="hero-strip-card">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779191793080-mgw718dwqh9.png" alt="Students building robotics projects">
+            </figure>
+            <figure class="hero-strip-card">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779089835922-qm6ldbzss5.png" alt="Students learning together on campus">
+            </figure>
+            <figure class="hero-strip-card">
+              <img src="https://static.wixstatic.com/media/ccbabc_49e677a164c84c6295873d8bc2ea33f9~mv2.png" alt="Dance showcase at LPU Summer School">
+            </figure>
+            <figure class="hero-strip-card">
+              <img src="https://static.wixstatic.com/media/ccbabc_49e677a164c84c6295873d8bc2ea33f9~mv2.png" alt="LPU Summer School stage showcase">
+            </figure>
+            <figure class="hero-strip-card">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779190305970-8wmlssoh4pn.png" alt="Students in a creative design workshop">
+            </figure>
+            <figure class="hero-strip-card">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188603214-x7q34c5kfq.png" alt="Students exploring global learning">
+            </figure>
+            <figure class="hero-strip-card">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779191793080-mgw718dwqh9.png" alt="Students building robotics projects at LPU">
+            </figure>
+            <figure class="hero-strip-card">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779089835922-qm6ldbzss5.png" alt="Students collaborating on campus">
+            </figure>
+            <figure class="hero-strip-card" aria-hidden="true">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779191793080-mgw718dwqh9.png" alt="">
+            </figure>
+            <figure class="hero-strip-card" aria-hidden="true">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779089835922-qm6ldbzss5.png" alt="">
+            </figure>
+            <figure class="hero-strip-card" aria-hidden="true">
+              <img src="https://static.wixstatic.com/media/ccbabc_49e677a164c84c6295873d8bc2ea33f9~mv2.png" alt="">
+            </figure>
+            <figure class="hero-strip-card" aria-hidden="true">
+              <img src="https://static.wixstatic.com/media/ccbabc_49e677a164c84c6295873d8bc2ea33f9~mv2.png" alt="">
+            </figure>
+            <figure class="hero-strip-card" aria-hidden="true">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779190305970-8wmlssoh4pn.png" alt="">
+            </figure>
+            <figure class="hero-strip-card" aria-hidden="true">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188603214-x7q34c5kfq.png" alt="">
+            </figure>
+            <figure class="hero-strip-card" aria-hidden="true">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779191793080-mgw718dwqh9.png" alt="">
+            </figure>
+            <figure class="hero-strip-card" aria-hidden="true">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779089835922-qm6ldbzss5.png" alt="">
+            </figure>
           </div>
         </div>
       </section>

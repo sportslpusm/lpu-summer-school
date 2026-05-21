@@ -817,7 +817,7 @@ window.editImage = async function(id) {
   openModal("Edit Image", `
     ${img.image_url ? `<img src="${esc(img.image_url)}" style="margin-bottom:12px">` : ""}
     <label>Upload New Image <input id="mImgFile" type="file" accept="image/*"></label>
-    <small style="color:#667085;display:block;margin:-6px 0 8px">Recommended size: <strong>1200 x 800 px</strong> (3:2 ratio)</small>
+    <small style="color:#667085;display:block;margin:-6px 0 8px">Recommended size: <strong>1600 x 900 px</strong> (16:9 ratio, used in hero media)</small>
     <label>Or Image URL <input id="mImgUrl" value="${esc(img.image_url)}"></label>
     <label>Alt Text <input id="mImgAlt" value="${esc(img.alt_text)}"></label>
     <label>Sort Order <input id="mImgOrder" type="number" value="${img.sort_order}"></label>
@@ -845,7 +845,7 @@ window.deleteImage = async function(id) {
 $("#addImageBtn").addEventListener("click", () => {
   openModal("Add Image", `
     <label>Upload Image <input id="mImgFile" type="file" accept="image/*"></label>
-    <small style="color:#667085;display:block;margin:-6px 0 8px">Recommended size: <strong>1200 x 800 px</strong> (3:2 ratio, used in hero gallery)</small>
+    <small style="color:#667085;display:block;margin:-6px 0 8px">Recommended size: <strong>1600 x 900 px</strong> (16:9 ratio, used in hero media)</small>
     <label>Or Image URL <input id="mImgUrl" placeholder="https://..."></label>
     <label>Alt Text <input id="mImgAlt" placeholder="Description of image"></label>
     <label>Sort Order <input id="mImgOrder" type="number" value="0"></label>

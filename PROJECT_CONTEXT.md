@@ -92,8 +92,7 @@ Browser pages
 Public landing page with:
 
 - Utility bar and sticky header.
-- Hero with rotating gallery images.
-- Countdown and seats-left urgency UI.
+- Premium cinematic single-column hero with a fixed `LPU Summer School 2026` main heading, orange `Learn. Build. Showcase.` pill, dynamic program description/urgency, plain-text CTA buttons, responsive desktop program grid, compact countdown bar, and a darkened program-specific background media layer that changes when the selected/auto-rotated program changes on desktop/tablet. Hero media is linked back to the admin-managed `gallery_images` table: active gallery images, ordered by `sort_order`, populate the scrolling hero strip and the first five images become the desktop/tablet program background images, with bundled fallbacks if the admin gallery is empty. The previous `Eligibility / Duration / Mode / Focus` hero stats cards were removed to reduce clutter. Mobile is the priority layout: the background image layer is hidden, the hero surface uses warm orange/white instead of dark navy, spacing is compressed, the image strip is visually ordered directly after the hero CTAs without edge masking, solid white surfaces are used for the secondary CTA/program/countdown cards, and program cards become full-width horizontal swipe cards so text does not cut off.
 - Program dates strip.
 - Impact strip.
 - Story cards.
@@ -281,7 +280,7 @@ Verified columns from REST sample:
 
 Used by:
 
-- Homepage hero gallery rotation.
+- Homepage hero full-bleed bottom image strip.
 - Admin Gallery CRUD.
 
 #### `registrations`
@@ -406,8 +405,10 @@ On page load, `script.js`:
 4. Builds `sessionCourses` by mapping sorted sessions to `session1`, `session2`, `session3` by array index.
 5. Populates registration course dropdowns.
 6. Populates homepage track cards, session cards, and fee table.
-7. Loads active gallery images and rotates the hero gallery.
-8. Runs countdown, seats-left urgency, nav, reveal, contact overlay, and social-proof UI.
+7. Initializes the homepage hero program selector. The main heading stays fixed; only description, metadata, deadline/countdown, seats-left note/count, and active tab state change. Legacy facts targets are optional because the visible hero stats cards were removed.
+8. Auto-rotates the selected hero program every few seconds while preserving click/tap and keyboard selection.
+9. Hero media loads active `gallery_images` rows from Supabase/admin. Ordered gallery images rebuild the homepage hero strip and map the first five images to desktop/tablet program backgrounds. Bundled fallback images are used if the admin gallery is empty or too short.
+10. Runs nav, countdown, seats-left urgency, reveal, contact overlay, and social-proof UI. The social-proof toast is hidden on small mobile viewports so it does not cover the hero program list.
 
 Important: REST fetch failures are mostly silent and leave hardcoded HTML/JS fallback content in place.
 
@@ -492,7 +493,7 @@ Payment is not gateway-verified. It is a manual UPI flow:
 
 - CRUD over `gallery_images`.
 - Can upload to `images` bucket or enter an image URL.
-- Active gallery images feed homepage hero rotation.
+- Active gallery images feed the homepage hero media: the strip is rebuilt from active rows ordered by `sort_order`, and the first five images are used as desktop/tablet program backgrounds. Recommended upload ratio is 16:9.
 
 ### Settings
 
@@ -504,7 +505,7 @@ Payment is not gateway-verified. It is a manual UPI flow:
 
 Public site:
 
-- Data attributes drive behavior: `data-cfg`, `data-session-toggle`, `data-session-course`, `data-payment-section`, `data-upload-state`, etc.
+- Data attributes drive behavior: `data-cfg`, `data-program-hero`, `data-program-option`, `data-hero-meta`, `data-session-toggle`, `data-session-course`, `data-payment-section`, `data-upload-state`, etc.
 - Shared `esc()` function for HTML escaping.
 - Shared `formatFee()`, `selectedSessions()`, and registration validation helpers.
 - Contact overlay shared by homepage and registration page.
@@ -553,7 +554,7 @@ Missing deployment details:
 - Fee/hostel/GST calculation happens in the client for display and should be treated as advisory. `create-registration` must recalculate server-side.
 - Public content fetch failures are mostly silent, leaving stale hardcoded fallback content.
 - Deadline enforcement depends on `registrationDeadline` being loaded from Supabase; if config fetch fails, registration may remain submittable.
-- The displayed seats-left number is simulated from time and does not use `site_config.max_seats` or actual registrations.
+- The homepage hero displays program-specific but simulated seats-left urgency from client-side time/deadline logic, not actual capacity or registration count.
 - Social proof popups are generated fake registration notifications. This is a trust/ethics and UX risk.
 - Screenshot upload currently includes detailed temporary console logging for file metadata, preview/decode/compression/upload states. Remove or gate these logs after the mobile upload issue is confirmed fixed in production.
 - `admin.html` allows `script-src 'unsafe-inline'` to support inline handlers, which increases XSS impact if any escaping is missed.

@@ -20,6 +20,90 @@ const seatsNotes = document.querySelectorAll("[data-seats-note]");
 const galleryMain = document.querySelector("[data-gallery-main]");
 const gallerySideA = document.querySelector("[data-gallery-side-a]");
 const gallerySideB = document.querySelector("[data-gallery-side-b]");
+const gallerySlots = document.querySelectorAll("[data-gallery-slot]");
+const heroGalleryTrack = document.querySelector("[data-hero-gallery] .hero-media-track");
+const heroProgramRoot = document.querySelector("[data-program-hero]");
+const heroProgramContent = document.querySelector("[data-hero-content]");
+const heroProgramName = document.querySelector("[data-hero-program-name]");
+const heroProgramDescription = document.querySelector("[data-hero-description]");
+const heroProgramContext = document.querySelector("[data-hero-cta-context]");
+const heroProgramDeadlineLabel = document.querySelector("[data-hero-deadline-label]");
+const heroProgramBgImage = document.querySelector("[data-hero-bg-image]");
+const heroProgramTabs = document.querySelectorAll("[data-program-option]");
+const heroProgramFacts = {
+  eligibility: document.querySelector('[data-hero-fact="eligibility"]'),
+  duration: document.querySelector('[data-hero-fact="duration"]'),
+  mode: document.querySelector('[data-hero-fact="mode"]'),
+  focus: document.querySelector('[data-hero-fact="focus"]')
+};
+const heroProgramMeta = {
+  dates: document.querySelector('[data-hero-meta="dates"]'),
+  mode: document.querySelector('[data-hero-meta="mode"]'),
+  duration: document.querySelector('[data-hero-meta="duration"]'),
+  location: document.querySelector('[data-hero-meta="location"]')
+};
+
+const FALLBACK_HERO_IMAGES = [
+  { src: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779163726439-f0drdpdqahd.png", alt: "LPU campus summer school moment" },
+  { src: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779089835922-qm6ldbzss5.png", alt: "Sports activity at LPU Summer School" },
+  { src: "https://static.wixstatic.com/media/ccbabc_49e677a164c84c6295873d8bc2ea33f9~mv2.png", alt: "Dance workshop showcase" },
+  { src: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779191793080-mgw718dwqh9.png", alt: "Robotics and design workshop" },
+  { src: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779190305970-8wmlssoh4pn.png", alt: "UI and design workshop" },
+  { src: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188603214-x7q34c5kfq.png", alt: "AI learning and creativity" },
+  { src: "https://static.wixstatic.com/media/ccbabc_620eb550d859431aa501391fa6557a1e~mv2.png", alt: "Music studio summer school activity" },
+  { src: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779192688907-7ntfeoxr9qt.png", alt: "General sports summer school activity" }
+];
+
+const HERO_PROGRAMS = {
+  campus: {
+    name: "2 Week Campus Program",
+    description: "A focused two-week LPU campus journey where students choose sessions, learn with mentors, build visible outcomes, and present their best work in a grand showcase.",
+    context: "For students ready to learn by doing inside a vibrant university campus.",
+    backgroundImage: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779163726439-f0drdpdqahd.png",
+    facts: { eligibility: "Grades 6-12", duration: "2 weeks", mode: "On Campus", focus: "Session-wise tracks" },
+    urgency: { deadlineLabel: "14 June 2026", deadline: "2026-06-14T23:59:59+05:30", seatsBase: 24, seatsMin: 6, note: "Final seats moving fast. Register today." },
+    meta: { dates: "15–27 June 2026", mode: "On Campus", duration: "2 weeks", location: "LPU Campus, Phagwara" }
+  },
+  online: {
+    name: "Online Course",
+    description: "A flexible online learning track for students who want guided skill-building from home with structured lessons, mentor touchpoints, and practical outcomes.",
+    context: "For learners who need remote access without losing the rhythm of a guided summer program.",
+    backgroundImage: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188840605-uiunxfem2bh.png",
+    facts: { eligibility: "Open learners", duration: "To be announced", mode: "Online", focus: "Remote skill-building" },
+    urgency: { deadlineLabel: "To be announced", deadline: "", seatsBase: 30, seatsMin: 12, note: "Dates and seats will be announced with the online schedule." },
+    meta: { dates: "Date to be decided", mode: "Online", duration: "To be announced", location: "Online" }
+  },
+  "staff-camp": {
+    name: "LPU Staff Kid Summer Camp",
+    description: "A lively campus summer camp for LPU staff children, blending learning, creativity, sports, friendships, and supervised experiences across the university ecosystem.",
+    context: "For LPU families looking for a meaningful, active, and well-supported summer experience.",
+    backgroundImage: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779089835922-qm6ldbzss5.png",
+    facts: { eligibility: "LPU staff kids", duration: "3 weeks", mode: "On Campus", focus: "Camp + activities" },
+    urgency: { deadlineLabel: "31 May 2026", deadline: "2026-05-31T23:59:59+05:30", seatsBase: 18, seatsMin: 5, note: "Limited camp seats for staff children." },
+    meta: { dates: "6–27 June 2026", mode: "On Campus", duration: "3 weeks", location: "LPU Campus, Phagwara" }
+  },
+  skills: {
+    name: "Tailor-Made Skills Workshop",
+    description: "A custom workshop format shaped around specific skill goals, cohorts, or institutional needs, with practical modules designed for the selected learners.",
+    context: "For groups that need a focused skill-building experience with a tailored learning plan.",
+    backgroundImage: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779191793080-mgw718dwqh9.png",
+    facts: { eligibility: "Custom cohorts", duration: "Flexible", mode: "LPU / Hybrid", focus: "Designed to need" },
+    urgency: { deadlineLabel: "To be announced", deadline: "", seatsBase: 16, seatsMin: 6, note: "Seats depend on the selected custom workshop cohort." },
+    meta: { dates: "Date to be decided", mode: "Custom Workshop", duration: "Flexible", location: "LPU / Hybrid" }
+  },
+  immersion: {
+    name: "LPU Immersion Program",
+    description: "An immersive LPU experience for learners to explore campus life, academic pathways, culture, labs, and guided activities with a global outlook.",
+    context: "For students who want to experience the energy, scale, and possibilities of LPU up close.",
+    backgroundImage: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188603214-x7q34c5kfq.png",
+    facts: { eligibility: "Students / groups", duration: "2 weeks", mode: "On Campus", focus: "Campus immersion" },
+    urgency: { deadlineLabel: "14 June 2026", deadline: "2026-06-14T23:59:59+05:30", seatsBase: 20, seatsMin: 6, note: "Immersion seats are limited for a guided campus experience." },
+    meta: { dates: "15–27 June 2026", mode: "On Campus", duration: "2 weeks", location: "LPU Campus, Phagwara" }
+  }
+};
+
+let heroProgramTimer = null;
+let heroProgramAutoTimer = null;
 
 let sessionCourses = {
   session1: [],
@@ -124,6 +208,7 @@ function applySettings(cfg) {
     }
     registrationDeadline = new Date(deadline);
     checkDeadlineExpiry();
+    updateHeroProgram(heroProgramRoot?.dataset.activeProgram || "campus", false);
   }
 
   // Dynamic hostel fees from config
@@ -191,6 +276,173 @@ function checkDeadlineExpiry() {
       el.style.pointerEvents = "none";
     }
   });
+}
+
+function getActiveHeroProgram() {
+  if (!heroProgramRoot) return null;
+  return HERO_PROGRAMS[heroProgramRoot.dataset.activeProgram] || HERO_PROGRAMS.campus;
+}
+
+function setCountdownPartText(countdown, value) {
+  countdown.querySelector("[data-days]").textContent = value.days;
+  countdown.querySelector("[data-hours]").textContent = value.hours;
+  countdown.querySelector("[data-minutes]").textContent = value.minutes;
+  countdown.querySelector("[data-seconds]").textContent = value.seconds;
+}
+
+function updateHeroUrgency(program) {
+  const urgency = program?.urgency || {};
+  const deadline = urgency.deadline || "";
+
+  if (heroProgramDeadlineLabel) {
+    heroProgramDeadlineLabel.textContent = urgency.deadlineLabel || "To be announced";
+  }
+
+  document.querySelectorAll("[data-countdown]").forEach((countdown) => {
+    if (countdown.closest("[data-program-hero]")) {
+      countdown.dataset.deadline = deadline;
+      countdown.dataset.deadlineLabel = urgency.deadlineLabel || "";
+    }
+  });
+
+  if (heroProgramRoot) {
+    heroProgramRoot.dataset.seatsBase = String(urgency.seatsBase || 24);
+    heroProgramRoot.dataset.seatsMin = String(urgency.seatsMin || 6);
+    heroProgramRoot.dataset.heroSeatsNote = urgency.note || "";
+  }
+
+  updateCountdown();
+  updateSeatsLeft();
+}
+
+function updateHeroBackground(program, animate = true) {
+  const nextSrc = program?.backgroundImage;
+  if (!heroProgramRoot || !heroProgramBgImage || !nextSrc || heroProgramBgImage.src === nextSrc) return;
+
+  const swapBackground = () => {
+    heroProgramBgImage.src = nextSrc;
+    if (animate) {
+      requestAnimationFrame(() => {
+        heroProgramRoot.classList.remove("is-bg-switching");
+      });
+    }
+  };
+
+  if (!animate) {
+    swapBackground();
+    return;
+  }
+
+  heroProgramRoot.classList.add("is-bg-switching");
+  const preload = new Image();
+  preload.onload = swapBackground;
+  preload.onerror = () => {
+    heroProgramRoot.classList.remove("is-bg-switching");
+  };
+  preload.src = nextSrc;
+}
+
+function updateHeroProgram(programKey, animate = true) {
+  if (!heroProgramRoot || !HERO_PROGRAMS[programKey]) return;
+  const program = HERO_PROGRAMS[programKey];
+
+  const render = () => {
+    heroProgramRoot.dataset.activeProgram = programKey;
+    if (heroProgramName) heroProgramName.textContent = program.name;
+    if (heroProgramDescription) heroProgramDescription.textContent = program.description;
+    if (heroProgramContext) heroProgramContext.textContent = program.context;
+    updateHeroBackground(program, animate);
+
+    Object.entries(program.meta).forEach(([key, value]) => {
+      if (heroProgramMeta[key]) heroProgramMeta[key].textContent = value;
+    });
+
+    Object.entries(program.facts).forEach(([key, value]) => {
+      if (heroProgramFacts[key]) heroProgramFacts[key].textContent = value;
+    });
+
+    updateHeroUrgency(program);
+
+    heroProgramTabs.forEach((tab) => {
+      const active = tab.dataset.programOption === programKey;
+      tab.classList.toggle("active", active);
+      tab.setAttribute("aria-selected", active ? "true" : "false");
+      tab.tabIndex = active ? 0 : -1;
+    });
+  };
+
+  clearTimeout(heroProgramTimer);
+  if (!animate || !heroProgramContent) {
+    render();
+    return;
+  }
+
+  heroProgramContent.classList.add("is-switching");
+  heroProgramTimer = setTimeout(() => {
+    render();
+    heroProgramContent.classList.remove("is-switching");
+  }, 160);
+}
+
+function centerHeroProgramTab(tab, behavior = "smooth") {
+  const selector = tab?.closest(".program-selector");
+  if (!selector) return;
+  const left = tab.offsetLeft - ((selector.clientWidth - tab.offsetWidth) / 2);
+  selector.scrollTo({ left: Math.max(0, left), behavior });
+}
+
+function activeHeroProgramIndex() {
+  const tabs = Array.from(heroProgramTabs);
+  const activeIndex = tabs.findIndex((tab) => tab.classList.contains("active"));
+  return activeIndex >= 0 ? activeIndex : 0;
+}
+
+function startHeroProgramAutoRotation() {
+  if (!heroProgramRoot || heroProgramTabs.length < 2) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  clearInterval(heroProgramAutoTimer);
+  heroProgramAutoTimer = setInterval(() => {
+    const tabs = Array.from(heroProgramTabs);
+    const nextTab = tabs[(activeHeroProgramIndex() + 1) % tabs.length];
+    if (!nextTab) return;
+    updateHeroProgram(nextTab.dataset.programOption);
+    centerHeroProgramTab(nextTab);
+  }, 5200);
+}
+
+function resetHeroProgramAutoRotation() {
+  clearInterval(heroProgramAutoTimer);
+  startHeroProgramAutoRotation();
+}
+
+if (heroProgramRoot && heroProgramTabs.length) {
+  heroProgramTabs.forEach((tab, index) => {
+    tab.tabIndex = tab.classList.contains("active") ? 0 : -1;
+    tab.addEventListener("click", () => {
+      updateHeroProgram(tab.dataset.programOption);
+      centerHeroProgramTab(tab);
+      resetHeroProgramAutoRotation();
+    });
+    tab.addEventListener("keydown", (event) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      let nextIndex = index;
+      if (event.key === "ArrowLeft") nextIndex = (index - 1 + heroProgramTabs.length) % heroProgramTabs.length;
+      if (event.key === "ArrowRight") nextIndex = (index + 1) % heroProgramTabs.length;
+      if (event.key === "Home") nextIndex = 0;
+      if (event.key === "End") nextIndex = heroProgramTabs.length - 1;
+      const nextTab = heroProgramTabs[nextIndex];
+      nextTab.focus();
+      nextTab.click();
+    });
+  });
+  heroProgramRoot.addEventListener("mouseenter", () => clearInterval(heroProgramAutoTimer));
+  heroProgramRoot.addEventListener("mouseleave", startHeroProgramAutoRotation);
+  heroProgramRoot.addEventListener("focusin", () => clearInterval(heroProgramAutoTimer));
+  heroProgramRoot.addEventListener("focusout", startHeroProgramAutoRotation);
+  updateHeroProgram("campus", false);
+  startHeroProgramAutoRotation();
 }
 
 // Fetch all dynamic data from Supabase
@@ -725,7 +977,13 @@ function updateCountdown() {
   if (!countdowns.length) return;
 
   countdowns.forEach((countdown) => {
-    const deadline = new Date(countdown.dataset.deadline);
+    const deadlineRaw = countdown.dataset.deadline || "";
+    const deadline = deadlineRaw ? new Date(deadlineRaw) : null;
+    if (!deadline || Number.isNaN(deadline.getTime())) {
+      setCountdownPartText(countdown, { days: "--", hours: "--", minutes: "--", seconds: "--" });
+      return;
+    }
+
     const now = new Date();
     const difference = Math.max(0, deadline - now);
     const totalMinutes = Math.floor(difference / 60000);
@@ -735,10 +993,12 @@ function updateCountdown() {
     const minutes = totalMinutes % 60;
     const seconds = totalSeconds % 60;
 
-    countdown.querySelector("[data-days]").textContent = String(days).padStart(2, "0");
-    countdown.querySelector("[data-hours]").textContent = String(hours).padStart(2, "0");
-    countdown.querySelector("[data-minutes]").textContent = String(minutes).padStart(2, "0");
-    countdown.querySelector("[data-seconds]").textContent = String(seconds).padStart(2, "0");
+    setCountdownPartText(countdown, {
+      days: String(days).padStart(2, "0"),
+      hours: String(hours).padStart(2, "0"),
+      minutes: String(minutes).padStart(2, "0"),
+      seconds: String(seconds).padStart(2, "0")
+    });
   });
 }
 
@@ -750,22 +1010,31 @@ if (countdowns.length) {
 function updateSeatsLeft() {
   if (!seatsLeftItems.length) return;
 
-  const cdEl = document.querySelector("[data-countdown]");
-  const deadline = new Date(cdEl ? cdEl.dataset.deadline : "2026-06-10T23:59:59+05:30");
+  const program = getActiveHeroProgram();
+  const urgency = program?.urgency || {};
+  const cdEl = document.querySelector("[data-program-hero] [data-countdown]") || document.querySelector("[data-countdown]");
+  const deadlineRaw = urgency.deadline || (cdEl ? cdEl.dataset.deadline : "");
+  const deadline = deadlineRaw ? new Date(deadlineRaw) : null;
   const start = new Date("2026-05-02T00:00:00+05:30");
   const now = new Date();
-  const totalWindow = deadline - start;
-  const elapsed = Math.max(0, Math.min(totalWindow, now - start));
-  const progress = totalWindow > 0 ? elapsed / totalWindow : 1;
-  const baseline = Math.round(24 - progress * 12);
+  const seatsBase = Number(heroProgramRoot?.dataset.seatsBase || urgency.seatsBase || 24);
+  const seatsMin = Number(heroProgramRoot?.dataset.seatsMin || urgency.seatsMin || 6);
+  const totalWindow = deadline && !Number.isNaN(deadline.getTime()) ? deadline - start : 0;
+  const elapsed = totalWindow > 0 ? Math.max(0, Math.min(totalWindow, now - start)) : 0;
+  const progress = totalWindow > 0 ? elapsed / totalWindow : 0.35;
+  const baseline = Math.round(seatsBase - progress * Math.max(4, seatsBase - seatsMin));
   const pulse = Math.floor((Date.now() / 18000) % 4);
-  const remaining = Math.max(6, baseline - pulse);
+  const remaining = Math.max(seatsMin, baseline - pulse);
 
   seatsLeftItems.forEach((item) => {
     item.textContent = String(remaining);
     item.style.color = remaining <= 10 ? "#d32f2f" : "";
   });
   seatsNotes.forEach((note) => {
+    if (urgency.note) {
+      note.textContent = urgency.note;
+      return;
+    }
     note.textContent = remaining <= 12
       ? "Filling up fast — secure your spot now!"
       : remaining <= 18
@@ -780,13 +1049,48 @@ if (seatsLeftItems.length) {
 }
 
 let galleryImages = [];
-let galleryInterval = null;
-let galleryIndex = 0;
-let gallerySwapping = false;
+
+function uniqueHeroImages(images) {
+  const uniqueImages = new Map();
+  [...images, ...FALLBACK_HERO_IMAGES].forEach((img) => {
+    if (img?.src && !uniqueImages.has(img.src)) uniqueImages.set(img.src, img);
+  });
+  return Array.from(uniqueImages.values());
+}
+
+function assignHeroProgramBackgrounds(images) {
+  const programKeys = ["campus", "online", "staff-camp", "skills", "immersion"];
+  programKeys.forEach((key, index) => {
+    if (HERO_PROGRAMS[key] && images[index]?.src) {
+      HERO_PROGRAMS[key].backgroundImage = images[index].src;
+    }
+  });
+  updateHeroBackground(getActiveHeroProgram(), false);
+}
+
+function renderHeroGalleryStrip(images) {
+  if (!heroGalleryTrack || !images.length) return;
+  heroGalleryTrack.innerHTML = "";
+
+  const renderImage = (image, hidden = false) => {
+    const figure = document.createElement("figure");
+    figure.className = "hero-strip-card";
+    if (hidden) figure.setAttribute("aria-hidden", "true");
+
+    const img = document.createElement("img");
+    img.src = image.src;
+    img.alt = hidden ? "" : (image.alt || "LPU Summer School highlight");
+    figure.appendChild(img);
+    heroGalleryTrack.appendChild(figure);
+  };
+
+  images.forEach((image) => renderImage(image));
+  images.forEach((image) => renderImage(image, true));
+}
 
 // Load gallery exclusively from DB — no hardcoded fallback
 (async function loadGalleryImages() {
-  if (!galleryMain) return;
+  const galleryTargets = gallerySlots.length ? Array.from(gallerySlots) : [galleryMain, gallerySideA, gallerySideB].filter(Boolean);
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/gallery_images?is_active=eq.true&order=sort_order.asc`, { headers: { "apikey": SUPABASE_KEY } });
     if (res.ok) {
@@ -797,57 +1101,18 @@ let gallerySwapping = false;
     }
   } catch (e) { /* no images to rotate */ }
 
-  // Set initial images from DB (replace whatever HTML has)
-  if (galleryImages.length >= 1) {
-    galleryMain.src = galleryImages[0].src;
-    galleryMain.alt = galleryImages[0].alt;
-  }
-  if (galleryImages.length >= 2 && gallerySideA) {
-    gallerySideA.src = galleryImages[1].src;
-    gallerySideA.alt = galleryImages[1].alt;
-  }
-  if (galleryImages.length >= 3 && gallerySideB) {
-    gallerySideB.src = galleryImages[2].src;
-    gallerySideB.alt = galleryImages[2].alt;
-  }
+  galleryImages = uniqueHeroImages(galleryImages);
+  assignHeroProgramBackgrounds(galleryImages);
+  renderHeroGalleryStrip(galleryImages);
 
-  // Only start rotation if we have more images than visible slots
-  if (galleryImages.length > 3) {
-    galleryIndex = 0;
-    galleryInterval = setInterval(rotateHeroGallery, 4200);
-  }
+  galleryTargets.forEach((target, index) => {
+    const image = galleryImages[index % galleryImages.length];
+    if (!image) return;
+    target.src = image.src;
+    target.alt = image.alt;
+  });
+
 })();
-
-function swapGalleryImage(image, imageData) {
-  if (!image) return;
-  const frame = image.closest(".hero-image");
-  frame?.classList.add("is-changing");
-  setTimeout(() => {
-    image.src = imageData.src;
-    image.alt = imageData.alt;
-    frame?.classList.remove("is-changing");
-  }, 260);
-}
-
-function rotateHeroGallery() {
-  if (!galleryMain || !gallerySideA || !gallerySideB) return;
-  if (gallerySwapping) return;
-  gallerySwapping = true;
-
-  galleryIndex = (galleryIndex + 1) % galleryImages.length;
-
-  // Pick 3 unique indices (guaranteed since length > 3)
-  const i0 = galleryIndex;
-  const i1 = (galleryIndex + 1) % galleryImages.length;
-  const i2 = (galleryIndex + 2) % galleryImages.length;
-
-  swapGalleryImage(galleryMain, galleryImages[i0]);
-  swapGalleryImage(gallerySideA, galleryImages[i1]);
-  swapGalleryImage(gallerySideB, galleryImages[i2]);
-
-  // Unlock after transition completes (260ms fade-out + 420ms fade-in)
-  setTimeout(() => { gallerySwapping = false; }, 700);
-}
 
 // ── Receipt display ─────────────────────────────────────────────────
 const HOSTEL_LABELS = { none: "No hostel", hostel_only: "Hostel only", hostel_food: "Hostel + Food" };
