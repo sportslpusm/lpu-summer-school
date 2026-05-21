@@ -4,6 +4,14 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 let accessToken = null;
 let sessions = [];
 
+const HERO_BACKGROUND_SETTINGS = [
+  { key: "hero_bg_campus", label: "Hero background - 2 Week Campus Program", description: "Desktop/tablet background image for the 2 Week Campus Program hero tab. Mobile hides this background." },
+  { key: "hero_bg_online", label: "Hero background - Online Course", description: "Desktop/tablet background image for the Online Course hero tab. Mobile hides this background." },
+  { key: "hero_bg_staff_camp", label: "Hero background - LPU Staff Kid Summer Camp", description: "Desktop/tablet background image for the Staff Kid Summer Camp hero tab. Mobile hides this background." },
+  { key: "hero_bg_skills", label: "Hero background - Tailor-Made Skills Workshop", description: "Desktop/tablet background image for the Tailor-Made Skills Workshop hero tab. Mobile hides this background." },
+  { key: "hero_bg_immersion", label: "Hero background - LPU Immersion Program", description: "Desktop/tablet background image for the LPU Immersion Program hero tab. Mobile hides this background." }
+];
+
 // --- Auth ---
 async function login(email, password) {
   const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
@@ -870,6 +878,17 @@ let settingsData = [];
 
 async function loadSettings() {
   settingsData = await apiGet("site_config", "order=key.asc");
+  const existingKeys = new Set(settingsData.map((s) => s.key));
+  HERO_BACKGROUND_SETTINGS.forEach((setting) => {
+    if (!existingKeys.has(setting.key)) {
+      settingsData.push({
+        key: setting.key,
+        value: "",
+        description: setting.description,
+        is_virtual: true
+      });
+    }
+  });
   renderSettings();
 }
 
@@ -882,10 +901,23 @@ const SETTING_TYPES = {
   hostel_food_fee: "number",
   max_seats: "number",
   upi_id: "text",
+  hero_bg_campus: "image-url",
+  hero_bg_online: "image-url",
+  hero_bg_staff_camp: "image-url",
+  hero_bg_skills: "image-url",
+  hero_bg_immersion: "image-url",
 };
 
 function settingInput(key, value) {
   const type = SETTING_TYPES[key];
+  if (type === "image-url") {
+    return `<div style="display:grid;gap:8px">
+      ${value ? `<img src="${esc(value)}" alt="" style="width:100%;max-height:160px;object-fit:cover;border-radius:10px;border:1px solid #e5e7eb">` : ""}
+      <input data-key="${esc(key)}" value="${esc(value)}" placeholder="https://...">
+      <input type="file" accept="image/*" data-bg-upload-key="${esc(key)}">
+      <div class="desc">Upload a separate background here. This is independent from Gallery scrolling images. Recommended: 1600 x 900 px.</div>
+    </div>`;
+  }
   if (type === "date") {
     // value like "2026-06-16" — native date picker
     return `<input type="date" data-key="${esc(key)}" value="${esc(value)}" min="2025-01-01" max="2030-12-31">`;
@@ -917,7 +949,7 @@ function settingInput(key, value) {
 function renderSettings() {
   $("#settingsGrid").innerHTML = settingsData.map((s) => `
     <div class="setting-item">
-      <label>${esc(s.key.replace(/_/g, " "))}</label>
+      <label>${esc(HERO_BACKGROUND_SETTINGS.find((setting) => setting.key === s.key)?.label || s.key.replace(/_/g, " "))}</label>
       ${settingInput(s.key, s.value)}
       ${s.description && !SETTING_TYPES[s.key]?.startsWith("datetime") ? `<div class="desc">${esc(s.description)}</div>` : ""}
     </div>
@@ -956,10 +988,17 @@ $("#saveSettingsBtn").addEventListener("click", async () => {
   const values = getSettingsValues();
   if (!values) return;
 
+  const bgUploads = $$("#settingsGrid input[data-bg-upload-key]");
+  for (const input of bgUploads) {
+    if (input.files.length) {
+      values[input.dataset.bgUploadKey] = await uploadImage(input.files[0]);
+    }
+  }
+
   const updates = [];
   for (const [key, value] of Object.entries(values)) {
     const orig = settingsData.find((s) => s.key === key);
-    if (orig && orig.value !== value) {
+    if (orig && !orig.is_virtual && orig.value !== value) {
       // Validate non-empty for critical fields
       if (!value && ["event_start_date", "event_end_date", "registration_deadline"].includes(key)) {
         alert(`"${key.replace(/_/g, " ")}" cannot be empty.`);
@@ -969,6 +1008,14 @@ $("#saveSettingsBtn").addEventListener("click", async () => {
         method: "PATCH",
         headers: { ...authHeaders(), "Prefer": "return=representation" },
         body: JSON.stringify({ value, updated_at: new Date().toISOString() })
+      }));
+    } else if ((!orig || orig.is_virtual) && value) {
+      const heroSetting = HERO_BACKGROUND_SETTINGS.find((setting) => setting.key === key);
+      updates.push(apiInsert("site_config", {
+        key,
+        value,
+        description: heroSetting?.description || "",
+        updated_at: new Date().toISOString()
       }));
     }
   }

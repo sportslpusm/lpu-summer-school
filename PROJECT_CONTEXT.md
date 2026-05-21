@@ -92,7 +92,7 @@ Browser pages
 Public landing page with:
 
 - Utility bar and sticky header.
-- Premium cinematic single-column hero with a fixed `LPU Summer School 2026` main heading, orange `Learn. Build. Showcase.` pill, dynamic program description/urgency, plain-text CTA buttons, responsive desktop program grid, compact countdown bar, and a darkened program-specific background media layer that changes when the selected/auto-rotated program changes on desktop/tablet. Hero media is linked back to the admin-managed `gallery_images` table: active gallery images, ordered by `sort_order`, populate the scrolling hero strip and the first five images become the desktop/tablet program background images, with bundled fallbacks if the admin gallery is empty. The previous `Eligibility / Duration / Mode / Focus` hero stats cards were removed to reduce clutter. Mobile is the priority layout: the background image layer is hidden, the hero surface uses warm orange/white instead of dark navy, spacing is compressed, the image strip is visually ordered directly after the hero CTAs without edge masking, solid white surfaces are used for the secondary CTA/program/countdown cards, and program cards become full-width horizontal swipe cards so text does not cut off.
+- Premium cinematic single-column hero with a fixed `LPU Summer School 2026` main heading, orange `Learn. Build. Showcase.` pill, dynamic program description/urgency, plain-text CTA buttons, responsive desktop program grid, compact countdown bar, and a darkened program-specific background media layer that changes when the selected/auto-rotated program changes on desktop/tablet. Desktop/tablet program background images come from separate admin Settings keys (`hero_bg_campus`, `hero_bg_online`, `hero_bg_staff_camp`, `hero_bg_skills`, `hero_bg_immersion`) and are independent from the scrolling Gallery. Active `gallery_images` rows, ordered by `sort_order`, populate the scrolling hero strip only, with bundled fallbacks if the admin gallery is empty. The previous `Eligibility / Duration / Mode / Focus` hero stats cards were removed to reduce clutter. Mobile is the priority layout: the background image layer is hidden, the hero surface uses warm orange/white instead of dark navy, spacing is compressed, the image strip is visually ordered directly after the hero CTAs without edge masking, solid white surfaces are used for the secondary CTA/program/countdown cards, and program cards become full-width horizontal swipe cards so text does not cut off.
 - Program dates strip.
 - Impact strip.
 - Story cards.
@@ -249,6 +249,11 @@ Verified keys:
 - `event_name`
 - `event_start_date`
 - `event_year`
+- `hero_bg_campus`
+- `hero_bg_immersion`
+- `hero_bg_online`
+- `hero_bg_skills`
+- `hero_bg_staff_camp`
 - `hostel_food_fee`
 - `hostel_only_fee`
 - `max_seats`
@@ -263,6 +268,7 @@ Used by:
 
 - Public contact/footer settings.
 - Program date/deadline display.
+- Desktop/tablet hero program backgrounds through `hero_bg_*` keys. These are separate from `gallery_images`.
 - Hostel fee labels and calculations.
 - Admin Settings tab.
 - Inferred Edge Function payment setup through `upi_id`.
@@ -407,7 +413,7 @@ On page load, `script.js`:
 6. Populates homepage track cards, session cards, and fee table.
 7. Initializes the homepage hero program selector. The main heading stays fixed; only description, metadata, deadline/countdown, seats-left note/count, and active tab state change. Legacy facts targets are optional because the visible hero stats cards were removed.
 8. Auto-rotates the selected hero program every few seconds while preserving click/tap and keyboard selection.
-9. Hero media loads active `gallery_images` rows from Supabase/admin. Ordered gallery images rebuild the homepage hero strip and map the first five images to desktop/tablet program backgrounds. Bundled fallback images are used if the admin gallery is empty or too short.
+9. Hero media loads active `gallery_images` rows from Supabase/admin and rebuilds the homepage hero strip without adding duplicate loop images. Desktop/tablet program backgrounds load from separate `site_config` `hero_bg_*` keys, with hardcoded fallbacks if those settings are empty.
 10. Runs nav, countdown, seats-left urgency, reveal, contact overlay, and social-proof UI. The social-proof toast is hidden on small mobile viewports so it does not cover the hero program list.
 
 Important: REST fetch failures are mostly silent and leave hardcoded HTML/JS fallback content in place.
@@ -493,11 +499,12 @@ Payment is not gateway-verified. It is a manual UPI flow:
 
 - CRUD over `gallery_images`.
 - Can upload to `images` bucket or enter an image URL.
-- Active gallery images feed the homepage hero media: the strip is rebuilt from active rows ordered by `sort_order`, and the first five images are used as desktop/tablet program backgrounds. Recommended upload ratio is 16:9.
+- Active gallery images feed only the homepage hero scrolling strip. They do not control program backgrounds. Recommended upload ratio is 16:9.
 
 ### Settings
 
 - Loads and edits all rows from `site_config`.
+- Adds virtual Settings rows for `hero_bg_campus`, `hero_bg_online`, `hero_bg_staff_camp`, `hero_bg_skills`, and `hero_bg_immersion` if missing; saving a value inserts the missing row. These fields support direct file upload or URL entry.
 - Special input handling for dates, datetime, numeric fields, and text.
 - `registration_deadline` is edited as date/time and saved as IST ISO string with `+05:30`.
 

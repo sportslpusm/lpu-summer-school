@@ -4433,25 +4433,25 @@ button:focus-visible, .button:focus-visible, a:focus-visible {
   width: calc(100% + 128px);
   margin: 56px 0 0 -64px;
   padding: 0;
-  overflow: hidden;
+  overflow-x: auto;
   mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
-  scroll-snap-type: none;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.hero-inline-media::-webkit-scrollbar {
+  display: none;
 }
 .hero-media-track {
-  --hero-gallery-shift: -3224px;
   display: flex;
   width: max-content;
   gap: 12px;
-  animation: heroGalleryAutoScroll 52s linear infinite;
-  will-change: transform;
-}
-.hero-inline-media:hover .hero-media-track {
-  animation-play-state: paused;
 }
 .hero-strip-card {
   width: 391px;
   height: 220px;
   flex: 0 0 391px;
+  scroll-snap-align: start;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 18px;
   box-shadow: 0 20px 54px rgba(0, 0, 0, 0.26);
@@ -4459,15 +4459,7 @@ button:focus-visible, .button:focus-visible, a:focus-visible {
 .hero-strip-card img {
   transform: scale(1.01);
 }
-@keyframes heroGalleryAutoScroll {
-  from { transform: translateX(0); }
-  to { transform: translateX(var(--hero-gallery-shift)); }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .hero-media-track {
-    animation: none;
-  }
   .hero-inline-media {
     overflow-x: auto;
     scroll-snap-type: x mandatory;
@@ -4486,7 +4478,6 @@ button:focus-visible, .button:focus-visible, a:focus-visible {
     margin: 44px 0 0 -32px;
   }
   .hero-media-track {
-    --hero-gallery-shift: -2352px;
     gap: 10px;
   }
   .hero-strip-card {
@@ -4589,9 +4580,7 @@ button:focus-visible, .button:focus-visible, a:focus-visible {
     mask-image: none;
   }
   .hero-media-track {
-    --hero-gallery-shift: calc(-640vw - 64px);
     gap: 8px;
-    animation-duration: 46s;
   }
   .hero-strip-card {
     width: 72vw;

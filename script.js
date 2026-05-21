@@ -102,6 +102,14 @@ const HERO_PROGRAMS = {
   }
 };
 
+const HERO_BACKGROUND_CONFIG_KEYS = {
+  campus: "hero_bg_campus",
+  online: "hero_bg_online",
+  "staff-camp": "hero_bg_staff_camp",
+  skills: "hero_bg_skills",
+  immersion: "hero_bg_immersion"
+};
+
 let heroProgramTimer = null;
 let heroProgramAutoTimer = null;
 
@@ -134,6 +142,14 @@ function applySettings(cfg) {
   const uniName = cfg["university_name"] || "";
   const address = cfg["address"] || "";
   const deadline = cfg["registration_deadline"] || "";
+
+  Object.entries(HERO_BACKGROUND_CONFIG_KEYS).forEach(([programKey, configKey]) => {
+    const imageUrl = (cfg[configKey] || "").trim();
+    if (imageUrl && HERO_PROGRAMS[programKey]) {
+      HERO_PROGRAMS[programKey].backgroundImage = imageUrl;
+    }
+  });
+  updateHeroBackground(getActiveHeroProgram(), false);
 
   // Utility bar contact
   document.querySelectorAll('[data-cfg="utility-contact"]').forEach((el) => {
@@ -1058,16 +1074,6 @@ function uniqueHeroImages(images) {
   return Array.from(uniqueImages.values());
 }
 
-function assignHeroProgramBackgrounds(images) {
-  const programKeys = ["campus", "online", "staff-camp", "skills", "immersion"];
-  programKeys.forEach((key, index) => {
-    if (HERO_PROGRAMS[key] && images[index]?.src) {
-      HERO_PROGRAMS[key].backgroundImage = images[index].src;
-    }
-  });
-  updateHeroBackground(getActiveHeroProgram(), false);
-}
-
 function renderHeroGalleryStrip(images) {
   if (!heroGalleryTrack || !images.length) return;
   heroGalleryTrack.innerHTML = "";
@@ -1085,7 +1091,6 @@ function renderHeroGalleryStrip(images) {
   };
 
   images.forEach((image) => renderImage(image));
-  images.forEach((image) => renderImage(image, true));
 }
 
 // Load gallery exclusively from DB — no hardcoded fallback
@@ -1102,7 +1107,6 @@ function renderHeroGalleryStrip(images) {
   } catch (e) { /* no images to rotate */ }
 
   galleryImages = uniqueHeroImages(galleryImages);
-  assignHeroProgramBackgrounds(galleryImages);
   renderHeroGalleryStrip(galleryImages);
 
   galleryTargets.forEach((target, index) => {
