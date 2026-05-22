@@ -3,6 +3,7 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 let accessToken = null;
 let sessions = [];
+let programs = [];
 
 const HERO_BACKGROUND_SETTINGS = [
   { key: "hero_bg_campus", label: "Hero background - 2 Week Campus Program", description: "Desktop/tablet background image for the 2 Week Campus Program hero tab. Mobile hides this background." },
@@ -96,6 +97,30 @@ async function apiDelete(table, id) {
   return api(`${table}?id=eq.${id}`, { method: "DELETE" });
 }
 
+function programName(programId) {
+  return programs.find((p) => p.id === programId)?.name || "2 Week Campus Program";
+}
+
+function programOptions(selectedId = "") {
+  return programs.map((program) => `<option value="${program.id}" ${program.id === selectedId ? "selected" : ""}>${esc(program.name)}</option>`).join("");
+}
+
+function updateProgramFilters() {
+  const filters = [
+    ["#regProgramFilter", "All Programs"],
+    ["#courseProgramFilter", "All Programs"],
+    ["#sessionProgramFilter", "All Programs"],
+    ["#feeProgramFilter", "All Programs"]
+  ];
+  filters.forEach(([selector, label]) => {
+    const el = $(selector);
+    if (!el) return;
+    const current = el.value || "all";
+    el.innerHTML = `<option value="all">${label}</option>` + programs.map((program) => `<option value="${program.id}">${esc(program.name)}</option>`).join("");
+    el.value = [...el.options].some((option) => option.value === current) ? current : "all";
+  });
+}
+
 // --- Image Upload ---
 async function uploadImage(file) {
   const ext = file.name.split(".").pop();
@@ -143,6 +168,7 @@ function registrationConfirmationEmail(reg) {
         <p>We are delighted to confirm <strong>${esc(reg.student_name)}</strong>'s registration for LPU Summer School.</p>
         <table style="width:100%;border-collapse:collapse;margin:16px 0">
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Student</td><td style="padding:8px;border-bottom:1px solid #eee"><strong>${esc(reg.student_name)}</strong></td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Program</td><td style="padding:8px;border-bottom:1px solid #eee">${esc(reg.program_name || "LPU Summer School")}</td></tr>
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Class</td><td style="padding:8px;border-bottom:1px solid #eee">${esc(reg.class_level)}</td></tr>
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Courses</td><td style="padding:8px;border-bottom:1px solid #eee">${courses.map(c => esc(c)).join(", ")}</td></tr>
           <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Total Fee</td><td style="padding:8px;border-bottom:1px solid #eee"><strong>Rs. ${reg.total_fee}</strong></td></tr>
@@ -150,9 +176,9 @@ function registrationConfirmationEmail(reg) {
         </table>
         <div style="background:#f7f8fb;border-radius:8px;padding:16px;margin:16px 0">
           <p style="margin:0 0 6px;font-weight:700;color:#111827">Program Schedule</p>
-          <p style="margin:0;font-size:14px;color:#667085">Dates: <strong style="color:#111827">16 Jun — 28 Jun 2026</strong></p>
-          <p style="margin:4px 0 0;font-size:14px;color:#667085">Timings: <strong style="color:#111827">9:00 AM — 5:00 PM daily</strong></p>
-          <p style="margin:4px 0 0;font-size:14px;color:#667085">Venue: <strong style="color:#111827">LPU Campus, Phagwara, Punjab</strong></p>
+          <p style="margin:0;font-size:14px;color:#667085">Dates: <strong style="color:#111827">${esc(reg.program_snapshot?.dates_label || "As per selected program")}</strong></p>
+          <p style="margin:4px 0 0;font-size:14px;color:#667085">Mode: <strong style="color:#111827">${esc(reg.program_snapshot?.mode || "As per selected program")}</strong></p>
+          <p style="margin:4px 0 0;font-size:14px;color:#667085">Venue: <strong style="color:#111827">${esc(reg.program_snapshot?.location || "LPU Campus, Phagwara, Punjab")}</strong></p>
         </div>
         <p>Our team will contact you shortly with further details regarding campus logistics.</p>
         <p style="color:#667085;font-size:13px;margin-top:24px">For queries: summerschool@lpu.co.in | +91 860 723 4098</p>
@@ -330,6 +356,7 @@ $$(".tab").forEach((tab) => {
 // --- Load All Data ---
 async function loadAll() {
   try {
+    await loadPrograms();
     await loadSessions();
     await Promise.all([loadRegistrations(), loadCourses(), loadFees(), loadGallery(), loadSettings()]);
   } catch (err) {
@@ -340,6 +367,169 @@ async function loadAll() {
     }
   }
 }
+
+// --- PROGRAMS ---
+async function loadPrograms() {
+  programs = await apiGet("programs", "order=sort_order.asc");
+  updateProgramFilters();
+  filterPrograms();
+}
+
+function filterPrograms() {
+  const q = ($("#programSearch")?.value || "").toLowerCase().trim();
+  let rows = programs;
+  if (q) rows = rows.filter((p) => [p.name, p.slug, p.mode, p.location].some((v) => v && v.toLowerCase().includes(q)));
+  renderPrograms(rows);
+  const countEl = $("#programCount");
+  if (countEl) countEl.textContent = `${rows.length} of ${programs.length}`;
+}
+
+function renderPrograms(rows) {
+  const body = $("#programBody");
+  if (!body) return;
+  body.innerHTML = rows.map((p) => `
+    <tr>
+      <td><strong>${esc(p.name)}</strong><br><small>${esc(p.slug)}</small></td>
+      <td>${esc(p.dates_label || "To be announced")}</td>
+      <td>${esc(p.mode || "")}</td>
+      <td>${p.fee_status === "ready" ? `${esc(p.fee_mode)}${p.base_fee ? ` / Rs. ${p.base_fee}` : ""}` : "To be announced"}</td>
+      <td><span class="badge badge-${p.registration_enabled ? "confirmed" : "pending"}">${p.registration_enabled ? "Open" : "Closed"}</span></td>
+      <td><span class="toggle ${p.is_active ? "on" : ""}" onclick="toggleProgram('${p.id}', ${!p.is_active})"></span></td>
+      <td class="row-actions">
+        <button onclick="editProgram('${p.id}')">Edit</button>
+        <button onclick="deleteProgram('${p.id}')" class="del">Delete</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+$("#programSearch")?.addEventListener("input", filterPrograms);
+
+window.toggleProgram = async function(id, active) {
+  await apiUpdate("programs", id, { is_active: active, updated_at: new Date().toISOString() });
+  await loadPrograms();
+};
+
+function programForm(p = {}) {
+  const deadline = toLocalDateTimeInputs(p.registration_deadline);
+  return `
+    <label>Name <input id="mProgramName" value="${esc(p.name || "")}" required></label>
+    <label>Slug <input id="mProgramSlug" value="${esc(p.slug || "")}" placeholder="online-course" required></label>
+    <label>Short Label <input id="mProgramShort" value="${esc(p.short_label || "")}"></label>
+    <label>Description <textarea id="mProgramDesc" rows="3">${esc(p.description || "")}</textarea></label>
+    <label>CTA Context <textarea id="mProgramContext" rows="2">${esc(p.cta_context || "")}</textarea></label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <label>Dates Label <input id="mProgramDatesLabel" value="${esc(p.dates_label || "")}" placeholder="15 to 27 June 2026"></label>
+      <label>Mode <input id="mProgramMode" value="${esc(p.mode || "")}" placeholder="On Campus"></label>
+      <label>Duration <input id="mProgramDuration" value="${esc(p.duration || "")}" placeholder="2 weeks"></label>
+      <label>Location <input id="mProgramLocation" value="${esc(p.location || "")}" placeholder="LPU Campus"></label>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <label>Start Date <input id="mProgramStart" type="date" value="${esc(p.start_date || "")}"></label>
+      <label>End Date <input id="mProgramEnd" type="date" value="${esc(p.end_date || "")}"></label>
+    </div>
+    <label>Registration Deadline <div style="display:flex;gap:8px"><input id="mProgramDeadlineDate" type="date" value="${deadline.date}" style="flex:1"><input id="mProgramDeadlineTime" type="time" value="${deadline.time}" style="width:120px"></div></label>
+    <label>Deadline Label <input id="mProgramDeadlineLabel" value="${esc(p.deadline_label || "")}" placeholder="14 June 2026"></label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <label>Seats Label <input id="mProgramSeatsLabel" value="${esc(p.seats_label || "Seats Left")}"></label>
+      <label>Seats Base <input id="mProgramSeatsBase" type="number" min="0" value="${p.seats_base ?? ""}"></label>
+      <label>Seats Minimum <input id="mProgramSeatsMin" type="number" min="0" value="${p.seats_min ?? ""}"></label>
+      <label>Sort Order <input id="mProgramOrder" type="number" value="${p.sort_order ?? programs.length + 1}"></label>
+    </div>
+    <label>Seats Note <input id="mProgramSeatsNote" value="${esc(p.seats_note || "")}"></label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <label>Fee Mode <select id="mProgramFeeMode">
+        ${["session_count", "package", "custom", "to_be_announced"].map((value) => `<option value="${value}" ${p.fee_mode === value ? "selected" : ""}>${value}</option>`).join("")}
+      </select></label>
+      <label>Fee Status <select id="mProgramFeeStatus">
+        <option value="ready" ${p.fee_status === "ready" ? "selected" : ""}>ready</option>
+        <option value="to_be_announced" ${p.fee_status !== "ready" ? "selected" : ""}>to_be_announced</option>
+      </select></label>
+      <label>Base Fee <input id="mProgramBaseFee" type="number" min="0" value="${p.base_fee ?? 0}"></label>
+      <label>GST Rate <input id="mProgramGstRate" type="number" min="0" step="0.01" value="${p.gst_rate ?? 0.18}"></label>
+    </div>
+    <label>Upload Program Image <input id="mProgramImageFile" type="file" accept="image/*"></label>
+    <label>Hero/Program Image URL <input id="mProgramImage" value="${esc(p.image_url || "")}" placeholder="https://..."></label>
+    <label>Upload Background Image <input id="mProgramBgFile" type="file" accept="image/*"></label>
+    <label>Background Image URL <input id="mProgramBg" value="${esc(p.background_image_url || "")}" placeholder="https://..."></label>
+    <label><input id="mProgramHostel" type="checkbox" ${p.allow_hostel ? "checked" : ""}> Allow hostel options</label>
+    <label><input id="mProgramRegistration" type="checkbox" ${p.registration_enabled ? "checked" : ""}> Registration enabled</label>
+  `;
+}
+
+function toLocalDateTimeInputs(value) {
+  if (!value) return { date: "", time: "23:59" };
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) return { date: "", time: "23:59" };
+  const ist = new Date(dt.getTime() + (330 - dt.getTimezoneOffset()) * 60000);
+  return { date: ist.toISOString().slice(0, 10), time: ist.toISOString().slice(11, 16) };
+}
+
+function getProgramFormData() {
+  const deadlineDate = $("#mProgramDeadlineDate").value;
+  const deadlineTime = $("#mProgramDeadlineTime").value || "23:59";
+  return {
+    name: $("#mProgramName").value,
+    slug: $("#mProgramSlug").value.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, ""),
+    short_label: $("#mProgramShort").value || null,
+    description: $("#mProgramDesc").value || null,
+    cta_context: $("#mProgramContext").value || null,
+    dates_label: $("#mProgramDatesLabel").value || null,
+    start_date: $("#mProgramStart").value || null,
+    end_date: $("#mProgramEnd").value || null,
+    mode: $("#mProgramMode").value || null,
+    duration: $("#mProgramDuration").value || null,
+    location: $("#mProgramLocation").value || null,
+    registration_deadline: deadlineDate ? `${deadlineDate}T${deadlineTime}:00+05:30` : null,
+    deadline_label: $("#mProgramDeadlineLabel").value || null,
+    seats_label: $("#mProgramSeatsLabel").value || "Seats Left",
+    seats_base: $("#mProgramSeatsBase").value ? parseInt($("#mProgramSeatsBase").value) : null,
+    seats_min: $("#mProgramSeatsMin").value ? parseInt($("#mProgramSeatsMin").value) : null,
+    seats_note: $("#mProgramSeatsNote").value || null,
+    fee_mode: $("#mProgramFeeMode").value,
+    fee_status: $("#mProgramFeeStatus").value,
+    base_fee: parseInt($("#mProgramBaseFee").value || "0"),
+    gst_rate: parseFloat($("#mProgramGstRate").value || "0.18"),
+    image_url: $("#mProgramImage").value || null,
+    background_image_url: $("#mProgramBg").value || null,
+    allow_hostel: $("#mProgramHostel").checked,
+    registration_enabled: $("#mProgramRegistration").checked,
+    sort_order: parseInt($("#mProgramOrder").value || "0"),
+    updated_at: new Date().toISOString()
+  };
+}
+
+async function applyProgramUploads(data) {
+  const imageFile = $("#mProgramImageFile");
+  const bgFile = $("#mProgramBgFile");
+  if (imageFile?.files.length) data.image_url = await uploadImage(imageFile.files[0]);
+  if (bgFile?.files.length) data.background_image_url = await uploadImage(bgFile.files[0]);
+  return data;
+}
+
+window.editProgram = async function(id) {
+  const p = programs.find((program) => program.id === id) || (await apiGet("programs", `id=eq.${id}`))[0];
+  openModal("Edit Program", programForm(p), async () => {
+    await apiUpdate("programs", id, await applyProgramUploads(getProgramFormData()));
+    await loadPrograms();
+    await loadSessions();
+    await loadCourses();
+    await loadFees();
+  });
+};
+
+window.deleteProgram = async function(id) {
+  if (!confirm("Delete this program? Existing sessions/courses/registrations can block deletion.")) return;
+  await apiDelete("programs", id);
+  await loadPrograms();
+};
+
+$("#addProgramBtn")?.addEventListener("click", () => {
+  openModal("Add Program", programForm({ fee_status: "to_be_announced", fee_mode: "to_be_announced", registration_enabled: false, is_active: true }), async () => {
+    await apiInsert("programs", await applyProgramUploads(getProgramFormData()));
+    await loadPrograms();
+  });
+});
 
 // --- REGISTRATIONS ---
 let allRegistrations = [];
@@ -363,12 +553,14 @@ function paymentBadgeLabel(ps) {
 function filterRegistrations() {
   const status = $("#regStatusFilter").value;
   const payment = $("#regPaymentFilter").value;
+  const programId = $("#regProgramFilter")?.value || "all";
   const q = ($("#regSearch").value || "").toLowerCase().trim();
 
   let rows = allRegistrations;
   if (status !== "all") rows = rows.filter((r) => r.status === status);
   if (payment !== "all") rows = rows.filter((r) => r.payment_status === payment);
-  if (q) rows = rows.filter((r) => [r.student_name, r.guardian_name, r.school_name, r.phone, r.email, r.city, r.payment_reference].some((v) => v && v.toLowerCase().includes(q)));
+  if (programId !== "all") rows = rows.filter((r) => r.program_id === programId);
+  if (q) rows = rows.filter((r) => [r.student_name, r.guardian_name, r.school_name, r.phone, r.email, r.city, r.payment_reference, r.program_name].some((v) => v && v.toLowerCase().includes(q)));
 
   renderRegistrations(rows);
   const countEl = $("#regCount");
@@ -388,6 +580,7 @@ function renderRegistrations(rows) {
     <tr>
       <td>${new Date(r.created_at).toLocaleDateString("en-IN")}</td>
       <td><strong>${esc(r.student_name)}</strong></td>
+      <td>${esc(r.program_name || programName(r.program_id))}</td>
       <td>${esc(r.class_level)}</td>
       <td>${esc(r.school_name)}</td>
       <td>${esc(r.guardian_name)}</td>
@@ -418,6 +611,7 @@ window.viewRegistration = async function(id) {
   openModal("Registration Details", `
     <div style="display:grid;gap:12px">
       <div><strong>Student:</strong> ${esc(r.student_name)}</div>
+      <div><strong>Program:</strong> ${esc(r.program_name || programName(r.program_id))}</div>
       <div><strong>Class:</strong> ${esc(r.class_level)}</div>
       <div><strong>School:</strong> ${esc(r.school_name)}</div>
       <div><strong>City:</strong> ${esc(r.city)}</div>
@@ -430,6 +624,8 @@ window.viewRegistration = async function(id) {
       <div><strong>Courses:</strong> ${courses.map(c => esc(c)).join(", ") || "None"}</div>
       <div><strong>Hostel:</strong> ${esc(hostelLabel)}${hostelAmt ? ` (Rs. ${hostelAmt})` : ""}</div>
       <hr style="border:none;border-top:1px solid #e4e7ec">
+      <div><strong>Session Fee:</strong> Rs. ${r.session_fee || 0}</div>
+      <div><strong>GST:</strong> Rs. ${r.gst_amount || 0}</div>
       <div><strong>Total Fee:</strong> <strong style="color:#f3700d">Rs. ${r.total_fee}</strong></div>
       <div><strong>Payment Ref:</strong> <code>${esc(r.payment_reference || "N/A")}</code></div>
       <div><strong>Payment:</strong> <span class="badge badge-${paymentBadgeClass(r.payment_status)}">${paymentBadgeLabel(r.payment_status)}</span></div>
@@ -498,6 +694,7 @@ window.changeRegStatus = async function(id, status) {
 
 $("#regStatusFilter").addEventListener("change", filterRegistrations);
 $("#regPaymentFilter").addEventListener("change", filterRegistrations);
+$("#regProgramFilter")?.addEventListener("change", filterRegistrations);
 $("#regSearch").addEventListener("input", filterRegistrations);
 
 $("#exportCsvBtn").addEventListener("click", async () => {
@@ -516,13 +713,15 @@ $("#exportCsvBtn").addEventListener("click", async () => {
 
 // --- SESSIONS ---
 async function loadSessions() {
-  sessions = await apiGet("sessions", "order=sort_order.asc");
+  sessions = await apiGet("sessions", "order=sort_order.asc&select=*");
   filterSessions();
 }
 
 function filterSessions() {
+  const programId = $("#sessionProgramFilter")?.value || "all";
   const q = ($("#sessionSearch")?.value || "").toLowerCase().trim();
   let rows = sessions;
+  if (programId !== "all") rows = rows.filter((s) => s.program_id === programId);
   if (q) rows = rows.filter((s) => s.name && s.name.toLowerCase().includes(q));
   renderSessions(rows);
   const countEl = $("#sessionCount");
@@ -534,6 +733,7 @@ function renderSessions(rows) {
   $("#sessionBody").innerHTML = rows.map((s) => `
     <tr>
       <td><strong>${esc(s.name)}</strong></td>
+      <td>${esc(programName(s.program_id))}</td>
       <td>${esc(s.time_slot)}</td>
       <td>${s.sort_order}</td>
       <td><span class="toggle ${s.is_active ? "on" : ""}" onclick="toggleSession('${s.id}', ${!s.is_active})"></span></td>
@@ -546,6 +746,7 @@ function renderSessions(rows) {
 }
 
 $("#sessionSearch")?.addEventListener("input", filterSessions);
+$("#sessionProgramFilter")?.addEventListener("change", filterSessions);
 
 window.toggleSession = async function(id, active) {
   await apiUpdate("sessions", id, { is_active: active });
@@ -576,11 +777,13 @@ window.editSession = function(id) {
   const s = sessions.find((x) => x.id === id);
   openModal("Edit Session", `
     <label>Name <input id="mSessionName" value="${esc(s.name)}"></label>
+    <label>Program <select id="mSessionProgram">${programOptions(s.program_id)}</select></label>
     ${sessionTimeForm(s.time_slot)}
     <label>Sort Order <input id="mSessionOrder" type="number" value="${s.sort_order}"></label>
   `, async () => {
     await apiUpdate("sessions", id, {
       name: $("#mSessionName").value,
+      program_id: $("#mSessionProgram").value,
       time_slot: getSessionTimeSlot(),
       sort_order: parseInt($("#mSessionOrder").value)
     });
@@ -599,11 +802,13 @@ window.deleteSession = async function(id) {
 $("#addSessionBtn").addEventListener("click", () => {
   openModal("Add Session", `
     <label>Name <input id="mSessionName" placeholder="Session 4"></label>
+    <label>Program <select id="mSessionProgram">${programOptions(programs[0]?.id)}</select></label>
     ${sessionTimeForm("")}
     <label>Sort Order <input id="mSessionOrder" type="number" value="${sessions.length + 1}"></label>
   `, async () => {
     await apiInsert("sessions", {
       name: $("#mSessionName").value,
+      program_id: $("#mSessionProgram").value,
       time_slot: getSessionTimeSlot(),
       sort_order: parseInt($("#mSessionOrder").value)
     });
@@ -615,24 +820,27 @@ $("#addSessionBtn").addEventListener("click", () => {
 let allCourses = [];
 
 async function loadCourses() {
-  allCourses = await apiGet("courses", "order=sort_order.asc&select=*,sessions(name)");
+  allCourses = await apiGet("courses", "order=sort_order.asc&select=*,sessions(name,time_slot,program_id),programs(name)");
   // Populate session filter dropdown
   const sessionFilter = $("#courseSessionFilter");
   if (sessionFilter) {
     const current = sessionFilter.value;
     sessionFilter.innerHTML = `<option value="all">All Sessions</option>` +
-      sessions.map((s) => `<option value="${s.id}">${esc(s.name)}</option>`).join("");
+      sessions.map((s) => `<option value="${s.id}">${esc(programName(s.program_id))} - ${esc(s.name)}</option>`).join("");
     sessionFilter.value = current || "all";
   }
+  updateProgramFilters();
   filterCourses();
 }
 
 function filterCourses() {
+  const programId = $("#courseProgramFilter")?.value || "all";
   const sessionId = $("#courseSessionFilter")?.value || "all";
   const category = $("#courseCategoryFilter")?.value || "all";
   const q = ($("#courseSearch")?.value || "").toLowerCase().trim();
 
   let rows = allCourses;
+  if (programId !== "all") rows = rows.filter((c) => c.program_id === programId);
   if (sessionId !== "all") rows = rows.filter((c) => c.session_id === sessionId);
   if (category !== "all") rows = rows.filter((c) => c.category === category);
   if (q) rows = rows.filter((c) => c.name && c.name.toLowerCase().includes(q));
@@ -651,6 +859,7 @@ function renderCourses(courses) {
           <strong style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.name)}</strong>
         </div>
       </td>
+      <td>${esc(c.programs?.name || programName(c.program_id))}</td>
       <td>${esc(c.sessions?.name) || "\u2014"}</td>
       <td><span class="badge badge-${c.category === 'tech' ? 'pending' : c.category === 'sports' ? 'confirmed' : 'cancelled'}">${esc(c.category)}</span></td>
       <td>${esc(c.class_range || "")}</td>
@@ -701,13 +910,19 @@ $("#addCourseBtn").addEventListener("click", () => {
 });
 
 $("#courseSearch")?.addEventListener("input", filterCourses);
+$("#courseProgramFilter")?.addEventListener("change", filterCourses);
 $("#courseSessionFilter")?.addEventListener("change", filterCourses);
 $("#courseCategoryFilter")?.addEventListener("change", filterCourses);
 
 function courseForm(c = {}) {
-  const sessionOpts = sessions.map((s) => `<option value="${s.id}" ${s.id === c.session_id ? "selected" : ""}>${esc(s.name)} (${esc(s.time_slot)})</option>`).join("");
+  const selectedProgramId = c.program_id || sessions.find((s) => s.id === c.session_id)?.program_id || programs[0]?.id || "";
+  const sessionOpts = sessions
+    .filter((s) => !selectedProgramId || s.program_id === selectedProgramId)
+    .map((s) => `<option value="${s.id}" ${s.id === c.session_id ? "selected" : ""}>${esc(s.name)} (${esc(s.time_slot)})</option>`)
+    .join("");
   return `
     <label>Course Name <input id="mCourseName" value="${esc(c.name || "")}"></label>
+    <label>Program <select id="mCourseProgram" onchange="refreshCourseSessionOptions()">${programOptions(selectedProgramId)}</select></label>
     <label>Session <select id="mCourseSession">${sessionOpts}</select></label>
     <label>Category <select id="mCourseCategory">
       <option value="tech" ${c.category === "tech" ? "selected" : ""}>Tech</option>
@@ -726,9 +941,22 @@ function courseForm(c = {}) {
   `;
 }
 
+window.refreshCourseSessionOptions = function() {
+  const programId = $("#mCourseProgram")?.value;
+  const sessionSelect = $("#mCourseSession");
+  if (!programId || !sessionSelect) return;
+  const current = sessionSelect.value;
+  const opts = sessions
+    .filter((s) => s.program_id === programId)
+    .map((s) => `<option value="${s.id}" ${s.id === current ? "selected" : ""}>${esc(s.name)} (${esc(s.time_slot)})</option>`)
+    .join("");
+  sessionSelect.innerHTML = opts || `<option value="">Add a session for this program first</option>`;
+};
+
 function getCourseFormData() {
   return {
     name: $("#mCourseName").value,
+    program_id: $("#mCourseProgram").value,
     session_id: $("#mCourseSession").value,
     category: $("#mCourseCategory").value,
     class_range: $("#mCourseClass").value,
@@ -739,32 +967,46 @@ function getCourseFormData() {
 }
 
 // --- FEES ---
+let allFees = [];
+
 async function loadFees() {
-  const fees = await apiGet("fee_tiers", "order=session_count.asc");
-  renderFees(fees);
+  allFees = await apiGet("fee_tiers", "order=session_count.asc");
+  filterFees();
+}
+
+function filterFees() {
+  const programId = $("#feeProgramFilter")?.value || "all";
+  const rows = programId === "all" ? allFees : allFees.filter((f) => f.program_id === programId);
+  renderFees(rows);
 }
 
 function renderFees(fees) {
   $("#feeBody").innerHTML = fees.map((f) => `
     <tr>
+      <td>${esc(programName(f.program_id))}</td>
       <td>${f.session_count}</td>
       <td>Rs. ${f.fee_amount.toLocaleString("en-IN")}</td>
       <td>${esc(f.label || "")}</td>
       <td class="row-actions">
-        <button onclick="editFee('${f.id}', ${f.session_count}, ${f.fee_amount}, '${esc(f.label || "")}')">Edit</button>
+        <button onclick="editFee('${f.id}')">Edit</button>
         <button onclick="deleteFee('${f.id}')" class="del">Delete</button>
       </td>
     </tr>
   `).join("");
 }
 
-window.editFee = function(id, count, amount, label) {
+$("#feeProgramFilter")?.addEventListener("change", filterFees);
+
+window.editFee = function(id) {
+  const fee = allFees.find((f) => f.id === id);
   openModal("Edit Fee Tier", `
-    <label>Session Count <input id="mFeeCount" type="number" value="${count}"></label>
-    <label>Fee Amount (Rs.) <input id="mFeeAmount" type="number" value="${amount}"></label>
-    <label>Label <input id="mFeeLabel" value="${label}"></label>
+    <label>Program <select id="mFeeProgram">${programOptions(fee.program_id)}</select></label>
+    <label>Session Count <input id="mFeeCount" type="number" value="${fee.session_count}"></label>
+    <label>Fee Amount (Rs.) <input id="mFeeAmount" type="number" value="${fee.fee_amount}"></label>
+    <label>Label <input id="mFeeLabel" value="${esc(fee.label || "")}"></label>
   `, async () => {
     await apiUpdate("fee_tiers", id, {
+      program_id: $("#mFeeProgram").value,
       session_count: parseInt($("#mFeeCount").value),
       fee_amount: parseInt($("#mFeeAmount").value),
       label: $("#mFeeLabel").value
@@ -781,11 +1023,13 @@ window.deleteFee = async function(id) {
 
 $("#addFeeBtn").addEventListener("click", () => {
   openModal("Add Fee Tier", `
+    <label>Program <select id="mFeeProgram">${programOptions(programs[0]?.id)}</select></label>
     <label>Session Count <input id="mFeeCount" type="number" value="0"></label>
     <label>Fee Amount (Rs.) <input id="mFeeAmount" type="number" value="0"></label>
     <label>Label <input id="mFeeLabel" placeholder="Description"></label>
   `, async () => {
     await apiInsert("fee_tiers", {
+      program_id: $("#mFeeProgram").value,
       session_count: parseInt($("#mFeeCount").value),
       fee_amount: parseInt($("#mFeeAmount").value),
       label: $("#mFeeLabel").value

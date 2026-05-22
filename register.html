@@ -135,7 +135,10 @@
               <span>03</span>
               <h2>Session and class selection</h2>
             </div>
-            <p class="form-help">Select the session first, then choose one class from that session only.</p>
+            <p class="form-help">Choose the program first. The sessions, classes, dates, and fee will update automatically.</p>
+            <input type="hidden" name="programSlug" value="campus" data-program-slug>
+            <div class="registration-programs" data-registration-programs aria-label="Choose program"></div>
+            <p class="form-help program-status" data-program-status>You are registering for 2 Week Campus Program.</p>
             <div class="session-selectors">
               <article class="selection-card">
                 <label class="check-row">
@@ -179,7 +182,7 @@
             </div>
           </div>
 
-          <div class="form-block">
+          <div class="form-block" data-hostel-block>
             <div class="form-heading">
               <span>04</span>
               <h2>Hostel &amp; Meals <small>(optional)</small></h2>

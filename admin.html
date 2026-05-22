@@ -39,6 +39,7 @@
 
       <nav class="admin-tabs">
         <button class="tab active" data-tab="registrations">Registrations</button>
+        <button class="tab" data-tab="programs">Programs</button>
         <button class="tab" data-tab="courses">Courses</button>
         <button class="tab" data-tab="sessions">Sessions</button>
         <button class="tab" data-tab="fees">Fees</button>
@@ -70,6 +71,9 @@
               <option value="paid">Verified</option>
               <option value="unpaid">Unpaid</option>
             </select>
+            <select class="admin-filter" id="regProgramFilter">
+              <option value="all">All Programs</option>
+            </select>
             <span class="toolbar-count" id="regCount"></span>
           </div>
           <div class="table-wrap">
@@ -78,6 +82,7 @@
                 <tr>
                   <th>Date</th>
                   <th>Student</th>
+                  <th>Program</th>
                   <th>Class</th>
                   <th>School</th>
                   <th>Guardian</th>
@@ -96,6 +101,34 @@
           <p class="empty-state" id="regEmpty" hidden>No registrations found.</p>
         </section>
 
+        <!-- Programs Tab -->
+        <section class="tab-panel" id="panel-programs">
+          <div class="panel-header">
+            <h2>Programs</h2>
+            <button class="btn primary small" id="addProgramBtn">+ Add Program</button>
+          </div>
+          <div class="admin-toolbar">
+            <input class="admin-search" type="search" id="programSearch" placeholder="Search program name...">
+            <span class="toolbar-count" id="programCount"></span>
+          </div>
+          <div class="table-wrap">
+            <table id="programTable">
+              <thead>
+                <tr>
+                  <th>Program</th>
+                  <th>Dates</th>
+                  <th>Mode</th>
+                  <th>Fee</th>
+                  <th>Registration</th>
+                  <th>Active</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="programBody"></tbody>
+            </table>
+          </div>
+        </section>
+
         <!-- Courses Tab -->
         <section class="tab-panel" id="panel-courses">
           <div class="panel-header">
@@ -104,6 +137,9 @@
           </div>
           <div class="admin-toolbar">
             <input class="admin-search" type="search" id="courseSearch" placeholder="Search course name...">
+            <select class="admin-filter" id="courseProgramFilter">
+              <option value="all">All Programs</option>
+            </select>
             <select class="admin-filter" id="courseSessionFilter">
               <option value="all">All Sessions</option>
             </select>
@@ -119,10 +155,11 @@
           </div>
           <div class="table-wrap">
             <table id="courseTable">
-              <colgroup><col><col><col><col><col><col></colgroup>
+              <colgroup><col><col><col><col><col><col><col></colgroup>
               <thead>
                 <tr>
                   <th>Course Name</th>
+                  <th>Program</th>
                   <th>Session</th>
                   <th>Category</th>
                   <th>Class Range</th>
@@ -143,6 +180,9 @@
           </div>
           <div class="admin-toolbar">
             <input class="admin-search" type="search" id="sessionSearch" placeholder="Search session name...">
+            <select class="admin-filter" id="sessionProgramFilter">
+              <option value="all">All Programs</option>
+            </select>
             <span class="toolbar-count" id="sessionCount"></span>
           </div>
           <div class="table-wrap">
@@ -150,6 +190,7 @@
               <thead>
                 <tr>
                   <th>Name</th>
+                  <th>Program</th>
                   <th>Time Slot</th>
                   <th>Order</th>
                   <th>Active</th>
@@ -167,10 +208,16 @@
             <h2>Fee Tiers</h2>
             <button class="btn primary small" id="addFeeBtn">+ Add Tier</button>
           </div>
+          <div class="admin-toolbar">
+            <select class="admin-filter" id="feeProgramFilter">
+              <option value="all">All Programs</option>
+            </select>
+          </div>
           <div class="table-wrap">
             <table id="feeTable">
               <thead>
                 <tr>
+                  <th>Program</th>
                   <th>Sessions Count</th>
                   <th>Fee (Rs.)</th>
                   <th>Label</th>

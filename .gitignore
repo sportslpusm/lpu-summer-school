@@ -5,6 +5,7 @@ node_modules/
 !assets/*.png
 .claude/
 .vercel/
+supabase/.temp/
 .agents/
 skills-lock.json
 

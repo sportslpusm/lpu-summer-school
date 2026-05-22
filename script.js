@@ -32,6 +32,12 @@ const heroProgramDeadlineLabel = document.querySelector("[data-hero-deadline-lab
 const heroProgramSeatsLabel = document.querySelector("[data-hero-seats-label]");
 const heroProgramBgImage = document.querySelector("[data-hero-bg-image]");
 const heroProgramTabs = document.querySelectorAll("[data-program-option]");
+const trackProgramFilters = document.querySelector("[data-track-programs]");
+const trackEmpty = document.getElementById("trackEmpty");
+const registrationProgramRoot = document.querySelector("[data-registration-programs]");
+const registrationProgramInput = document.querySelector("[data-program-slug]");
+const registrationProgramStatus = document.querySelector("[data-program-status]");
+const hostelBlock = document.querySelector("[data-hostel-block]");
 const heroProgramFacts = {
   eligibility: document.querySelector('[data-hero-fact="eligibility"]'),
   duration: document.querySelector('[data-hero-fact="duration"]'),
@@ -112,8 +118,94 @@ const HERO_BACKGROUND_CONFIG_KEYS = {
   immersion: "hero_bg_immersion"
 };
 
+function normalizeProgram(row = {}, fallbackKey = "campus") {
+  const slug = row.slug || fallbackKey;
+  const fallback = HERO_PROGRAMS[slug] || HERO_PROGRAMS[fallbackKey] || HERO_PROGRAMS.campus;
+  const deadline = row.registration_deadline || fallback.urgency?.deadline || "";
+  const hasProgramBackground = Boolean(row.background_image_url);
+  return {
+    ...fallback,
+    id: row.id || fallback.id || null,
+    slug,
+    name: row.name || fallback.name,
+    shortLabel: row.short_label || fallback.shortLabel || fallback.name,
+    description: row.description || fallback.description,
+    context: row.cta_context || fallback.context || "",
+    backgroundImage: row.background_image_url || row.image_url || fallback.backgroundImage,
+    hasProgramBackground,
+    imageUrl: row.image_url || fallback.imageUrl || row.background_image_url || fallback.backgroundImage,
+    feeMode: row.fee_mode || fallback.feeMode || "session_count",
+    feeStatus: row.fee_status || fallback.feeStatus || "ready",
+    baseFee: Number(row.base_fee ?? fallback.baseFee ?? 0),
+    gstRate: Number(row.gst_rate ?? fallback.gstRate ?? 0.18),
+    allowHostel: Boolean(row.allow_hostel ?? fallback.allowHostel ?? false),
+    registrationEnabled: Boolean(row.registration_enabled ?? fallback.registrationEnabled ?? true),
+    sortOrder: Number(row.sort_order ?? fallback.sortOrder ?? 0),
+    isActive: Boolean(row.is_active ?? fallback.isActive ?? true),
+    facts: {
+      eligibility: fallback.facts?.eligibility || "Students",
+      duration: row.duration || fallback.facts?.duration || fallback.meta?.duration || "To be announced",
+      mode: row.mode || fallback.facts?.mode || fallback.meta?.mode || "To be announced",
+      focus: row.short_label || fallback.facts?.focus || fallback.name
+    },
+    urgency: {
+      deadlineLabel: row.deadline_label || fallback.urgency?.deadlineLabel || "To be announced",
+      deadline,
+      seatsLabel: row.seats_label || fallback.urgency?.seatsLabel || "Seats Left",
+      seatsBase: Number(row.seats_base ?? fallback.urgency?.seatsBase ?? 0),
+      seatsMin: Number(row.seats_min ?? fallback.urgency?.seatsMin ?? 0),
+      note: row.seats_note || fallback.urgency?.note || ""
+    },
+    meta: {
+      dates: row.dates_label || fallback.meta?.dates || "Date to be decided",
+      mode: row.mode || fallback.meta?.mode || "To be announced",
+      duration: row.duration || fallback.meta?.duration || "To be announced",
+      location: row.location || fallback.meta?.location || "To be announced"
+    }
+  };
+}
+
+function setPrograms(rows = []) {
+  const normalized = rows.length
+    ? rows.map((row) => normalizeProgram(row, row.slug)).sort((a, b) => a.sortOrder - b.sortOrder)
+    : Object.keys(HERO_PROGRAMS).map((slug, index) => normalizeProgram({ slug, sort_order: index + 1 }, slug));
+
+  programs = normalized;
+  programBySlug = {};
+  normalized.forEach((program) => {
+    programBySlug[program.slug] = program;
+    HERO_PROGRAMS[program.slug] = program;
+  });
+  if (!programBySlug[trackProgramSlug]) trackProgramSlug = programs[0]?.slug || "campus";
+  if (!programBySlug[registrationProgramSlug]) registrationProgramSlug = programs[0]?.slug || "campus";
+  renderHeroProgramTabs();
+}
+
+function getProgram(slug, fallback = "campus") {
+  return programBySlug[slug] || HERO_PROGRAMS[slug] || programBySlug[fallback] || HERO_PROGRAMS[fallback] || programs[0] || HERO_PROGRAMS.campus;
+}
+
+function renderHeroProgramTabs() {
+  if (!heroProgramTabs.length) return;
+  heroProgramTabs.forEach((tab) => {
+    const program = getProgram(tab.dataset.programOption);
+    if (!program) return;
+    const title = tab.querySelector("span");
+    const date = tab.querySelector("small");
+    if (title) title.textContent = program.name;
+    if (date) date.textContent = program.meta?.dates || program.urgency?.deadlineLabel || "";
+  });
+}
+
 let heroProgramTimer = null;
 let heroProgramAutoTimer = null;
+let programs = [];
+let programBySlug = {};
+let publicSessions = [];
+let publicCourses = [];
+let publicFees = [];
+let trackProgramSlug = "campus";
+let registrationProgramSlug = "campus";
 
 let sessionCourses = {
   session1: [],
@@ -127,6 +219,7 @@ let feeBySessionCount = {
   2: 1000,
   3: 1400
 };
+let feeByProgramSessionCount = {};
 
 function phoneDigits(phone) { return phone.replace(/[^0-9+]/g, ""); }
 function phoneWA(phone) { return phone.replace(/[^0-9]/g, ""); }
@@ -147,7 +240,7 @@ function applySettings(cfg) {
 
   Object.entries(HERO_BACKGROUND_CONFIG_KEYS).forEach(([programKey, configKey]) => {
     const imageUrl = (cfg[configKey] || "").trim();
-    if (imageUrl && HERO_PROGRAMS[programKey]) {
+    if (imageUrl && HERO_PROGRAMS[programKey] && !HERO_PROGRAMS[programKey].hasProgramBackground) {
       HERO_PROGRAMS[programKey].backgroundImage = imageUrl;
     }
   });
@@ -236,15 +329,7 @@ function applySettings(cfg) {
   if (!isNaN(hostelFood)) HOSTEL_FEES.hostel_food = hostelFood;
 
   // Update hostel price labels on register page
-  document.querySelectorAll('.hostel-radio').forEach((radio) => {
-    const input = radio.querySelector('input[name="hostel"]');
-    const priceEl = radio.querySelector('.hostel-radio-price');
-    if (!input || !priceEl) return;
-    const fee = HOSTEL_FEES[input.value];
-    if (fee > 0) {
-      priceEl.innerHTML = `<em>Rs. ${fee.toLocaleString("en-IN")}</em><small>+ 18% GST</small>`;
-    }
-  });
+  updateHostelPriceLabels();
 
   // Update hostel prices on homepage
   document.querySelectorAll('.hostel-option').forEach((el, i) => {
@@ -298,7 +383,7 @@ function checkDeadlineExpiry() {
 
 function getActiveHeroProgram() {
   if (!heroProgramRoot) return null;
-  return HERO_PROGRAMS[heroProgramRoot.dataset.activeProgram] || HERO_PROGRAMS.campus;
+  return getProgram(heroProgramRoot.dataset.activeProgram || "campus");
 }
 
 function setCountdownPartText(countdown, value) {
@@ -319,7 +404,7 @@ function updateHeroUrgency(program) {
   }
 
   if (heroProgramSeatsLabel) {
-    heroProgramSeatsLabel.textContent = hasAnnouncedDeadline ? "Seats Left" : "Seats Update";
+    heroProgramSeatsLabel.textContent = hasAnnouncedDeadline ? (urgency.seatsLabel || "Seats Left") : "Seats Update";
   }
 
   document.querySelectorAll("[data-countdown]").forEach((countdown) => {
@@ -369,8 +454,9 @@ function updateHeroBackground(program, animate = true) {
 }
 
 function updateHeroProgram(programKey, animate = true) {
-  if (!heroProgramRoot || !HERO_PROGRAMS[programKey]) return;
-  const program = HERO_PROGRAMS[programKey];
+  const program = getProgram(programKey);
+  if (!heroProgramRoot || !program) return;
+  programKey = program.slug || programKey;
 
   const render = () => {
     heroProgramRoot.dataset.activeProgram = programKey;
@@ -388,6 +474,7 @@ function updateHeroProgram(programKey, animate = true) {
     });
 
     updateHeroUrgency(program);
+    setTrackProgram(programKey, { fromHero: true });
 
     heroProgramTabs.forEach((tab) => {
       const active = tab.dataset.programOption === programKey;
@@ -413,6 +500,10 @@ function updateHeroProgram(programKey, animate = true) {
 function centerHeroProgramTab(tab, behavior = "smooth") {
   const selector = tab?.closest(".program-selector");
   if (!selector) return;
+  if (window.matchMedia("(max-width: 767px)").matches) {
+    selector.scrollTo({ left: Math.max(0, tab.offsetLeft - 20), behavior });
+    return;
+  }
   const left = tab.offsetLeft - ((selector.clientWidth - tab.offsetWidth) / 2);
   selector.scrollTo({ left: Math.max(0, left), behavior });
 }
@@ -474,111 +565,186 @@ if (heroProgramRoot && heroProgramTabs.length) {
 // Fetch all dynamic data from Supabase
 (async function loadDynamicData() {
   try {
-    const [sessionsRes, coursesRes, feesRes, settingsRes] = await Promise.all([
+    const [programsRes, sessionsRes, coursesRes, feesRes, settingsRes] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/programs?is_active=eq.true&order=sort_order.asc`, { headers: { "apikey": SUPABASE_KEY } }),
       fetch(`${SUPABASE_URL}/rest/v1/sessions?is_active=eq.true&order=sort_order.asc`, { headers: { "apikey": SUPABASE_KEY } }),
-      fetch(`${SUPABASE_URL}/rest/v1/courses?is_active=eq.true&order=sort_order.asc`, { headers: { "apikey": SUPABASE_KEY } }),
+      fetch(`${SUPABASE_URL}/rest/v1/courses?is_active=eq.true&order=sort_order.asc&select=*,sessions(name,time_slot,sort_order,program_id),programs(slug,name)`, { headers: { "apikey": SUPABASE_KEY } }),
       fetch(`${SUPABASE_URL}/rest/v1/fee_tiers?order=session_count.asc`, { headers: { "apikey": SUPABASE_KEY } }),
       fetch(`${SUPABASE_URL}/rest/v1/site_config?select=key,value`, { headers: { "apikey": SUPABASE_KEY } })
     ]);
 
     if (!sessionsRes.ok || !coursesRes.ok || !feesRes.ok) return;
 
+    const programsData = programsRes.ok ? await programsRes.json() : [];
     const sessionsData = await sessionsRes.json();
     const coursesData = await coursesRes.json();
     const feesData = await feesRes.json();
+    publicSessions = sessionsData;
+    publicCourses = coursesData;
+    publicFees = feesData;
+    setPrograms(programsData);
 
     const cfg = {};
     if (settingsRes.ok) {
       (await settingsRes.json()).forEach((r) => { cfg[r.key] = r.value; });
       applySettings(cfg);
-      updateRegistrationState();
     }
 
-    // Build sessionCourses map
-    sessionCourses = {};
-    sessionsData.forEach((s, i) => {
-      const key = `session${i + 1}`;
-      sessionCourses[key] = coursesData
-        .filter((c) => c.session_id === s.id)
-        .map((c) => c.name);
-    });
-
-    // Build fee map
-    feeBySessionCount = {};
-    feesData.forEach((f) => { feeBySessionCount[f.session_count] = f.fee_amount; });
-
-    // Update session labels and time slots on register page
-    sessionsData.forEach((s, i) => {
-      const key = `session${i + 1}`;
-      const nameEl = document.querySelector(`[data-session-name="${key}"]`);
-      const timeEl = document.querySelector(`[data-session-time="${key}"]`);
-      if (nameEl) nameEl.textContent = s.name;
-      if (timeEl) timeEl.textContent = s.time_slot;
-    });
-
-    // Re-populate course dropdowns on register page
-    courseSelects.forEach((select) => {
-      const session = select.dataset.sessionCourse;
-      const existingOptions = select.querySelectorAll("option:not(:first-child)");
-      existingOptions.forEach((o) => o.remove());
-      (sessionCourses[session] || []).forEach((course) => {
-        const option = document.createElement("option");
-        option.value = course;
-        option.textContent = course;
-        select.append(option);
-      });
-    });
-
-    // --- Populate homepage tracks grid ---
-    const trackGrid = document.getElementById("trackGrid");
-    const visibleCourses = coursesData.filter((c) => c.image_url);
-    if (trackGrid) {
-      trackGrid.innerHTML = visibleCourses
-        .map((c, i) => `<article class="track-card" data-category="${esc(c.category)}" data-course-idx="${i}"><img src="${esc(c.image_url)}" alt="${esc(c.name)}"><div><span>${esc(c.class_range || "Classes 6-12")}</span><h3>${esc(c.name)}</h3><p>${esc(c.description || "")}</p></div></article>`)
-        .join("");
-
-      // Re-bind filter buttons to new cards
-      const newCards = trackGrid.querySelectorAll("[data-category]");
-      filters.forEach((button) => {
-        button.addEventListener("click", () => {
-          const category = button.dataset.filter;
-          filters.forEach((f) => f.classList.remove("active"));
-          button.classList.add("active");
-          newCards.forEach((card) => {
-            card.hidden = !(category === "all" || card.dataset.category === category);
-          });
-        });
-      });
-
-      // Mobile bottom sheet for course details
-      initCourseBottomSheet(trackGrid, visibleCourses, sessionsData);
-    }
-
-    // --- Populate homepage sessions section ---
-    const sessionColumns = document.getElementById("sessionColumns");
-    if (sessionColumns) {
-      sessionColumns.innerHTML = sessionsData.map((s) => {
-        const courses = coursesData.filter((c) => c.session_id === s.id);
-        return `<article class="session-card"><h3>${esc(s.name)} <span>${esc(s.time_slot)}</span></h3><ul>${courses.map((c) => `<li>${esc(c.name)}</li>`).join("")}</ul></article>`;
-      }).join("");
-    }
-
-    // --- Populate homepage fees table ---
-    const feeTableBody = document.getElementById("feeTableBody");
-    if (feeTableBody) {
-      feeTableBody.innerHTML = feesData
-        .filter((f) => f.session_count > 0)
-        .map((f) => `<tr><td>${f.session_count} Session${f.session_count > 1 ? "s" : ""}</td><td>${esc(f.label || "")}</td><td>Rs. ${f.fee_amount.toLocaleString("en-IN")}</td></tr>`)
-        .join("");
-    }
+    buildFeeMaps();
+    renderTrackProgramFilters();
+    renderHomepageProgramContent();
+    renderRegistrationPrograms();
+    updateRegistrationProgram(registrationProgramSlug, { preserveSelection: true });
+    updateHeroProgram(heroProgramRoot?.dataset.activeProgram || "campus", false);
   } catch (e) {
     // Silently fall back if fetch fails
   }
 })();
 
 // ── Mobile course detail bottom sheet ───────────────────────────────
+function buildFeeMaps() {
+  feeBySessionCount = {};
+  feeByProgramSessionCount = {};
+  publicFees.forEach((fee) => {
+    const program = programs.find((p) => p.id === fee.program_id) || programs[0];
+    const slug = program?.slug || "campus";
+    if (!feeByProgramSessionCount[slug]) feeByProgramSessionCount[slug] = {};
+    feeByProgramSessionCount[slug][fee.session_count] = Number(fee.fee_amount || 0);
+    if (slug === "campus") feeBySessionCount[fee.session_count] = Number(fee.fee_amount || 0);
+  });
+}
+
+function courseSessionSort(course) {
+  return Number(course.sessions?.sort_order ?? publicSessions.find((s) => s.id === course.session_id)?.sort_order ?? 0);
+}
+
+function programSessions(slug) {
+  const program = getProgram(slug);
+  return publicSessions
+    .filter((session) => program?.id ? session.program_id === program.id : true)
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+}
+
+function programCourses(slug) {
+  const program = getProgram(slug);
+  return publicCourses
+    .filter((course) => program?.id ? course.program_id === program.id : true)
+    .sort((a, b) => {
+      const aSession = courseSessionSort(a);
+      const bSession = courseSessionSort(b);
+      if (aSession !== bSession) return aSession - bSession;
+      return (a.sort_order || 0) - (b.sort_order || 0);
+    });
+}
+
+function activeTrackCategory() {
+  return document.querySelector(".filter.active")?.dataset.filter || "all";
+}
+
+function setTrackProgram(slug, options = {}) {
+  if (!slug || !getProgram(slug)) return;
+  trackProgramSlug = slug;
+  renderTrackProgramFilters();
+  renderHomepageProgramContent();
+  if (!options.fromHero && heroProgramRoot) updateHeroProgram(slug);
+}
+
+function renderTrackProgramFilters() {
+  if (!trackProgramFilters || !programs.length) return;
+  trackProgramFilters.innerHTML = programs.map((program) => `
+    <button class="track-program-chip ${program.slug === trackProgramSlug ? "active" : ""}" type="button" data-track-program="${esc(program.slug)}">
+      <span>${esc(program.name)}</span>
+      <small>${esc(program.meta?.dates || program.urgency?.deadlineLabel || "")}</small>
+    </button>
+  `).join("");
+  trackProgramFilters.querySelectorAll("[data-track-program]").forEach((button) => {
+    button.addEventListener("click", () => setTrackProgram(button.dataset.trackProgram));
+  });
+}
+
+function renderHomepageProgramContent() {
+  renderHomepageTracks();
+  renderHomepageSessions();
+  renderHomepageFees();
+}
+
+function fallbackCourseImage(program) {
+  return program?.imageUrl || program?.backgroundImage || FALLBACK_HERO_IMAGES[0].src;
+}
+
+function renderHomepageTracks() {
+  const trackGrid = document.getElementById("trackGrid");
+  if (!trackGrid) return;
+  const program = getProgram(trackProgramSlug);
+  const category = activeTrackCategory();
+  const allCourses = programCourses(trackProgramSlug);
+  const visibleCourses = allCourses.filter((course) => category === "all" || course.category === category);
+
+  if (!visibleCourses.length) {
+    trackGrid.innerHTML = "";
+    if (trackEmpty) {
+      trackEmpty.hidden = false;
+      trackEmpty.textContent = allCourses.length ? "No tracks match this filter yet." : `${program.name} tracks will appear here after admin adds them.`;
+    }
+    return;
+  }
+
+  if (trackEmpty) trackEmpty.hidden = true;
+  trackGrid.innerHTML = visibleCourses.map((course, i) => `
+    <article class="track-card" data-category="${esc(course.category)}" data-course-idx="${i}">
+      <img src="${esc(course.image_url || fallbackCourseImage(program))}" alt="${esc(course.name)}">
+      <div>
+        <span>${esc(course.class_range || "Classes 6-12")}</span>
+        <h3>${esc(course.name)}</h3>
+        <p>${esc(course.description || "")}</p>
+      </div>
+    </article>
+  `).join("");
+
+  initCourseBottomSheet(trackGrid, visibleCourses, publicSessions);
+}
+
+function renderHomepageSessions() {
+  const sessionColumns = document.getElementById("sessionColumns");
+  if (!sessionColumns) return;
+  const sessions = programSessions(trackProgramSlug);
+  if (!sessions.length) {
+    sessionColumns.innerHTML = `<article class="session-card empty-session-card"><h3>Schedule coming soon</h3><ul><li>Admin can add sessions for ${esc(getProgram(trackProgramSlug).name)} from the admin panel.</li></ul></article>`;
+    return;
+  }
+  sessionColumns.innerHTML = sessions.map((session) => {
+    const courses = programCourses(trackProgramSlug).filter((course) => course.session_id === session.id);
+    return `<article class="session-card"><h3>${esc(session.name)} <span>${esc(session.time_slot)}</span></h3><ul>${courses.length ? courses.map((course) => `<li>${esc(course.name)}</li>`).join("") : "<li>Courses coming soon</li>"}</ul></article>`;
+  }).join("");
+}
+
+function renderHomepageFees() {
+  const feeTableBody = document.getElementById("feeTableBody");
+  if (!feeTableBody) return;
+  const program = getProgram(trackProgramSlug);
+  const fees = publicFees.filter((fee) => fee.program_id === program?.id && fee.session_count > 0).sort((a, b) => a.session_count - b.session_count);
+
+  if (program?.feeStatus !== "ready" || program?.feeMode === "to_be_announced") {
+    feeTableBody.innerHTML = `<tr><td>${esc(program.name)}</td><td>Fee details are being finalized.</td><td>To be announced</td></tr>`;
+    return;
+  }
+
+  if (program?.feeMode !== "session_count" && program?.baseFee > 0) {
+    feeTableBody.innerHTML = `<tr><td>${esc(program.name)}</td><td>${esc(program.shortLabel || "Program package")}</td><td>${formatFee(program.baseFee)}</td></tr>`;
+    return;
+  }
+
+  feeTableBody.innerHTML = fees.length
+    ? fees.map((fee) => `<tr><td>${fee.session_count} Session${fee.session_count > 1 ? "s" : ""}</td><td>${esc(fee.label || "")}</td><td>${formatFee(Number(fee.fee_amount || 0))}</td></tr>`).join("")
+    : `<tr><td>${esc(program.name)}</td><td>Fee tiers are not configured yet.</td><td>To be announced</td></tr>`;
+}
+
 function initCourseBottomSheet(grid, courses, sessions) {
   const MOBILE_MAX = 620;
+  document.querySelector(".course-sheet-overlay")?.remove();
+  if (grid._courseSheetClickHandler) {
+    grid.removeEventListener("click", grid._courseSheetClickHandler);
+  }
   // Build session lookup: session_id -> session name
   const sessionMap = {};
   sessions.forEach((s, i) => { sessionMap[s.id] = s.name + " (" + s.time_slot + ")"; });
@@ -614,7 +780,7 @@ function initCourseBottomSheet(grid, courses, sessions) {
   let isOpen = false;
 
   function openSheet(course) {
-    sheetImg.src = course.image_url;
+    sheetImg.src = course.image_url || fallbackCourseImage(getProgram(trackProgramSlug));
     sheetImg.alt = course.name;
     sheetBadge.textContent = course.class_range || "Classes 6-12";
     sheetTitle.textContent = course.name;
@@ -633,14 +799,15 @@ function initCourseBottomSheet(grid, courses, sessions) {
   }
 
   // Tap handler — only on mobile
-  grid.addEventListener("click", (e) => {
+  grid._courseSheetClickHandler = (e) => {
     if (window.innerWidth > MOBILE_MAX) return;
     const card = e.target.closest(".track-card");
     if (!card) return;
     e.preventDefault();
     const idx = parseInt(card.dataset.courseIdx, 10);
     if (!isNaN(idx) && courses[idx]) openSheet(courses[idx]);
-  });
+  };
+  grid.addEventListener("click", grid._courseSheetClickHandler);
 
   closeBtn.addEventListener("click", closeSheet);
   overlay.addEventListener("click", (e) => {
@@ -695,28 +862,17 @@ if (floatingRegister && registerButtons.length && "IntersectionObserver" in wind
 
 filters.forEach((button) => {
   button.addEventListener("click", () => {
-    const category = button.dataset.filter;
     filters.forEach((filter) => filter.classList.remove("active"));
     button.classList.add("active");
-
-    cards.forEach((card) => {
-      card.hidden = !(category === "all" || card.dataset.category === category);
-    });
-  });
-});
-
-courseSelects.forEach((select) => {
-  const session = select.dataset.sessionCourse;
-  sessionCourses[session].forEach((course) => {
-    const option = document.createElement("option");
-    option.value = course;
-    option.textContent = course;
-    select.append(option);
+    renderHomepageTracks();
   });
 });
 
 function selectedSessions() {
-  return [...sessionToggles].filter((toggle) => toggle.checked);
+  return [...sessionToggles].filter((toggle) => {
+    const card = toggle.closest(".selection-card");
+    return toggle.checked && !toggle.disabled && !(card && card.hidden);
+  });
 }
 
 function formatFee(amount) {
@@ -724,6 +880,23 @@ function formatFee(amount) {
 }
 
 const GST_RATE = 0.18;
+
+function gstPercentLabel(rate = GST_RATE) {
+  const percent = Number(rate || GST_RATE) * 100;
+  return `${Number.isInteger(percent) ? percent : percent.toFixed(2).replace(/\.?0+$/, "")}%`;
+}
+
+function updateHostelPriceLabels(rate = selectedRegistrationProgram()?.gstRate ?? GST_RATE) {
+  document.querySelectorAll(".hostel-radio").forEach((radio) => {
+    const input = radio.querySelector('input[name="hostel"]');
+    const priceEl = radio.querySelector(".hostel-radio-price");
+    if (!input || !priceEl) return;
+    const fee = HOSTEL_FEES[input.value];
+    if (fee > 0) {
+      priceEl.innerHTML = `<em>Rs. ${fee.toLocaleString("en-IN")}</em><small>+ ${gstPercentLabel(rate)} GST</small>`;
+    }
+  });
+}
 
 function esc(str) {
   if (!str) return "";
@@ -733,17 +906,151 @@ function esc(str) {
 const HOSTEL_FEES = { none: 0, hostel_only: 1400, hostel_food: 3000 };
 let registrationDeadline = null;
 
+function selectedRegistrationProgram() {
+  return getProgram(registrationProgramSlug);
+}
+
+function programHasFeeConfig(program) {
+  if (!program || program.feeStatus !== "ready" || program.feeMode === "to_be_announced") return false;
+  if (program.feeMode === "session_count") {
+    const tiers = feeByProgramSessionCount[program.slug] || {};
+    const hasProgramTier = Object.keys(tiers).some((count) => Number(count) > 0 && Number(tiers[count]) > 0);
+    if (hasProgramTier) return true;
+    return program.slug === "campus" && Object.keys(feeBySessionCount).some((count) => Number(count) > 0 && Number(feeBySessionCount[count]) > 0);
+  }
+  return Number(program.baseFee || 0) > 0;
+}
+
+function registrationProgramIsOpen(program = selectedRegistrationProgram()) {
+  return Boolean(program?.registrationEnabled && programHasFeeConfig(program));
+}
+
+function selectedProgramFee(selectedCount) {
+  const program = selectedRegistrationProgram();
+  if (!program || !registrationProgramIsOpen(program)) return 0;
+  if (program.feeMode === "session_count") {
+    return feeByProgramSessionCount[program.slug]?.[selectedCount] ?? (program.slug === "campus" ? feeBySessionCount[selectedCount] : 0) ?? 0;
+  }
+  return Number(program.baseFee || 0);
+}
+
+function renderRegistrationPrograms() {
+  if (!registrationProgramRoot || !programs.length) return;
+  registrationProgramRoot.innerHTML = programs.map((program) => {
+    const open = registrationProgramIsOpen(program);
+    const active = program.slug === registrationProgramSlug;
+    return `
+      <button class="registration-program-card ${active ? "active" : ""}" type="button" data-registration-program="${esc(program.slug)}" aria-pressed="${active ? "true" : "false"}">
+        <span>${esc(program.name)}</span>
+        <small>${esc(program.meta?.dates || "Date to be decided")}</small>
+        <em>${open ? "Registration open" : "Coming soon"}</em>
+      </button>
+    `;
+  }).join("");
+  registrationProgramRoot.querySelectorAll("[data-registration-program]").forEach((button) => {
+    button.addEventListener("click", () => updateRegistrationProgram(button.dataset.registrationProgram));
+  });
+}
+
+function resetSessionCards() {
+  sessionToggles.forEach((toggle) => {
+    toggle.checked = false;
+    toggle.disabled = false;
+    const select = document.querySelector(`[data-session-course="${toggle.value}"]`);
+    if (select) {
+      select.value = "";
+      select.disabled = true;
+      select.required = false;
+    }
+  });
+}
+
+function updateRegistrationProgram(slug, options = {}) {
+  const program = getProgram(slug);
+  if (!program) return;
+  registrationProgramSlug = program.slug;
+  if (registrationProgramInput) registrationProgramInput.value = program.slug;
+  if (!options.preserveSelection) resetSessionCards();
+  renderRegistrationPrograms();
+
+  const sessions = programSessions(program.slug).slice(0, sessionToggles.length);
+  sessionCourses = {};
+  sessionToggles.forEach((toggle, index) => {
+    const card = toggle.closest(".selection-card");
+    const select = document.querySelector(`[data-session-course="${toggle.value}"]`);
+    const session = sessions[index];
+    const key = toggle.value;
+    if (!session || !card || !select) {
+      if (card) card.hidden = true;
+      toggle.disabled = true;
+      return;
+    }
+
+    card.hidden = false;
+    toggle.disabled = !registrationProgramIsOpen(program);
+    toggle.dataset.sessionId = session.id;
+    const nameEl = document.querySelector(`[data-session-name="${key}"]`);
+    const timeEl = document.querySelector(`[data-session-time="${key}"]`);
+    if (nameEl) nameEl.textContent = session.name;
+    if (timeEl) timeEl.textContent = session.time_slot;
+
+    const courses = publicCourses.filter((course) => course.session_id === session.id && course.program_id === program.id);
+    sessionCourses[key] = courses;
+    select.innerHTML = `<option value="">Select ${esc(session.name)} class</option>`;
+    courses.forEach((course) => {
+      const option = document.createElement("option");
+      option.value = course.id;
+      option.textContent = course.name;
+      select.append(option);
+    });
+    if (!courses.length) toggle.disabled = true;
+  });
+
+  if (hostelBlock) {
+    hostelBlock.hidden = !program.allowHostel;
+    hostelBlock.querySelectorAll("input").forEach((input) => {
+      input.disabled = !program.allowHostel;
+    });
+    if (!program.allowHostel) {
+      const noneHostel = hostelBlock.querySelector('input[name="hostel"][value="none"]');
+      if (noneHostel) noneHostel.checked = true;
+    }
+  }
+  updateHostelPriceLabels(program.gstRate);
+
+  if (registrationProgramStatus) {
+    const sessionsReady = sessions.length > 0 && sessions.some((session) => publicCourses.some((course) => course.session_id === session.id && course.program_id === program.id));
+    if (!registrationProgramIsOpen(program)) {
+      registrationProgramStatus.textContent = `${program.name} registration will open after the admin adds the final schedule and fee.`;
+      registrationProgramStatus.classList.add("warning");
+    } else if (!sessionsReady) {
+      registrationProgramStatus.textContent = `${program.name} needs sessions and courses before registration can open.`;
+      registrationProgramStatus.classList.add("warning");
+    } else {
+      registrationProgramStatus.textContent = `You are registering for ${program.name}.`;
+      registrationProgramStatus.classList.remove("warning");
+    }
+  }
+
+  updateRegistrationState();
+  updateBlockStates();
+  updateSubmitState();
+}
+
 function getHostelFee() {
   const checked = document.querySelector('input[name="hostel"]:checked');
   return HOSTEL_FEES[checked?.value] || 0;
 }
 
 function updateRegistrationState() {
+  const program = selectedRegistrationProgram();
   const selected = selectedSessions();
-  const sessionFee = feeBySessionCount[selected.length] ?? 0;
-  const hostelFee = getHostelFee();
+  const sessionFee = selectedProgramFee(selected.length);
+  const hostelFee = program?.allowHostel ? getHostelFee() : 0;
   const baseFee = sessionFee + hostelFee;
-  const gst = Math.round(baseFee * GST_RATE);
+  const gstRate = Number(program?.gstRate ?? GST_RATE);
+  const gst = Math.round(baseFee * gstRate);
+  const gstLabel = gstPercentLabel(gstRate);
   const total = baseFee + gst;
 
   feeTotals.forEach((el) => { el.textContent = formatFee(total); });
@@ -753,26 +1060,32 @@ function updateRegistrationState() {
     if (!baseFee) { el.innerHTML = ""; return; }
     const parts = [];
     if (hostelFee) parts.push(`<div class="fee-line"><span>Hostel</span><strong>${formatFee(hostelFee)}</strong></div>`);
-    parts.push(`<div class="fee-line"><span>GST 18%</span><strong>${formatFee(gst)}</strong></div>`);
+    parts.push(`<div class="fee-line"><span>GST ${gstLabel}</span><strong>${formatFee(gst)}</strong></div>`);
     el.innerHTML = parts.join("");
   });
   document.querySelectorAll("[data-gst-line]").forEach((el) => {
-    el.textContent = baseFee ? `Includes 18% GST: ${formatFee(gst)}` : "";
+    el.textContent = baseFee ? `Includes ${gstLabel} GST: ${formatFee(gst)}` : "";
   });
 
   if (feeNote) {
-    feeNote.textContent = selected.length
+    if (!registrationProgramIsOpen(program)) {
+      feeNote.textContent = "Fee will appear after this program opens for registration.";
+    } else {
+      feeNote.textContent = selected.length
       ? `${selected.length} session${selected.length > 1 ? "s" : ""} selected.`
       : "Select at least one session to calculate fee.";
+    }
   }
 
   sessionToggles.forEach((toggle) => {
     const select = document.querySelector(`[data-session-course="${toggle.value}"]`);
     if (!select) return;
+    const card = toggle.closest(".selection-card");
+    const unavailable = !registrationProgramIsOpen(program) || (card && card.hidden);
 
-    select.disabled = !toggle.checked;
-    select.required = toggle.checked;
-    if (!toggle.checked) {
+    select.disabled = unavailable || !toggle.checked;
+    select.required = !unavailable && toggle.checked;
+    if (unavailable || !toggle.checked) {
       select.value = "";
     }
   });
@@ -851,6 +1164,8 @@ function validateBlock(blockIndex) {
   }
 
   if (blockIndex === 2) {
+    const program = selectedRegistrationProgram();
+    if (!registrationProgramIsOpen(program)) return false;
     const selected = selectedSessions();
     if (selected.length === 0) return false;
     return selected.every((toggle) => {
@@ -860,6 +1175,7 @@ function validateBlock(blockIndex) {
   }
 
   if (blockIndex === 3) {
+    if (hostelBlock?.hidden) return true;
     const hostelChecked = block.querySelector('input[name="hostel"]:checked');
     return !!hostelChecked;
   }
@@ -874,10 +1190,15 @@ function validateBlock(blockIndex) {
 
 function validateSessionCards() {
   let allValid = true;
+  const program = selectedRegistrationProgram();
   sessionToggles.forEach((toggle) => {
     const card = toggle.closest(".selection-card");
     const sel = document.querySelector(`[data-session-course="${toggle.value}"]`);
     if (!card || !sel) return;
+    if (card.hidden || !registrationProgramIsOpen(program)) {
+      card.classList.remove("invalid");
+      return;
+    }
 
     if (toggle.checked && !sel.value.trim()) {
       card.classList.add("invalid");
@@ -926,6 +1247,15 @@ function updateSubmitState() {
   if (!submitButton) return;
   const complete = isFormComplete();
   submitButton.disabled = !complete;
+  const program = selectedRegistrationProgram();
+  if (!registrationProgramIsOpen(program)) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Registration Opening Soon";
+  } else if (!submitButton.disabled && submitButton.textContent === "Registration Opening Soon") {
+    submitButton.textContent = "Proceed to Payment";
+  } else if (submitButton.disabled && submitButton.textContent === "Registration Opening Soon") {
+    submitButton.textContent = "Proceed to Payment";
+  }
 }
 
 function runFullValidation(showErrors) {
@@ -1220,21 +1550,24 @@ function showReceipt(data) {
   const table = document.querySelector("[data-receipt-table]");
   if (!receiptEl || !table) return;
 
+  const receiptProgram = getProgram(data.program_slug || registrationProgramSlug);
   const progDatesEl = document.querySelector('[data-cfg="program-dates"]');
-  const progDatesStr = progDatesEl ? progDatesEl.textContent : "";
+  const progDatesStr = receiptProgram?.meta?.dates || (progDatesEl ? progDatesEl.textContent : "");
+  const receiptGstLabel = gstPercentLabel(receiptProgram?.gstRate ?? GST_RATE);
 
   const rows = [
     ["Student", `<strong>${esc(data.student_name || "")}</strong> (${esc(data.class_level || "")})`],
     ["Guardian", esc(data.guardian_name || "")],
+    ["Program", esc(data.program_name || "LPU Summer School 2026")],
     ["Courses", (data.courses || []).map(c => esc(c)).join(", ")],
     ["Hostel", esc(HOSTEL_LABELS[data.hostel_option] || "No hostel")],
   ];
   if (progDatesStr) rows.push(["Program Dates", esc(progDatesStr)]);
-  rows.push(["Daily Timings", "9:00 AM — 5:00 PM"]);
-  rows.push(["Venue", "LPU Campus, Phagwara, Punjab"]);
+  rows.push(["Mode", esc(receiptProgram?.meta?.mode || "As per selected program")]);
+  rows.push(["Venue", esc(receiptProgram?.meta?.location || "LPU Campus, Phagwara, Punjab")]);
   rows.push(["Session Fee", formatFee(data.session_fee || 0)]);
   if ((data.hostel_amount || 0) > 0) rows.push(["Hostel Fee", formatFee(data.hostel_amount)]);
-  rows.push(["GST (18%)", formatFee(data.gst_amount || 0)]);
+  rows.push([`GST (${receiptGstLabel})`, formatFee(data.gst_amount || 0)]);
 
   const infoRows = [
     ["Payment Ref", `<code>${esc(data.payment_reference || "")}</code>`],
@@ -1577,7 +1910,7 @@ function showPaymentSection(data) {
 
   let splitText = `Session fee: ${formatFee(data.session_fee)}`;
   if (data.hostel_amount > 0) splitText += ` + Hostel: ${formatFee(data.hostel_amount)}`;
-  splitText += ` + GST 18%: ${formatFee(data.gst_amount)}`;
+  splitText += ` + GST ${gstPercentLabel(getProgram(data.program_slug || registrationProgramSlug)?.gstRate ?? GST_RATE)}: ${formatFee(data.gst_amount)}`;
   section.querySelector("[data-pay-split]").textContent = splitText;
 
   // UPI ID
@@ -1759,9 +2092,16 @@ if (form) checkPendingRegistration();
 form?.addEventListener("submit", async (event) => {
   event.preventDefault();
 
+  const program = selectedRegistrationProgram();
+  const programDeadline = program?.urgency?.deadline ? new Date(program.urgency.deadline) : registrationDeadline;
   // Block submission if deadline has passed
-  if (registrationDeadline && new Date() > registrationDeadline) {
+  if (programDeadline && new Date() > programDeadline) {
     statusMessage.textContent = "Registration is closed. The deadline has passed.";
+    statusMessage.classList.add("error");
+    return;
+  }
+  if (!registrationProgramIsOpen(program)) {
+    statusMessage.textContent = `${program.name} registration will open after the schedule and fee are announced.`;
     statusMessage.classList.add("error");
     return;
   }
@@ -1778,6 +2118,9 @@ form?.addEventListener("submit", async (event) => {
   const selected = selectedSessions();
   const formData = new FormData(form);
   const hostelOption = formData.get("hostel");
+  const selectedCourseIds = selected
+    .map((toggle) => formData.get(`${toggle.value}Course`))
+    .filter(Boolean);
 
   submitButton.disabled = true;
   submitButton.textContent = "Creating registration...";
@@ -1785,6 +2128,7 @@ form?.addEventListener("submit", async (event) => {
   statusMessage.textContent = "";
 
   const registrationData = {
+    program_slug: program.slug,
     student_name: formData.get("studentName"),
     class_level: formData.get("classLevel"),
     school_name: formData.get("schoolName"),
@@ -1793,23 +2137,25 @@ form?.addEventListener("submit", async (event) => {
     phone: formData.get("phone"),
     email: formData.get("email"),
     emergency_phone: formData.get("emergencyPhone"),
-    session1_course: formData.get("session1Course") || null,
-    session2_course: formData.get("session2Course") || null,
-    session3_course: formData.get("session3Course") || null,
+    course_ids: selectedCourseIds,
     hostel_option: hostelOption,
     medical_note: formData.get("medicalNote") || null
   };
 
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/create-registration`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/create_program_registration`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(registrationData)
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`
+      },
+      body: JSON.stringify({ payload: registrationData })
     });
 
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || "Failed to create registration");
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || err.error || "Failed to create registration");
     }
 
     const result = await res.json();
@@ -1818,7 +2164,7 @@ form?.addEventListener("submit", async (event) => {
       student_name: registrationData.student_name,
       class_level: registrationData.class_level,
       guardian_name: registrationData.guardian_name,
-      hostel_option: hostelOption
+      hostel_option: hostelOption || "none"
     });
   } catch (error) {
     statusMessage.classList.add("error");
