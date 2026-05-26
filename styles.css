@@ -899,8 +899,12 @@ h1 {
 .registration-form input, .registration-form select, .registration-form textarea { width: 100%; border: 1px solid #cfd6e1; border-radius: 8px; padding: 12px 14px; color: var(--ink); background: var(--white); }
 .registration-form input:focus, .registration-form select:focus, .registration-form textarea:focus { border-color: var(--orange); outline: 3px solid rgba(243, 112, 13, 0.18); }
 .full { grid-column: 1 / -1; }
-.session-selectors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.session-selectors { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
 .selection-card { display: grid; gap: 14px; border: 1px solid var(--line); border-radius: 8px; padding: 18px; background: #fffaf6; }
+.selection-empty,
+.selection-card-empty { background: #f8fafc; color: var(--muted); }
+.selection-empty strong { color: var(--ink); }
+.selection-empty p { margin: 0; line-height: 1.5; }
 .registration-programs {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));

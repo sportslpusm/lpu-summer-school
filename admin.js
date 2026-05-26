@@ -4,6 +4,21 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 let accessToken = null;
 let sessions = [];
 let programs = [];
+let allCourses = [];
+let allFees = [];
+let allRegistrations = [];
+
+const FEE_MODE_LABELS = {
+  session_count: "Per selected session",
+  package: "Fixed program price",
+  custom: "Custom price",
+  to_be_announced: "Fee not announced"
+};
+
+const FEE_STATUS_LABELS = {
+  ready: "Fee announced",
+  to_be_announced: "Fee not announced"
+};
 
 const HERO_BACKGROUND_SETTINGS = [
   { key: "hero_bg_campus", label: "Hero background - 2 Week Campus Program", description: "Desktop/tablet background image for the 2 Week Campus Program hero tab. Mobile hides this background." },
@@ -105,6 +120,119 @@ function programOptions(selectedId = "") {
   return programs.map((program) => `<option value="${program.id}" ${program.id === selectedId ? "selected" : ""}>${esc(program.name)}</option>`).join("");
 }
 
+function formatDateHuman(value, options = {}) {
+  if (!value) return "";
+  const date = new Date(`${value}T00:00:00+05:30`);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    ...(options.omitYear ? {} : { year: "numeric" })
+  });
+}
+
+function formatDateRangeLabel(startDate, endDate) {
+  if (!startDate && !endDate) return "Date to be decided";
+  if (startDate && !endDate) return `From ${formatDateHuman(startDate)}`;
+  if (!startDate && endDate) return `Until ${formatDateHuman(endDate)}`;
+
+  const start = new Date(`${startDate}T00:00:00+05:30`);
+  const end = new Date(`${endDate}T00:00:00+05:30`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "Date to be decided";
+
+  const sameYear = start.getFullYear() === end.getFullYear();
+  const startLabel = start.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    ...(sameYear ? {} : { year: "numeric" })
+  });
+  const endLabel = formatDateHuman(endDate);
+  return `${startLabel} to ${endLabel}`;
+}
+
+function durationFromDates(startDate, endDate) {
+  if (!startDate || !endDate) return "To be announced";
+  const start = new Date(`${startDate}T00:00:00+05:30`);
+  const end = new Date(`${endDate}T00:00:00+05:30`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return "To be announced";
+  const days = Math.max(Math.round((end - start) / 86400000) + 1, 1);
+  if (days >= 7) {
+    const weeks = Math.ceil(days / 7);
+    return `${weeks} week${weeks > 1 ? "s" : ""}`;
+  }
+  return `${days} day${days > 1 ? "s" : ""}`;
+}
+
+function toPercentInput(rate) {
+  const numeric = Number(rate ?? 0.18);
+  const percent = numeric <= 1 ? numeric * 100 : numeric;
+  return Number.isInteger(percent) ? String(percent) : String(Number(percent.toFixed(2)));
+}
+
+function fromPercentInput(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric < 0) return 0;
+  return numeric > 1 ? Number((numeric / 100).toFixed(4)) : numeric;
+}
+
+function feeModeLabel(value) {
+  return FEE_MODE_LABELS[value] || value || "Not configured";
+}
+
+function feeStatusLabel(value) {
+  return FEE_STATUS_LABELS[value] || value || "Not configured";
+}
+
+function activeSessionsForProgram(programId) {
+  return sessions.filter((session) => session.program_id === programId && session.is_active !== false);
+}
+
+function activeCoursesForProgram(programId) {
+  return allCourses.filter((course) => course.program_id === programId && course.is_active !== false);
+}
+
+function feeTiersForProgram(programId) {
+  return allFees.filter((fee) => fee.program_id === programId);
+}
+
+function activeRegistrationsForProgram(programId) {
+  return allRegistrations.filter((reg) => {
+    if (reg.program_id !== programId) return false;
+    if (["cancelled", "rejected"].includes(reg.status)) return false;
+    if (reg.payment_status === "failed") return false;
+    return true;
+  });
+}
+
+function programSetupState(program) {
+  const issues = [];
+  const sessionCount = activeSessionsForProgram(program.id).length;
+  const courseCount = activeCoursesForProgram(program.id).length;
+  const tiers = feeTiersForProgram(program.id);
+  const capacity = Number(program.seats_base || 0);
+
+  if (!program.start_date || !program.end_date) issues.push("dates missing");
+  if (!sessionCount) issues.push("sessions missing");
+  if (!courseCount) issues.push("courses missing");
+  if (program.fee_status !== "ready" || program.fee_mode === "to_be_announced") {
+    issues.push("fee not announced");
+  } else if (program.fee_mode === "session_count" && !tiers.some((tier) => Number(tier.session_count) > 0 && Number(tier.fee_amount) > 0)) {
+    issues.push("fee tiers missing");
+  } else if (program.fee_mode !== "session_count" && Number(program.base_fee || 0) <= 0) {
+    issues.push("base fee missing");
+  }
+  if (program.registration_enabled && issues.length) issues.push("registration marked open before setup is ready");
+
+  return {
+    ready: program.is_active !== false && program.registration_enabled && issues.length === 0,
+    displayReady: program.is_active !== false && courseCount > 0,
+    issues,
+    capacity,
+    reserved: activeRegistrationsForProgram(program.id).length,
+    seatsLeft: capacity > 0 ? Math.max(capacity - activeRegistrationsForProgram(program.id).length, 0) : null
+  };
+}
+
 function updateProgramFilters() {
   const filters = [
     ["#regProgramFilter", "All Programs"],
@@ -156,7 +284,7 @@ async function sendEmail(to, subject, html) {
 }
 
 function registrationConfirmationEmail(reg) {
-  const courses = [reg.session1_course, reg.session2_course, reg.session3_course].filter(Boolean);
+  const courses = registrationCourseList(reg);
   return `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px">
       <div style="background:#f3700d;color:white;padding:20px;border-radius:10px 10px 0 0;text-align:center">
@@ -359,6 +487,7 @@ async function loadAll() {
     await loadPrograms();
     await loadSessions();
     await Promise.all([loadRegistrations(), loadCourses(), loadFees(), loadGallery(), loadSettings()]);
+    filterPrograms();
   } catch (err) {
     if (err.message.includes("JWT") || err.message.includes("401")) {
       localStorage.removeItem("sb_token");
@@ -388,18 +517,34 @@ function renderPrograms(rows) {
   const body = $("#programBody");
   if (!body) return;
   body.innerHTML = rows.map((p) => `
+    ${(() => {
+      const setup = programSetupState(p);
+      const dateLabel = formatDateRangeLabel(p.start_date, p.end_date);
+      const capacityLabel = setup.seatsLeft === null ? "TBA" : `${setup.seatsLeft} / ${setup.capacity}`;
+      const readinessClass = setup.ready ? "confirmed" : setup.displayReady ? "warning" : "pending";
+      const readinessText = setup.ready ? "Ready" : setup.displayReady ? "Needs setup" : "Draft";
+      const feeText = p.fee_status === "ready"
+        ? `${feeModeLabel(p.fee_mode)}${p.base_fee ? ` / Rs. ${Number(p.base_fee).toLocaleString("en-IN")}` : ""}`
+        : "To be announced";
+      return `
     <tr>
       <td><strong>${esc(p.name)}</strong><br><small>${esc(p.slug)}</small></td>
-      <td>${esc(p.dates_label || "To be announced")}</td>
+      <td>${esc(dateLabel)}<br><small>${esc(durationFromDates(p.start_date, p.end_date))}</small></td>
       <td>${esc(p.mode || "")}</td>
-      <td>${p.fee_status === "ready" ? `${esc(p.fee_mode)}${p.base_fee ? ` / Rs. ${p.base_fee}` : ""}` : "To be announced"}</td>
-      <td><span class="badge badge-${p.registration_enabled ? "confirmed" : "pending"}">${p.registration_enabled ? "Open" : "Closed"}</span></td>
+      <td>${esc(feeText)}</td>
+      <td>
+        <span class="badge badge-${readinessClass}">${readinessText}</span>
+        ${setup.issues.length ? `<br><small>${esc(setup.issues.slice(0, 2).join(", "))}${setup.issues.length > 2 ? "..." : ""}</small>` : ""}
+      </td>
+      <td>${esc(capacityLabel)}<br><small>reserved: ${setup.reserved}</small></td>
       <td><span class="toggle ${p.is_active ? "on" : ""}" onclick="toggleProgram('${p.id}', ${!p.is_active})"></span></td>
       <td class="row-actions">
         <button onclick="editProgram('${p.id}')">Edit</button>
         <button onclick="deleteProgram('${p.id}')" class="del">Delete</button>
       </td>
     </tr>
+      `;
+    })()}
   `).join("");
 }
 
@@ -412,49 +557,106 @@ window.toggleProgram = async function(id, active) {
 
 function programForm(p = {}) {
   const deadline = toLocalDateTimeInputs(p.registration_deadline);
+  const startDate = p.start_date || "";
+  const endDate = p.end_date || "";
+  const setup = p.id ? programSetupState(p) : { issues: ["new program starts as draft"], seatsLeft: null, reserved: 0 };
   return `
-    <label>Name <input id="mProgramName" value="${esc(p.name || "")}" required></label>
-    <label>Slug <input id="mProgramSlug" value="${esc(p.slug || "")}" placeholder="online-course" required></label>
-    <label>Short Label <input id="mProgramShort" value="${esc(p.short_label || "")}"></label>
-    <label>Description <textarea id="mProgramDesc" rows="3">${esc(p.description || "")}</textarea></label>
-    <label>CTA Context <textarea id="mProgramContext" rows="2">${esc(p.cta_context || "")}</textarea></label>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <label>Dates Label <input id="mProgramDatesLabel" value="${esc(p.dates_label || "")}" placeholder="15 to 27 June 2026"></label>
-      <label>Mode <input id="mProgramMode" value="${esc(p.mode || "")}" placeholder="On Campus"></label>
-      <label>Duration <input id="mProgramDuration" value="${esc(p.duration || "")}" placeholder="2 weeks"></label>
-      <label>Location <input id="mProgramLocation" value="${esc(p.location || "")}" placeholder="LPU Campus"></label>
+    <div class="modal-section">
+      <h4>Basics</h4>
+      <label>Name <input id="mProgramName" value="${esc(p.name || "")}" required></label>
+      <div class="form-grid two">
+        <label>Slug <input id="mProgramSlug" value="${esc(p.slug || "")}" placeholder="staff-camp" required></label>
+        <label>Short Label <input id="mProgramShort" value="${esc(p.short_label || "")}" placeholder="Staff Kid Camp"></label>
+      </div>
+      <label>Description <textarea id="mProgramDesc" rows="3">${esc(p.description || "")}</textarea></label>
+      <label>CTA Context <textarea id="mProgramContext" rows="2">${esc(p.cta_context || "")}</textarea></label>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <label>Start Date <input id="mProgramStart" type="date" value="${esc(p.start_date || "")}"></label>
-      <label>End Date <input id="mProgramEnd" type="date" value="${esc(p.end_date || "")}"></label>
+
+    <div class="modal-section">
+      <h4>Schedule</h4>
+      <div class="form-grid two">
+        <label>Start Date <input id="mProgramStart" type="date" value="${esc(startDate)}"></label>
+        <label>End Date <input id="mProgramEnd" type="date" value="${esc(endDate)}"></label>
+        <label>Mode <input id="mProgramMode" value="${esc(p.mode || "")}" placeholder="On Campus / Online / Hybrid"></label>
+        <label>Location <input id="mProgramLocation" value="${esc(p.location || "")}" placeholder="LPU Campus, Phagwara"></label>
+      </div>
+      <div class="derived-preview" data-program-date-preview>
+        <strong>${esc(formatDateRangeLabel(startDate, endDate))}</strong>
+        <span>${esc(durationFromDates(startDate, endDate))}</span>
+      </div>
+      <p class="form-note">Date label and duration are generated automatically from the start/end dates.</p>
     </div>
-    <label>Registration Deadline <div style="display:flex;gap:8px"><input id="mProgramDeadlineDate" type="date" value="${deadline.date}" style="flex:1"><input id="mProgramDeadlineTime" type="time" value="${deadline.time}" style="width:120px"></div></label>
-    <label>Deadline Label <input id="mProgramDeadlineLabel" value="${esc(p.deadline_label || "")}" placeholder="14 June 2026"></label>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <label>Seats Label <input id="mProgramSeatsLabel" value="${esc(p.seats_label || "Seats Left")}"></label>
-      <label>Seats Base <input id="mProgramSeatsBase" type="number" min="0" value="${p.seats_base ?? ""}"></label>
-      <label>Seats Minimum <input id="mProgramSeatsMin" type="number" min="0" value="${p.seats_min ?? ""}"></label>
-      <label>Sort Order <input id="mProgramOrder" type="number" value="${p.sort_order ?? programs.length + 1}"></label>
+
+    <div class="modal-section">
+      <h4>Registration</h4>
+      <label>Registration Deadline
+        <div class="inline-fields">
+          <input id="mProgramDeadlineDate" type="date" value="${deadline.date}">
+          <input id="mProgramDeadlineTime" type="time" value="${deadline.time}">
+        </div>
+      </label>
+      <div class="form-grid two">
+        <label>Seat Capacity <input id="mProgramSeatsBase" type="number" min="0" value="${p.seats_base ?? ""}" placeholder="Leave blank if not announced"></label>
+        <label>Sort Order <input id="mProgramOrder" type="number" value="${p.sort_order ?? programs.length + 1}"></label>
+      </div>
+      <label>Seats Note <input id="mProgramSeatsNote" value="${esc(p.seats_note || "")}" placeholder="Optional note shown near seats"></label>
+      <div class="derived-preview">
+        <strong>Real seats left: ${setup.seatsLeft === null ? "TBA" : `${setup.seatsLeft} of ${setup.capacity}`}</strong>
+        <span>Reserved registrations: ${setup.reserved || 0}</span>
+      </div>
     </div>
-    <label>Seats Note <input id="mProgramSeatsNote" value="${esc(p.seats_note || "")}"></label>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <label>Fee Mode <select id="mProgramFeeMode">
-        ${["session_count", "package", "custom", "to_be_announced"].map((value) => `<option value="${value}" ${p.fee_mode === value ? "selected" : ""}>${value}</option>`).join("")}
-      </select></label>
-      <label>Fee Status <select id="mProgramFeeStatus">
-        <option value="ready" ${p.fee_status === "ready" ? "selected" : ""}>ready</option>
-        <option value="to_be_announced" ${p.fee_status !== "ready" ? "selected" : ""}>to_be_announced</option>
-      </select></label>
-      <label>Base Fee <input id="mProgramBaseFee" type="number" min="0" value="${p.base_fee ?? 0}"></label>
-      <label>GST Rate <input id="mProgramGstRate" type="number" min="0" step="0.01" value="${p.gst_rate ?? 0.18}"></label>
+
+    <div class="modal-section">
+      <h4>Pricing</h4>
+      <div class="form-grid two">
+        <label>Fee Type <select id="mProgramFeeMode">
+          ${["session_count", "package", "custom", "to_be_announced"].map((value) => `<option value="${value}" ${p.fee_mode === value ? "selected" : ""}>${feeModeLabel(value)}</option>`).join("")}
+        </select></label>
+        <label>Fee Status <select id="mProgramFeeStatus">
+          <option value="ready" ${p.fee_status === "ready" ? "selected" : ""}>Fee announced</option>
+          <option value="to_be_announced" ${p.fee_status !== "ready" ? "selected" : ""}>Fee not announced</option>
+        </select></label>
+        <label>Base Fee (Rs.) <input id="mProgramBaseFee" type="number" min="0" value="${p.base_fee ?? 0}"></label>
+        <label>GST Rate (%) <input id="mProgramGstRate" type="number" min="0" step="0.01" value="${esc(toPercentInput(p.gst_rate))}" inputmode="decimal"></label>
+      </div>
+      <p class="form-note">Enter GST as a percent, for example 18. The system saves it internally as 0.18.</p>
     </div>
-    <label>Upload Program Image <input id="mProgramImageFile" type="file" accept="image/*"></label>
-    <label>Hero/Program Image URL <input id="mProgramImage" value="${esc(p.image_url || "")}" placeholder="https://..."></label>
-    <label>Upload Background Image <input id="mProgramBgFile" type="file" accept="image/*"></label>
-    <label>Background Image URL <input id="mProgramBg" value="${esc(p.background_image_url || "")}" placeholder="https://..."></label>
-    <label><input id="mProgramHostel" type="checkbox" ${p.allow_hostel ? "checked" : ""}> Allow hostel options</label>
-    <label><input id="mProgramRegistration" type="checkbox" ${p.registration_enabled ? "checked" : ""}> Registration enabled</label>
+
+    <div class="modal-section">
+      <h4>Media</h4>
+      <label>Upload Program Card Image <input id="mProgramImageFile" type="file" accept="image/*"></label>
+      <label>Program Card Image URL <input id="mProgramImage" value="${esc(p.image_url || "")}" placeholder="https://..."></label>
+      <label>Upload Hero Background Image <input id="mProgramBgFile" type="file" accept="image/*"></label>
+      <label>Hero Background Image URL <input id="mProgramBg" value="${esc(p.background_image_url || "")}" placeholder="https://..."></label>
+    </div>
+
+    <div class="modal-section">
+      <h4>Visibility</h4>
+      <label class="check-label"><input id="mProgramHostel" type="checkbox" ${p.allow_hostel ? "checked" : ""}> Allow hostel bed options</label>
+      <label class="check-label"><input id="mProgramRegistration" type="checkbox" ${p.registration_enabled ? "checked" : ""}> Open registration when setup is ready</label>
+      ${setup.issues.length ? `<div class="setup-warning"><strong>Setup checklist</strong><span>${esc(setup.issues.join("; "))}</span></div>` : `<div class="setup-ok">This program is ready for registration.</div>`}
+    </div>
   `;
+}
+
+function updateProgramDerivedPreview() {
+  const preview = $("[data-program-date-preview]");
+  if (!preview) return;
+  const startDate = $("#mProgramStart")?.value || "";
+  const endDate = $("#mProgramEnd")?.value || "";
+  preview.innerHTML = `<strong>${esc(formatDateRangeLabel(startDate, endDate))}</strong><span>${esc(durationFromDates(startDate, endDate))}</span>`;
+}
+
+function wireProgramForm() {
+  ["#mProgramStart", "#mProgramEnd"].forEach((selector) => {
+    $(selector)?.addEventListener("change", updateProgramDerivedPreview);
+  });
+  $("#mProgramFeeMode")?.addEventListener("change", () => {
+    const mode = $("#mProgramFeeMode").value;
+    const baseFee = $("#mProgramBaseFee");
+    if (baseFee) baseFee.disabled = mode === "session_count" || mode === "to_be_announced";
+  });
+  $("#mProgramFeeMode")?.dispatchEvent(new Event("change"));
 }
 
 function toLocalDateTimeInputs(value) {
@@ -468,28 +670,33 @@ function toLocalDateTimeInputs(value) {
 function getProgramFormData() {
   const deadlineDate = $("#mProgramDeadlineDate").value;
   const deadlineTime = $("#mProgramDeadlineTime").value || "23:59";
+  const startDate = $("#mProgramStart").value || null;
+  const endDate = $("#mProgramEnd").value || null;
+  const capacity = $("#mProgramSeatsBase").value ? parseInt($("#mProgramSeatsBase").value, 10) : null;
+  const feeMode = $("#mProgramFeeMode").value;
+  const feeStatus = $("#mProgramFeeStatus").value;
   return {
     name: $("#mProgramName").value,
     slug: $("#mProgramSlug").value.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, ""),
     short_label: $("#mProgramShort").value || null,
     description: $("#mProgramDesc").value || null,
     cta_context: $("#mProgramContext").value || null,
-    dates_label: $("#mProgramDatesLabel").value || null,
-    start_date: $("#mProgramStart").value || null,
-    end_date: $("#mProgramEnd").value || null,
+    dates_label: formatDateRangeLabel(startDate, endDate),
+    start_date: startDate,
+    end_date: endDate,
     mode: $("#mProgramMode").value || null,
-    duration: $("#mProgramDuration").value || null,
+    duration: durationFromDates(startDate, endDate),
     location: $("#mProgramLocation").value || null,
     registration_deadline: deadlineDate ? `${deadlineDate}T${deadlineTime}:00+05:30` : null,
-    deadline_label: $("#mProgramDeadlineLabel").value || null,
-    seats_label: $("#mProgramSeatsLabel").value || "Seats Left",
-    seats_base: $("#mProgramSeatsBase").value ? parseInt($("#mProgramSeatsBase").value) : null,
-    seats_min: $("#mProgramSeatsMin").value ? parseInt($("#mProgramSeatsMin").value) : null,
+    deadline_label: deadlineDate ? formatDateHuman(deadlineDate) : "To be announced",
+    seats_label: capacity ? "Seats Left" : "Seats Update",
+    seats_base: capacity,
+    seats_min: null,
     seats_note: $("#mProgramSeatsNote").value || null,
-    fee_mode: $("#mProgramFeeMode").value,
-    fee_status: $("#mProgramFeeStatus").value,
+    fee_mode: feeMode,
+    fee_status: feeStatus,
     base_fee: parseInt($("#mProgramBaseFee").value || "0"),
-    gst_rate: parseFloat($("#mProgramGstRate").value || "0.18"),
+    gst_rate: fromPercentInput($("#mProgramGstRate").value || "18"),
     image_url: $("#mProgramImage").value || null,
     background_image_url: $("#mProgramBg").value || null,
     allow_hostel: $("#mProgramHostel").checked,
@@ -516,6 +723,7 @@ window.editProgram = async function(id) {
     await loadCourses();
     await loadFees();
   });
+  wireProgramForm();
 };
 
 window.deleteProgram = async function(id) {
@@ -529,10 +737,8 @@ $("#addProgramBtn")?.addEventListener("click", () => {
     await apiInsert("programs", await applyProgramUploads(getProgramFormData()));
     await loadPrograms();
   });
+  wireProgramForm();
 });
-
-// --- REGISTRATIONS ---
-let allRegistrations = [];
 
 async function loadRegistrations() {
   allRegistrations = await apiGet("registrations", "order=created_at.desc");
@@ -576,7 +782,9 @@ function renderRegistrations(rows) {
   }
   $("#regEmpty").hidden = true;
 
-  body.innerHTML = rows.map((r) => `
+  body.innerHTML = rows.map((r) => {
+    const courseList = registrationCourseList(r);
+    return `
     <tr>
       <td>${new Date(r.created_at).toLocaleDateString("en-IN")}</td>
       <td><strong>${esc(r.student_name)}</strong></td>
@@ -585,7 +793,7 @@ function renderRegistrations(rows) {
       <td>${esc(r.school_name)}</td>
       <td>${esc(r.guardian_name)}</td>
       <td>${esc(r.phone)}</td>
-      <td>${[r.session1_course, r.session2_course, r.session3_course].filter(Boolean).map(c => esc(c)).join(", ") || "\u2014"}</td>
+      <td>${courseList.map(c => esc(c)).join(", ") || "\u2014"}</td>
       <td>Rs. ${r.total_fee}</td>
       <td><span class="badge badge-${paymentBadgeClass(r.payment_status)}">${paymentBadgeLabel(r.payment_status)}</span></td>
       <td>${r.screenshot_url ? `<a href="${esc(r.screenshot_url)}" target="_blank" class="screenshot-thumb" title="View screenshot"><img src="${esc(r.screenshot_url)}" alt="proof"></a>` : "\u2014"}</td>
@@ -595,15 +803,28 @@ function renderRegistrations(rows) {
         ${r.payment_status === "verification_pending" ? `<button onclick="approveRegistration('${r.id}')" class="approve-btn" title="Approve">✓</button><button onclick="rejectRegistration('${r.id}')" class="del" title="Reject">✗</button>` : `<button onclick="changeRegStatus('${r.id}', 'confirmed')">✓</button><button onclick="changeRegStatus('${r.id}', 'cancelled')" class="del">✗</button>`}
       </td>
     </tr>
-  `).join("");
+  `;
+  }).join("");
 }
 
 const HOSTEL_LABELS = { none: "No hostel", hostel_only: "Non-AC hostel bed", hostel_food: "AC hostel bed" };
 
+function registrationCourseList(reg) {
+  if (typeof reg.course_names === "string") {
+    try {
+      const parsed = JSON.parse(reg.course_names);
+      if (Array.isArray(parsed) && parsed.length) return parsed;
+    } catch (_) {}
+  }
+  if (Array.isArray(reg.course_names) && reg.course_names.length) return reg.course_names;
+  if (Array.isArray(reg.program_snapshot?.courses) && reg.program_snapshot.courses.length) return reg.program_snapshot.courses;
+  return [reg.session1_course, reg.session2_course, reg.session3_course].filter(Boolean);
+}
+
 window.viewRegistration = async function(id) {
   const rows = await apiGet("registrations", `id=eq.${id}`);
   const r = rows[0];
-  const courses = [r.session1_course, r.session2_course, r.session3_course].filter(Boolean);
+  const courses = registrationCourseList(r);
 
   const hostelLabel = HOSTEL_LABELS[r.hostel_option] || r.hostel_option || "N/A";
   const hostelAmt = r.hostel_amount || 0;
@@ -630,6 +851,7 @@ window.viewRegistration = async function(id) {
       <div><strong>Payment Ref:</strong> <code>${esc(r.payment_reference || "N/A")}</code></div>
       <div><strong>Payment:</strong> <span class="badge badge-${paymentBadgeClass(r.payment_status)}">${paymentBadgeLabel(r.payment_status)}</span></div>
       <div><strong>Status:</strong> <span class="badge badge-${r.status}">${r.status}</span></div>
+      ${r.payment_review_note ? `<div><strong>Payment Review Note:</strong> ${esc(r.payment_review_note)}</div>` : ""}
       ${r.screenshot_url ? `
       <hr style="border:none;border-top:1px solid #e4e7ec">
       <div><strong>Payment Screenshot:</strong></div>
@@ -653,7 +875,7 @@ window.approveRegistration = async function(id) {
   await apiUpdate("registrations", id, {
     status: "confirmed",
     payment_status: "paid",
-    verified_by: "admin",
+    verified_by: localStorage.getItem("sb_email") || "admin",
     verified_at: new Date().toISOString()
   });
 
@@ -668,12 +890,14 @@ window.approveRegistration = async function(id) {
 };
 
 window.rejectRegistration = async function(id) {
-  if (!confirm("Reject this payment? The student will need to re-register.")) return;
+  const note = prompt("Reason for rejection (shown only in admin export/detail):", "Payment proof could not be verified.");
+  if (note === null) return;
   await apiUpdate("registrations", id, {
     status: "rejected",
     payment_status: "failed",
-    verified_by: "admin",
-    verified_at: new Date().toISOString()
+    verified_by: localStorage.getItem("sb_email") || "admin",
+    verified_at: new Date().toISOString(),
+    payment_review_note: note
   });
   loadRegistrations();
 };
@@ -816,9 +1040,6 @@ $("#addSessionBtn").addEventListener("click", () => {
   });
 });
 
-// --- COURSES (with image upload) ---
-let allCourses = [];
-
 async function loadCourses() {
   allCourses = await apiGet("courses", "order=sort_order.asc&select=*,sessions(name,time_slot,program_id),programs(name)");
   // Populate session filter dropdown
@@ -954,10 +1175,15 @@ window.refreshCourseSessionOptions = function() {
 };
 
 function getCourseFormData() {
+  const programId = $("#mCourseProgram").value;
+  const sessionId = $("#mCourseSession").value;
+  if (!sessions.some((session) => session.id === sessionId && session.program_id === programId)) {
+    throw new Error("Selected session does not belong to the selected program.");
+  }
   return {
     name: $("#mCourseName").value,
-    program_id: $("#mCourseProgram").value,
-    session_id: $("#mCourseSession").value,
+    program_id: programId,
+    session_id: sessionId,
     category: $("#mCourseCategory").value,
     class_range: $("#mCourseClass").value,
     description: $("#mCourseDesc").value,
@@ -965,9 +1191,6 @@ function getCourseFormData() {
     sort_order: parseInt($("#mCourseOrder").value)
   };
 }
-
-// --- FEES ---
-let allFees = [];
 
 async function loadFees() {
   allFees = await apiGet("fee_tiers", "order=session_count.asc");
@@ -984,7 +1207,7 @@ function renderFees(fees) {
   $("#feeBody").innerHTML = fees.map((f) => `
     <tr>
       <td>${esc(programName(f.program_id))}</td>
-      <td>${f.session_count}</td>
+      <td>${f.session_count} selected ${Number(f.session_count) === 1 ? "session" : "sessions"}</td>
       <td>Rs. ${f.fee_amount.toLocaleString("en-IN")}</td>
       <td>${esc(f.label || "")}</td>
       <td class="row-actions">
@@ -1001,9 +1224,9 @@ window.editFee = function(id) {
   const fee = allFees.find((f) => f.id === id);
   openModal("Edit Fee Tier", `
     <label>Program <select id="mFeeProgram">${programOptions(fee.program_id)}</select></label>
-    <label>Session Count <input id="mFeeCount" type="number" value="${fee.session_count}"></label>
+    <label>Number of selected sessions <input id="mFeeCount" type="number" min="1" value="${fee.session_count}"></label>
     <label>Fee Amount (Rs.) <input id="mFeeAmount" type="number" value="${fee.fee_amount}"></label>
-    <label>Label <input id="mFeeLabel" value="${esc(fee.label || "")}"></label>
+    <label>Public label <input id="mFeeLabel" value="${esc(fee.label || "")}" placeholder="Example: Any 2 sessions"></label>
   `, async () => {
     await apiUpdate("fee_tiers", id, {
       program_id: $("#mFeeProgram").value,
@@ -1024,9 +1247,9 @@ window.deleteFee = async function(id) {
 $("#addFeeBtn").addEventListener("click", () => {
   openModal("Add Fee Tier", `
     <label>Program <select id="mFeeProgram">${programOptions(programs[0]?.id)}</select></label>
-    <label>Session Count <input id="mFeeCount" type="number" value="0"></label>
+    <label>Number of selected sessions <input id="mFeeCount" type="number" min="1" value="1"></label>
     <label>Fee Amount (Rs.) <input id="mFeeAmount" type="number" value="0"></label>
-    <label>Label <input id="mFeeLabel" placeholder="Description"></label>
+    <label>Public label <input id="mFeeLabel" placeholder="Example: Any 1 session"></label>
   `, async () => {
     await apiInsert("fee_tiers", {
       program_id: $("#mFeeProgram").value,
@@ -1153,8 +1376,13 @@ const SETTING_TYPES = {
 };
 
 const SETTING_LABELS = {
+  event_start_date: "Global fallback start date",
+  event_end_date: "Global fallback end date",
+  registration_deadline: "Global fallback registration deadline",
+  max_seats: "Legacy global seats fallback",
   hostel_only_fee: "Non-AC hostel bed daily rate",
-  hostel_food_fee: "AC hostel bed daily rate"
+  hostel_food_fee: "AC hostel bed daily rate",
+  upi_id: "UPI ID"
 };
 
 function settingInput(key, value) {

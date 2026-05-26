@@ -39,6 +39,7 @@ Tracked source files:
 - `supabase/migrations/20260521171245_tighten_program_security.sql`: tightened RPC/admin execute surface.
 - `supabase/migrations/20260521181947_tighten_program_public_policy.sql`: narrowed active program public read policy to anon.
 - `supabase/migrations/20260526084756_update_hostel_daily_rates.sql`: updates hostel config to daily per-bed rates and recalculates hostel totals in the registration RPC from daily rate times program duration days.
+- `supabase/migrations/20260526155902_admin_logic_cleanup.sql`: adds durable `course_names` and `payment_review_note`, adds real program registration stats RPC, and updates registration RPC validation for dynamic program/session/course selections, real capacity, dates, and per-program fees.
 - `assets/dsosww-logo.png`, `assets/lpu-naac-logo.png`, `assets/sww-logo.png`: tracked local image assets.
 - `.gitignore`: ignores `node_modules/`, `.playwright-mcp/`, `.code-review-graph/`, root `*.png` screenshots except `assets/*.png`, `.claude/`, and `.vercel/`.
 
@@ -116,7 +117,8 @@ Registration page with:
 - Registration hero and step progress.
 - Student details block.
 - Parent/guardian details block.
-- Three session selection cards, statically named `session1`, `session2`, `session3`.
+- Dynamic program picker for all active programs.
+- Dynamic session/class cards generated from the selected program's `sessions` and `courses`; supports more than three sessions while preserving first-three legacy columns for older admin/export compatibility.
 - Optional hostel/meals radio group.
 - Additional info and consent.
 - Sticky submit/fee summary.
@@ -161,7 +163,7 @@ Local Codex Supabase access setup on 2026-05-20:
 - `~/.codex/config.toml` has a remote MCP server named `supabase` pointing to `https://mcp.supabase.com/mcp?project_ref=bynpuhoysivxxlblxica`.
 - `remote_mcp_client_enabled = true` is enabled in the local Codex config.
 - `codex mcp login supabase` completed successfully through OAuth.
-- Supabase MCP is configured. On 2026-05-26 the Codex MCP client needed a fresh OAuth login before tools became available; after re-login, migration `20260526084756_update_hostel_daily_rates` was applied through Supabase MCP. The local Supabase CLI account still does not have direct project access through `supabase link`.
+- Supabase MCP is configured. On 2026-05-26 the Codex MCP client needed a fresh OAuth login before tools became available; after re-login, migrations `20260526084756_update_hostel_daily_rates` and `20260526155902_admin_logic_cleanup` were applied through Supabase MCP. The local Supabase CLI account still does not have direct project access through `supabase link`.
 
 The Supabase anon key is also hardcoded in both files. Do not duplicate the key in docs unless necessary; rotate/update both JS files together if the anon key changes.
 
@@ -180,7 +182,7 @@ The Supabase OpenAPI schema endpoint rejected the anon key and requires a servic
 
 #### `programs`
 
-Added by `supabase/migrations/20260521170842_program_model.sql`.
+Added by `supabase/migrations/20260521170842_program_model.sql`; most recently updated by `supabase/migrations/20260526155902_admin_logic_cleanup.sql`.
 
 Important columns:
 
@@ -344,10 +346,10 @@ Important columns:
 - Program: `program_id`, `program_slug`, `program_name`, `program_snapshot`
 - Student: `student_name`, `class_level`, `school_name`, `city`
 - Guardian/contact: `guardian_name`, `phone`, `email`, `emergency_phone`
-- Course selections: legacy `session1_course`, `session2_course`, `session3_course`, plus `selected_course_ids` JSONB
+- Course selections: legacy `session1_course`, `session2_course`, `session3_course`, plus `selected_course_ids` JSONB and durable `course_names` JSONB for all selected classes/activities
 - Hostel: `hostel_option`, `hostel_amount`
 - Payment/fees: `session_fee`, `gst_amount`, `total_fee`, `payment_reference`, `payment_status`
-- Verification/admin: `status`, `screenshot_url`, `verified_by`, `verified_at`
+- Verification/admin: `status`, `screenshot_url`, `verified_by`, `verified_at`, `payment_review_note`
 - Notes: `medical_note`
 
 Admin expects statuses including:
@@ -356,6 +358,8 @@ Admin expects statuses including:
 - `payment_status`: `verification_pending`, `paid`, `unpaid`, `failed`
 
 New registrations should be created through `public.create_program_registration(payload jsonb)`, not by direct table inserts from the public browser.
+
+`public.get_program_registration_stats()` returns real per-program reserved/confirmed counts for public hero/admin capacity display. Reserved registrations exclude cancelled/rejected rows and failed payments.
 
 #### `payments`
 
@@ -413,12 +417,13 @@ Request payload:
 Server/database responsibilities:
 
 - Validate required fields and selected program.
-- Reject inactive programs, closed registration, or fee-to-be-announced programs.
+- Reject inactive programs, closed registration, fee-to-be-announced programs, and programs missing start/end dates.
+- Enforce `registration_deadline` and real `programs.seats_base` capacity before creating a registration.
 - Validate selected course IDs are active, belong to the selected program, and do not duplicate a session.
 - Recalculate fee from program-specific `fee_tiers` or `programs.base_fee`.
 - Apply hostel fee only when the program allows hostel. Hostel settings are daily per-bed rates; the RPC multiplies the selected daily rate by program duration days, preferring duration text such as `2 weeks` -> 14 days, then falling back to program start/end dates.
 - Calculate GST from `programs.gst_rate`.
-- Create a pending registration with program snapshot and unique payment reference.
+- Create a pending registration with program snapshot, durable `course_names`, selected course IDs, first-three legacy course fields, and a unique payment reference.
 - Return UPI payment data and receipt-ready fields.
 
 Expected response fields used by UI:
@@ -435,6 +440,18 @@ Expected response fields used by UI:
 - `upi_id`
 - `upi_url`
 - `qr_data_url`
+
+### `public.get_program_registration_stats()`
+
+Added by `supabase/migrations/20260526155902_admin_logic_cleanup.sql`.
+
+Called by `script.js` through Supabase REST RPC to avoid fake seat urgency:
+
+- URL: `/rest/v1/rpc/get_program_registration_stats`
+- Method: `POST`
+- Returns `program_id`, `reserved_count`, and `confirmed_count`
+- Reserved count excludes cancelled/rejected registrations and failed payments
+- Execute permission is granted to `anon` and `authenticated`
 
 Security note:
 
@@ -488,28 +505,28 @@ Used after admin approval/confirmation. Failures are caught and only logged in t
 On page load, `script.js`:
 
 1. Defines fallback program, session/course, and fee data.
-2. Fetches active programs, active sessions, active courses, fee tiers, and site config from Supabase REST.
+2. Fetches active programs, active sessions, active courses, fee tiers, site config, and real program registration stats from Supabase REST/RPC.
 3. Applies settings to contact/footer/deadline/date/hostel UI.
 4. Normalizes `programs` rows into the hero/registration/admin-friendly program model.
 5. Builds per-program fee maps and filters sessions/courses by selected program.
-6. Populates registration program cards, course dropdowns, homepage track cards, session cards, and fee table.
+6. Populates registration program cards, dynamic selected-program session/course cards, homepage track cards, session cards, and fee table.
 7. Initializes the homepage hero program selector. The main heading stays fixed; only description, metadata, deadline/countdown, seats-left note/count, and active tab state change. Legacy facts targets are optional because the visible hero stats cards were removed.
 8. Auto-rotates the selected hero program every few seconds while preserving click/tap and keyboard selection.
 9. Hero media loads active `gallery_images` rows from Supabase/admin and rebuilds the homepage hero strip without adding duplicate loop images. The strip auto-advances through existing cards in JS, pauses on user interaction, and uses centered container `scrollTo` rather than card `scrollIntoView` to avoid page-level horizontal shifting. On mobile the centered card intentionally shows small previous/next peeks. Desktop/tablet program backgrounds load from separate `site_config` `hero_bg_*` keys, with hardcoded fallbacks if those settings are empty.
 10. Homepage Program tracks, Sessions, and Fees sections follow the selected hero/program filter. Programs without configured tracks show an empty-state message instead of showing campus courses.
-11. Runs nav, countdown, seats-left urgency, reveal, contact overlay, and social-proof UI. The social-proof toast is hidden on small mobile viewports so it does not cover the hero program list.
+11. Runs nav, countdown, real capacity-based seats display, reveal, and contact overlay. Fake social-proof registration popups are intentionally disabled.
 
 Important: REST fetch failures are mostly silent and leave hardcoded HTML/JS fallback content in place.
 
 ## Registration Flow
 
 1. User chooses one of the five active programs.
-2. Registration only opens if that program has `registration_enabled = true`, `fee_status = ready`, and usable fee configuration.
-3. User fills student, guardian, session/course, hostel, medical note, and consent fields.
-4. Session/course dropdowns are filtered to the selected program.
+2. Registration only opens if that program has `registration_enabled = true`, start/end dates, `fee_status = ready`, usable fee configuration, and at least one active session/course.
+3. User fills student, guardian, session/course or activity/course, hostel, medical note, and consent fields.
+4. Session/course cards are generated from the selected program and filtered to that program; staff-camp currently renders eight activity cards from production data.
 5. Hostel UI is hidden/disabled when the selected program does not allow hostel.
 6. Validation runs per field/block and controls the submit button.
-7. Session fee is based on the selected program's fee mode and fee tiers.
+7. Main fee is based on the selected program's fee mode: `session_count` uses fee tiers by selected count, while `package`/`custom` use `programs.base_fee`.
 8. Hostel fee is calculated from `HOSTEL_DAILY_RATES`, overridden by `site_config`, then multiplied by the selected program's chargeable duration days. The public labels must say per student bed, per day.
 9. GST is calculated client-side from the selected program GST rate for display only.
 10. On submit, the browser calls `public.create_program_registration`.
@@ -536,14 +553,15 @@ Payment is not gateway-verified. It is a manual UPI flow:
 5. Admin approves:
    - `status = confirmed`
    - `payment_status = paid`
-   - `verified_by = admin`
+   - `verified_by = localStorage sb_email if present, else admin`
    - `verified_at = current ISO timestamp`
    - confirmation email attempted through `send-email`
 6. Admin rejects:
    - `status = rejected`
    - `payment_status = failed`
-   - `verified_by = admin`
+   - `verified_by = localStorage sb_email if present, else admin`
    - `verified_at = current ISO timestamp`
+   - `payment_review_note = prompted admin rejection reason`
 
 ## Admin Modules
 
@@ -563,13 +581,16 @@ Payment is not gateway-verified. It is a manual UPI flow:
 - Exports all registration fields to CSV.
 - Shows screenshot thumbnail and registration detail modal.
 - Approves/rejects payment verification.
+- Rejection now captures a `payment_review_note`; approval/rejection stores the logged-in admin email when available instead of only the literal `"admin"`.
 - Sends confirmation email on approval or direct confirm status.
-- Detail modal and confirmation email include program, program dates, selected courses, session fee, hostel fee, GST, and total amount.
+- Detail modal and confirmation email read all selected courses from durable `course_names`/snapshot data first, then fall back to legacy `session1_course` through `session3_course`.
 
 ### Programs
 
 - CRUD over `programs`.
-- Admin can edit names/labels, hero descriptions, dates, deadline, mode, duration, location, seats labels/notes, fee mode/status, base fee, GST rate, hostel allowance, registration enabled, active state, sort order, card image, and background image.
+- Admin can edit names/labels, hero descriptions, start/end dates, registration deadline, mode, location, seat capacity/note, fee type/status, base fee, GST percent, hostel allowance, registration enabled, active state, sort order, card image, and background image.
+- Date label, duration, and deadline label are derived automatically from date fields. GST is entered as a human percent such as `18`, then saved internally as `0.18`.
+- Program readiness shows missing dates/sessions/courses/fees and real reserved seats so the admin does not rely on fake urgency labels.
 - Program image/background image can be uploaded to the `images` bucket or entered as a URL.
 - Program activation is separate from registration opening. Keep `registration_enabled = false` and `fee_status = to_be_announced` until sessions, courses, and fees are configured.
 
@@ -587,7 +608,7 @@ Payment is not gateway-verified. It is a manual UPI flow:
 - Courses belong to both `program_id` and `session_id`.
 - Relation display uses `select=*,programs(name),sessions(name,time_slot,program_id)`.
 - Admin can filter courses by program.
-- Course form filters the session dropdown to the selected program.
+- Course form filters the session dropdown to the selected program and validates that the selected session belongs to the selected program before saving.
 - Can upload image to `images` bucket or enter an image URL.
 - Categories supported in UI: `tech`, `creative`, `career`, `sports`, `general`.
 
@@ -596,7 +617,7 @@ Payment is not gateway-verified. It is a manual UPI flow:
 - CRUD over `fee_tiers`.
 - Fee tiers belong to a program through `program_id`.
 - Admin can filter fee tiers by program.
-- Fee calculation assumes a tier exists for the selected program and selected session count unless the program uses package/custom/base fee mode.
+- Fee tier UI labels the count as "selected sessions"; fee calculation assumes a tier exists for the selected program and selected session count unless the program uses package/custom/base fee mode.
 
 ### Gallery
 
@@ -657,19 +678,19 @@ Missing deployment details:
 - Supabase URL and anon key are duplicated in `script.js` and `admin.js`; future key/project changes can drift.
 - Admin performs direct browser CRUD against Supabase REST; security depends entirely on RLS/admin policies that are not visible here.
 - Public registration creation now uses anon-callable `public.create_program_registration`, a `SECURITY DEFINER` RPC. It is intentionally public but should be monitored, rate-limited if possible, and kept strictly validated.
+- `public.get_program_registration_stats()` is also anon-callable so the public hero can show real capacity; it returns only aggregate counts, but Supabase advisor still flags it as a public `SECURITY DEFINER` function.
+- Supabase advisors still warn that public storage buckets `images` and `payment-screenshots` allow broad object listing, and several RLS policies re-evaluate auth functions per row. These are existing security/performance cleanup items outside this feature pass.
 - `upload-screenshot` still appears unauthenticated from the browser because it sends no auth or apikey headers. Verify CORS, JWT verification, rate limits, spam protection, server-side validation, and file validation.
 - Manual UPI screenshot verification is fragile and not payment-gateway verified.
-- `verified_by` is hardcoded as `"admin"` rather than the authenticated user's email/id.
+- `verified_by` now uses the stored admin email when available, but the admin auth/session model is still browser-local and should eventually store a stable user id/audit table server-side.
 - Confirmation email failure is non-blocking and only logged to console, so admins may think email was sent when it failed.
-- Only the 2 Week Campus Program currently has configured sessions, courses, and fee tiers. Other programs are active for display but registration is closed until admin adds their sessions/courses/fees and enables registration.
-- Registration supports exactly three static session selectors and legacy `session1_course`, `session2_course`, `session3_course` columns; admin can create more sessions, but registration will not adapt beyond three without schema/UI changes.
-- New registration course choices store `selected_course_ids` JSONB plus legacy course-name fields. Renames are safer than before but the legacy text fields can still become ambiguous.
-- Dynamic sessions are mapped by selected program and sorted array position to `session1`, `session2`, `session3`; reordering sessions changes registration meaning unless controlled carefully.
+- Programs without dates, fee, sessions, or courses now appear as coming soon/closed in registration, but admins can still make content inconsistent if they enable display before setup is complete.
+- Legacy `session1_course`, `session2_course`, `session3_course` columns still exist for older exports/email compatibility. New complete selections are stored in `course_names` and `selected_course_ids`; future schema cleanup should move registration-course joins into a relational child table.
 - Fee/hostel/GST calculation happens in the client for display and is recalculated server-side by `create_program_registration`. Hostel options use legacy values `hostel_only` and `hostel_food` for compatibility, but the visible labels are now Non-AC hostel bed and AC hostel bed.
 - Public content fetch failures are mostly silent, leaving stale hardcoded fallback content.
-- Deadline/countdown display is advisory. The RPC enforces program open/closed and fee status, but it does not currently hard-block registrations after `registration_deadline`.
-- The homepage hero displays program-specific but simulated seats-left urgency from client-side time/deadline logic, not actual capacity or registration count.
-- Social proof popups are generated fake registration notifications. This is a trust/ethics and UX risk.
+- Deadline/countdown display is advisory in the browser, but `create_program_registration` now enforces `registration_deadline` server-side.
+- Homepage seat display now uses `get_program_registration_stats()` and `programs.seats_base`; programs without real announced capacity/deadline show `Seats Update / TBA`.
+- Fake social-proof popups are disabled. Keep them disabled unless they are backed by real anonymized registration events.
 - Screenshot upload currently includes detailed temporary console logging for file metadata, preview/decode/compression/upload states. Remove or gate these logs after the mobile upload issue is confirmed fixed in production.
 - `admin.html` allows `script-src 'unsafe-inline'` to support inline handlers, which increases XSS impact if any escaping is missed.
 - Admin auth token is stored in `localStorage`; XSS would expose it.

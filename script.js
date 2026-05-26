@@ -8,8 +8,8 @@ const filters = document.querySelectorAll("[data-filter]");
 const cards = document.querySelectorAll("[data-category]");
 const form = document.querySelector("[data-registration-form]");
 const statusMessage = document.querySelector("[data-form-status]");
-const sessionToggles = document.querySelectorAll("[data-session-toggle]");
-const courseSelects = document.querySelectorAll("[data-session-course]");
+let sessionToggles = document.querySelectorAll("[data-session-toggle]");
+let courseSelects = document.querySelectorAll("[data-session-course]");
 const feeTotals = document.querySelectorAll("[data-fee-total]");
 const feeNote = document.querySelector("[data-fee-note]");
 const countdowns = document.querySelectorAll("[data-countdown]");
@@ -37,6 +37,7 @@ const trackEmpty = document.getElementById("trackEmpty");
 const registrationProgramRoot = document.querySelector("[data-registration-programs]");
 const registrationProgramInput = document.querySelector("[data-program-slug]");
 const registrationProgramStatus = document.querySelector("[data-program-status]");
+const sessionSelectorsRoot = document.querySelector("[data-session-selectors]");
 const hostelBlock = document.querySelector("[data-hostel-block]");
 const heroProgramFacts = {
   eligibility: document.querySelector('[data-hero-fact="eligibility"]'),
@@ -124,11 +125,61 @@ const HERO_BACKGROUND_CONFIG_KEYS = {
   immersion: "hero_bg_immersion"
 };
 
+function formatDisplayDate(value, options = {}) {
+  if (!value) return "";
+  const date = new Date(`${value}T00:00:00+05:30`);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: options.short ? "short" : "long",
+    ...(options.omitYear ? {} : { year: "numeric" })
+  });
+}
+
+function formatDisplayDateRange(startDate, endDate, fallback = "Date to be decided") {
+  if (!startDate && !endDate) return fallback;
+  if (startDate && !endDate) return `From ${formatDisplayDate(startDate, { short: true })}`;
+  if (!startDate && endDate) return `Until ${formatDisplayDate(endDate, { short: true })}`;
+  const start = new Date(`${startDate}T00:00:00+05:30`);
+  const end = new Date(`${endDate}T00:00:00+05:30`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return fallback;
+  const sameYear = start.getFullYear() === end.getFullYear();
+  const startLabel = start.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    ...(sameYear ? {} : { year: "numeric" })
+  });
+  return `${startLabel} to ${formatDisplayDate(endDate, { short: true })}`;
+}
+
+function durationFromProgramDates(startDate, endDate, fallback = "To be announced") {
+  if (!startDate || !endDate) return fallback;
+  const start = new Date(`${startDate}T00:00:00+05:30`);
+  const end = new Date(`${endDate}T00:00:00+05:30`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return fallback;
+  const days = Math.max(Math.round((end - start) / 86400000) + 1, 1);
+  if (days >= 7) {
+    const weeks = Math.ceil(days / 7);
+    return `${weeks} week${weeks > 1 ? "s" : ""}`;
+  }
+  return `${days} day${days > 1 ? "s" : ""}`;
+}
+
 function normalizeProgram(row = {}, fallbackKey = "campus") {
   const slug = row.slug || fallbackKey;
   const fallback = HERO_PROGRAMS[slug] || HERO_PROGRAMS[fallbackKey] || HERO_PROGRAMS.campus;
-  const deadline = row.registration_deadline || fallback.urgency?.deadline || "";
+  const hasRemoteProgram = Boolean(row.id);
+  const deadline = hasRemoteProgram ? row.registration_deadline || "" : fallback.urgency?.deadline || "";
   const hasProgramBackground = Boolean(row.background_image_url);
+  const datesLabel = row.start_date || row.end_date
+    ? formatDisplayDateRange(row.start_date, row.end_date)
+    : row.dates_label || (hasRemoteProgram ? "Date to be decided" : fallback.meta?.dates || "Date to be decided");
+  const durationLabel = row.start_date || row.end_date
+    ? durationFromProgramDates(row.start_date, row.end_date)
+    : row.duration || (hasRemoteProgram ? "To be announced" : fallback.meta?.duration || "To be announced");
+  const deadlineLabel = row.registration_deadline
+    ? formatDisplayDate(row.registration_deadline.slice(0, 10))
+    : row.deadline_label || (hasRemoteProgram ? "To be announced" : fallback.urgency?.deadlineLabel || "To be announced");
   return {
     ...fallback,
     id: row.id || fallback.id || null,
@@ -140,8 +191,8 @@ function normalizeProgram(row = {}, fallbackKey = "campus") {
     backgroundImage: row.background_image_url || row.image_url || fallback.backgroundImage,
     hasProgramBackground,
     imageUrl: row.image_url || fallback.imageUrl || row.background_image_url || fallback.backgroundImage,
-    startDate: row.start_date || fallback.startDate || "",
-    endDate: row.end_date || fallback.endDate || "",
+    startDate: row.start_date || (hasRemoteProgram ? "" : fallback.startDate || ""),
+    endDate: row.end_date || (hasRemoteProgram ? "" : fallback.endDate || ""),
     feeMode: row.fee_mode || fallback.feeMode || "session_count",
     feeStatus: row.fee_status || fallback.feeStatus || "ready",
     baseFee: Number(row.base_fee ?? fallback.baseFee ?? 0),
@@ -152,22 +203,22 @@ function normalizeProgram(row = {}, fallbackKey = "campus") {
     isActive: Boolean(row.is_active ?? fallback.isActive ?? true),
     facts: {
       eligibility: fallback.facts?.eligibility || "Students",
-      duration: row.duration || fallback.facts?.duration || fallback.meta?.duration || "To be announced",
+      duration: durationLabel,
       mode: row.mode || fallback.facts?.mode || fallback.meta?.mode || "To be announced",
       focus: row.short_label || fallback.facts?.focus || fallback.name
     },
     urgency: {
-      deadlineLabel: row.deadline_label || fallback.urgency?.deadlineLabel || "To be announced",
+      deadlineLabel,
       deadline,
       seatsLabel: row.seats_label || fallback.urgency?.seatsLabel || "Seats Left",
-      seatsBase: Number(row.seats_base ?? fallback.urgency?.seatsBase ?? 0),
-      seatsMin: Number(row.seats_min ?? fallback.urgency?.seatsMin ?? 0),
+      seatsBase: Number(hasRemoteProgram ? (row.seats_base || 0) : (fallback.urgency?.seatsBase || 0)),
+      seatsMin: Number(hasRemoteProgram ? (row.seats_min || 0) : (fallback.urgency?.seatsMin || 0)),
       note: row.seats_note || fallback.urgency?.note || ""
     },
     meta: {
-      dates: row.dates_label || fallback.meta?.dates || "Date to be decided",
+      dates: datesLabel,
       mode: row.mode || fallback.meta?.mode || "To be announced",
-      duration: row.duration || fallback.meta?.duration || "To be announced",
+      duration: durationLabel,
       location: row.location || fallback.meta?.location || "To be announced"
     }
   };
@@ -212,14 +263,11 @@ let programBySlug = {};
 let publicSessions = [];
 let publicCourses = [];
 let publicFees = [];
+let programStatsById = {};
 let trackProgramSlug = "campus";
 let registrationProgramSlug = "campus";
 
-let sessionCourses = {
-  session1: [],
-  session2: [],
-  session3: []
-};
+let sessionCourses = {};
 
 let feeBySessionCount = {
   0: 0,
@@ -404,7 +452,7 @@ function updateHeroUrgency(program) {
   }
 
   if (heroProgramSeatsLabel) {
-    heroProgramSeatsLabel.textContent = hasAnnouncedDeadline ? (urgency.seatsLabel || "Seats Left") : "Seats Update";
+    heroProgramSeatsLabel.textContent = hasAnnouncedDeadline && Number(urgency.seatsBase || 0) > 0 ? (urgency.seatsLabel || "Seats Left") : "Seats Update";
   }
 
   document.querySelectorAll("[data-countdown]").forEach((countdown) => {
@@ -417,8 +465,9 @@ function updateHeroUrgency(program) {
   if (heroProgramRoot) {
     heroProgramRoot.classList.toggle("is-urgency-pending", !hasAnnouncedDeadline);
     heroProgramRoot.dataset.urgencyPending = hasAnnouncedDeadline ? "false" : "true";
-    heroProgramRoot.dataset.seatsBase = String(urgency.seatsBase || 24);
-    heroProgramRoot.dataset.seatsMin = String(urgency.seatsMin || 6);
+    heroProgramRoot.dataset.programId = program?.id || "";
+    heroProgramRoot.dataset.seatsBase = String(urgency.seatsBase || 0);
+    heroProgramRoot.dataset.seatsMin = String(urgency.seatsMin || 0);
     heroProgramRoot.dataset.heroSeatsNote = urgency.note || "";
   }
 
@@ -565,12 +614,17 @@ if (heroProgramRoot && heroProgramTabs.length) {
 // Fetch all dynamic data from Supabase
 (async function loadDynamicData() {
   try {
-    const [programsRes, sessionsRes, coursesRes, feesRes, settingsRes] = await Promise.all([
+    const [programsRes, sessionsRes, coursesRes, feesRes, settingsRes, statsRes] = await Promise.all([
       fetch(`${SUPABASE_URL}/rest/v1/programs?is_active=eq.true&order=sort_order.asc`, { headers: { "apikey": SUPABASE_KEY } }),
       fetch(`${SUPABASE_URL}/rest/v1/sessions?is_active=eq.true&order=sort_order.asc`, { headers: { "apikey": SUPABASE_KEY } }),
       fetch(`${SUPABASE_URL}/rest/v1/courses?is_active=eq.true&order=sort_order.asc&select=*,sessions(name,time_slot,sort_order,program_id),programs(slug,name)`, { headers: { "apikey": SUPABASE_KEY } }),
       fetch(`${SUPABASE_URL}/rest/v1/fee_tiers?order=session_count.asc`, { headers: { "apikey": SUPABASE_KEY } }),
-      fetch(`${SUPABASE_URL}/rest/v1/site_config?select=key,value`, { headers: { "apikey": SUPABASE_KEY } })
+      fetch(`${SUPABASE_URL}/rest/v1/site_config?select=key,value`, { headers: { "apikey": SUPABASE_KEY } }),
+      fetch(`${SUPABASE_URL}/rest/v1/rpc/get_program_registration_stats`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` },
+        body: "{}"
+      })
     ]);
 
     if (!sessionsRes.ok || !coursesRes.ok || !feesRes.ok) return;
@@ -579,6 +633,14 @@ if (heroProgramRoot && heroProgramTabs.length) {
     const sessionsData = await sessionsRes.json();
     const coursesData = await coursesRes.json();
     const feesData = await feesRes.json();
+    const statsData = statsRes.ok ? await statsRes.json() : [];
+    programStatsById = {};
+    statsData.forEach((row) => {
+      programStatsById[row.program_id] = {
+        reserved: Number(row.reserved_count || 0),
+        confirmed: Number(row.confirmed_count || 0)
+      };
+    });
     publicSessions = sessionsData;
     publicCourses = coursesData;
     publicFees = feesData;
@@ -968,8 +1030,19 @@ function programHasFeeConfig(program) {
   return Number(program.baseFee || 0) > 0;
 }
 
+function programHasSchedule(program) {
+  if (!program) return false;
+  const sessions = programSessions(program.slug);
+  if (!sessions.length) return false;
+  return sessions.some((session) => publicCourses.some((course) => (
+    course.program_id === program.id &&
+    course.session_id === session.id &&
+    course.is_active !== false
+  )));
+}
+
 function registrationProgramIsOpen(program = selectedRegistrationProgram()) {
-  return Boolean(program?.registrationEnabled && programHasFeeConfig(program));
+  return Boolean(program?.registrationEnabled && program.startDate && program.endDate && programHasFeeConfig(program) && programHasSchedule(program));
 }
 
 function selectedProgramFee(selectedCount) {
@@ -999,10 +1072,88 @@ function renderRegistrationPrograms() {
   });
 }
 
+function refreshSessionElements() {
+  sessionToggles = document.querySelectorAll("[data-session-toggle]");
+  courseSelects = document.querySelectorAll("[data-session-course]");
+}
+
+function registrationSessionKey(index) {
+  return `session${index + 1}`;
+}
+
+function attachSessionInputListeners() {
+  sessionToggles.forEach((toggle) => {
+    if (toggle.dataset.bound === "true") return;
+    toggle.dataset.bound = "true";
+    toggle.addEventListener("change", () => {
+      updateRegistrationState();
+      validateSessionCards();
+      updateBlockStates();
+      updateSubmitState();
+    });
+  });
+
+  courseSelects.forEach((select) => {
+    if (select.dataset.bound === "true") return;
+    select.dataset.bound = "true";
+    select.addEventListener("change", () => {
+      validateSessionCards();
+      updateBlockStates();
+      updateSubmitState();
+    });
+  });
+}
+
+function renderRegistrationSessionCards(program) {
+  if (!sessionSelectorsRoot) return;
+  const sessions = programSessions(program.slug);
+  const open = registrationProgramIsOpen(program);
+  sessionCourses = {};
+
+  if (!sessions.length) {
+    sessionSelectorsRoot.innerHTML = `
+      <article class="selection-card selection-empty">
+        <strong>Schedule coming soon</strong>
+        <p>Admin needs to add sessions and courses before this program can accept registrations.</p>
+      </article>
+    `;
+    refreshSessionElements();
+    return;
+  }
+
+  sessionSelectorsRoot.innerHTML = sessions.map((session, index) => {
+    const key = registrationSessionKey(index);
+    const courses = publicCourses
+      .filter((course) => course.program_id === program.id && course.session_id === session.id && course.is_active !== false)
+      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    const disabled = !open || !courses.length;
+    sessionCourses[key] = courses;
+
+    return `
+      <article class="selection-card ${!courses.length ? "selection-card-empty" : ""}">
+        <label class="check-row">
+          <input type="checkbox" name="session" value="${esc(key)}" data-session-toggle data-session-id="${esc(session.id)}" ${disabled ? "disabled" : ""}>
+          <span data-session-name="${esc(key)}">${esc(session.name || `Session ${index + 1}`)}</span>
+          <small data-session-time="${esc(key)}">${esc(session.time_slot || "")}</small>
+        </label>
+        <label>
+          Class for ${esc(session.name || `Session ${index + 1}`)}
+          <select name="${esc(key)}Course" data-session-course="${esc(key)}" disabled>
+            <option value="">${courses.length ? `Select ${esc(session.name || `Session ${index + 1}`)} class` : "No active classes added"}</option>
+            ${courses.map((course) => `<option value="${esc(course.id)}">${esc(course.name)}</option>`).join("")}
+          </select>
+        </label>
+      </article>
+    `;
+  }).join("");
+
+  refreshSessionElements();
+  attachSessionInputListeners();
+}
+
 function resetSessionCards() {
   sessionToggles.forEach((toggle) => {
     toggle.checked = false;
-    toggle.disabled = false;
     const select = document.querySelector(`[data-session-course="${toggle.value}"]`);
     if (select) {
       select.value = "";
@@ -1017,41 +1168,9 @@ function updateRegistrationProgram(slug, options = {}) {
   if (!program) return;
   registrationProgramSlug = program.slug;
   if (registrationProgramInput) registrationProgramInput.value = program.slug;
-  if (!options.preserveSelection) resetSessionCards();
   renderRegistrationPrograms();
-
-  const sessions = programSessions(program.slug).slice(0, sessionToggles.length);
-  sessionCourses = {};
-  sessionToggles.forEach((toggle, index) => {
-    const card = toggle.closest(".selection-card");
-    const select = document.querySelector(`[data-session-course="${toggle.value}"]`);
-    const session = sessions[index];
-    const key = toggle.value;
-    if (!session || !card || !select) {
-      if (card) card.hidden = true;
-      toggle.disabled = true;
-      return;
-    }
-
-    card.hidden = false;
-    toggle.disabled = !registrationProgramIsOpen(program);
-    toggle.dataset.sessionId = session.id;
-    const nameEl = document.querySelector(`[data-session-name="${key}"]`);
-    const timeEl = document.querySelector(`[data-session-time="${key}"]`);
-    if (nameEl) nameEl.textContent = session.name;
-    if (timeEl) timeEl.textContent = session.time_slot;
-
-    const courses = publicCourses.filter((course) => course.session_id === session.id && course.program_id === program.id);
-    sessionCourses[key] = courses;
-    select.innerHTML = `<option value="">Select ${esc(session.name)} class</option>`;
-    courses.forEach((course) => {
-      const option = document.createElement("option");
-      option.value = course.id;
-      option.textContent = course.name;
-      select.append(option);
-    });
-    if (!courses.length) toggle.disabled = true;
-  });
+  renderRegistrationSessionCards(program);
+  if (!options.preserveSelection) resetSessionCards();
 
   if (hostelBlock) {
     hostelBlock.hidden = !program.allowHostel;
@@ -1066,16 +1185,27 @@ function updateRegistrationProgram(slug, options = {}) {
   updateHostelPriceLabels(program.gstRate);
 
   if (registrationProgramStatus) {
-    const sessionsReady = sessions.length > 0 && sessions.some((session) => publicCourses.some((course) => course.session_id === session.id && course.program_id === program.id));
-    if (!registrationProgramIsOpen(program)) {
-      registrationProgramStatus.textContent = `${program.name} registration will open after the admin adds the final schedule and fee.`;
+    const hasFee = programHasFeeConfig(program);
+    const hasSchedule = programHasSchedule(program);
+    const hasDates = Boolean(program.startDate && program.endDate);
+    registrationProgramStatus.classList.remove("warning");
+    if (!program.registrationEnabled) {
+      registrationProgramStatus.textContent = `${program.name} registration is currently closed by admin.`;
       registrationProgramStatus.classList.add("warning");
-    } else if (!sessionsReady) {
+    } else if (!hasDates && !hasFee && !hasSchedule) {
+      registrationProgramStatus.textContent = `${program.name} needs dates, schedule, courses, and fee before registration can open.`;
+      registrationProgramStatus.classList.add("warning");
+    } else if (!hasDates) {
+      registrationProgramStatus.textContent = `${program.name} dates are not announced yet.`;
+      registrationProgramStatus.classList.add("warning");
+    } else if (!hasFee) {
+      registrationProgramStatus.textContent = `${program.name} fee is not announced yet.`;
+      registrationProgramStatus.classList.add("warning");
+    } else if (!hasSchedule) {
       registrationProgramStatus.textContent = `${program.name} needs sessions and courses before registration can open.`;
       registrationProgramStatus.classList.add("warning");
     } else {
       registrationProgramStatus.textContent = `You are registering for ${program.name}.`;
-      registrationProgramStatus.classList.remove("warning");
     }
   }
 
@@ -1117,6 +1247,10 @@ function updateRegistrationState() {
   if (feeNote) {
     if (!registrationProgramIsOpen(program)) {
       feeNote.textContent = "Fee will appear after this program opens for registration.";
+    } else if (program.feeMode !== "session_count") {
+      feeNote.textContent = selected.length
+        ? `${program.name} fixed program fee applies.`
+        : "Select at least one activity or class to continue.";
     } else {
       feeNote.textContent = selected.length
       ? `${selected.length} session${selected.length > 1 ? "s" : ""} selected.`
@@ -1138,9 +1272,7 @@ function updateRegistrationState() {
   });
 }
 
-sessionToggles.forEach((toggle) => {
-  toggle.addEventListener("change", updateRegistrationState);
-});
+attachSessionInputListeners();
 
 document.querySelectorAll('input[name="hostel"]').forEach((r) => {
   r.addEventListener("change", updateRegistrationState);
@@ -1338,21 +1470,8 @@ if (form) {
     });
   });
 
-  // Session toggles & course selects: validate on change
-  sessionToggles.forEach((toggle) => {
-    toggle.addEventListener("change", () => {
-      validateSessionCards();
-      updateBlockStates();
-      updateSubmitState();
-    });
-  });
-  courseSelects.forEach((sel) => {
-    sel.addEventListener("change", () => {
-      validateSessionCards();
-      updateBlockStates();
-      updateSubmitState();
-    });
-  });
+  // Session toggles and course selects are generated dynamically per program.
+  attachSessionInputListeners();
 
   // Consent checkbox
   const consentBox = form.querySelector('input[name="consent"]');
@@ -1415,32 +1534,26 @@ function updateSeatsLeft() {
 
   const program = getActiveHeroProgram();
   const urgency = program?.urgency || {};
-  const cdEl = document.querySelector("[data-program-hero] [data-countdown]") || document.querySelector("[data-countdown]");
-  const deadlineRaw = urgency.deadline || (cdEl ? cdEl.dataset.deadline : "");
-  const deadline = deadlineRaw ? new Date(deadlineRaw) : null;
+  const deadline = urgency.deadline ? new Date(urgency.deadline) : null;
   const hasAnnouncedDeadline = Boolean(deadline && !Number.isNaN(deadline.getTime()));
+  const capacity = hasAnnouncedDeadline ? Number(urgency.seatsBase || 0) : 0;
 
-  if (!hasAnnouncedDeadline) {
+  if (!capacity) {
     seatsLeftItems.forEach((item) => {
       item.textContent = "TBA";
       item.style.color = "";
     });
     seatsNotes.forEach((note) => {
-      note.textContent = "Seats will be announced with the final program schedule.";
+      note.textContent = !hasAnnouncedDeadline
+        ? "Seats will be announced after dates and registration deadline are finalized."
+        : urgency.note || "Seat capacity will be announced with the final program schedule.";
     });
     return;
   }
 
-  const start = new Date("2026-05-02T00:00:00+05:30");
-  const now = new Date();
-  const seatsBase = Number(heroProgramRoot?.dataset.seatsBase || urgency.seatsBase || 24);
-  const seatsMin = Number(heroProgramRoot?.dataset.seatsMin || urgency.seatsMin || 6);
-  const totalWindow = deadline && !Number.isNaN(deadline.getTime()) ? deadline - start : 0;
-  const elapsed = totalWindow > 0 ? Math.max(0, Math.min(totalWindow, now - start)) : 0;
-  const progress = totalWindow > 0 ? elapsed / totalWindow : 0.35;
-  const baseline = Math.round(seatsBase - progress * Math.max(4, seatsBase - seatsMin));
-  const pulse = Math.floor((Date.now() / 18000) % 4);
-  const remaining = Math.max(seatsMin, baseline - pulse);
+  const stats = program?.id ? programStatsById[program.id] : null;
+  const reserved = Number(stats?.reserved || 0);
+  const remaining = Math.max(capacity - reserved, 0);
 
   seatsLeftItems.forEach((item) => {
     item.textContent = String(remaining);
@@ -1451,18 +1564,19 @@ function updateSeatsLeft() {
       note.textContent = urgency.note;
       return;
     }
-    note.textContent = remaining <= 12
-      ? "Filling up fast — secure your spot now!"
-      : remaining <= 18
-        ? "Final seats moving fast. Register today."
-        : "Limited batch size for better mentoring.";
+    if (remaining <= 0) {
+      note.textContent = "This program is currently full.";
+      return;
+    }
+    if (remaining <= Math.max(3, Math.ceil(capacity * 0.2))) {
+      note.textContent = "Limited seats remain for this program.";
+      return;
+    }
+    note.textContent = "Seat count is based on submitted registrations.";
   });
 }
 
 updateSeatsLeft();
-if (seatsLeftItems.length) {
-  setInterval(updateSeatsLeft, 12000);
-}
 
 let galleryImages = [];
 let heroGalleryAutoTimer = null;
@@ -1610,7 +1724,7 @@ function showReceipt(data) {
   if (progDatesStr) rows.push(["Program Dates", esc(progDatesStr)]);
   rows.push(["Mode", esc(receiptProgram?.meta?.mode || "As per selected program")]);
   rows.push(["Venue", esc(receiptProgram?.meta?.location || "LPU Campus, Phagwara, Punjab")]);
-  rows.push(["Session Fee", formatFee(data.session_fee || 0)]);
+  rows.push([receiptProgram?.feeMode === "session_count" ? "Session Fee" : "Program Fee", formatFee(data.session_fee || 0)]);
   if ((data.hostel_amount || 0) > 0) rows.push([`Hostel Bed (${data.hostel_days || hostelChargeDays(receiptProgram)} days)`, formatFee(data.hostel_amount)]);
   rows.push([`GST (${receiptGstLabel})`, formatFee(data.gst_amount || 0)]);
 
@@ -1953,9 +2067,11 @@ function showPaymentSection(data) {
   section.querySelector("[data-pay-ref]").textContent = data.payment_reference;
   section.querySelector("[data-pay-total]").textContent = formatFee(data.total_amount);
 
-  let splitText = `Session fee: ${formatFee(data.session_fee)}`;
+  const paymentProgram = getProgram(data.program_slug || registrationProgramSlug);
+  const mainFeeLabel = paymentProgram?.feeMode === "session_count" ? "Session fee" : "Program fee";
+  let splitText = `${mainFeeLabel}: ${formatFee(data.session_fee)}`;
   if (data.hostel_amount > 0) splitText += ` + Hostel bed (${data.hostel_days || hostelChargeDays(getProgram(data.program_slug || registrationProgramSlug))} days): ${formatFee(data.hostel_amount)}`;
-  splitText += ` + GST ${gstPercentLabel(getProgram(data.program_slug || registrationProgramSlug)?.gstRate ?? GST_RATE)}: ${formatFee(data.gst_amount)}`;
+  splitText += ` + GST ${gstPercentLabel(paymentProgram?.gstRate ?? GST_RATE)}: ${formatFee(data.gst_amount)}`;
   section.querySelector("[data-pay-split]").textContent = splitText;
 
   // UPI ID
@@ -2278,8 +2394,9 @@ if (contactToggle && contactOverlay) {
   });
 }
 
-// Social proof popup — fake registration notifications
+// Social proof popup is intentionally disabled; registrations should not show fake urgency.
 (function socialProofPopup() {
+  return;
   if (document.querySelector(".register-page")) return;
 
   const first = [
