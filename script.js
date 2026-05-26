@@ -68,6 +68,8 @@ const HERO_PROGRAMS = {
     description: "A focused two-week LPU campus journey where students choose sessions, learn with mentors, build visible outcomes, and present their best work in a grand showcase.",
     context: "For students ready to learn by doing inside a vibrant university campus.",
     backgroundImage: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779163726439-f0drdpdqahd.png",
+    startDate: "2026-06-15",
+    endDate: "2026-06-27",
     facts: { eligibility: "Grades 6-12", duration: "2 weeks", mode: "On Campus", focus: "Session-wise tracks" },
     urgency: { deadlineLabel: "14 June 2026", deadline: "2026-06-14T23:59:59+05:30", seatsBase: 24, seatsMin: 6, note: "Final seats moving fast. Register today." },
     meta: { dates: "15–27 June 2026", mode: "On Campus", duration: "2 weeks", location: "LPU Campus, Phagwara" }
@@ -86,6 +88,8 @@ const HERO_PROGRAMS = {
     description: "A lively campus summer camp for LPU staff children, blending learning, creativity, sports, friendships, and supervised experiences across the university ecosystem.",
     context: "For LPU families looking for a meaningful, active, and well-supported summer experience.",
     backgroundImage: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779089835922-qm6ldbzss5.png",
+    startDate: "2026-06-06",
+    endDate: "2026-06-27",
     facts: { eligibility: "LPU staff kids", duration: "3 weeks", mode: "On Campus", focus: "Camp + activities" },
     urgency: { deadlineLabel: "31 May 2026", deadline: "2026-05-31T23:59:59+05:30", seatsBase: 18, seatsMin: 5, note: "Limited camp seats for staff children." },
     meta: { dates: "6–27 June 2026", mode: "On Campus", duration: "3 weeks", location: "LPU Campus, Phagwara" }
@@ -104,6 +108,8 @@ const HERO_PROGRAMS = {
     description: "An immersive LPU experience for learners to explore campus life, academic pathways, culture, labs, and guided activities with a global outlook.",
     context: "For students who want to experience the energy, scale, and possibilities of LPU up close.",
     backgroundImage: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188603214-x7q34c5kfq.png",
+    startDate: "2026-06-15",
+    endDate: "2026-06-27",
     facts: { eligibility: "Students / groups", duration: "2 weeks", mode: "On Campus", focus: "Campus immersion" },
     urgency: { deadlineLabel: "14 June 2026", deadline: "2026-06-14T23:59:59+05:30", seatsBase: 20, seatsMin: 6, note: "Immersion seats are limited for a guided campus experience." },
     meta: { dates: "15–27 June 2026", mode: "On Campus", duration: "2 weeks", location: "LPU Campus, Phagwara" }
@@ -134,6 +140,8 @@ function normalizeProgram(row = {}, fallbackKey = "campus") {
     backgroundImage: row.background_image_url || row.image_url || fallback.backgroundImage,
     hasProgramBackground,
     imageUrl: row.image_url || fallback.imageUrl || row.background_image_url || fallback.backgroundImage,
+    startDate: row.start_date || fallback.startDate || "",
+    endDate: row.end_date || fallback.endDate || "",
     feeMode: row.fee_mode || fallback.feeMode || "session_count",
     feeStatus: row.fee_status || fallback.feeStatus || "ready",
     baseFee: Number(row.base_fee ?? fallback.baseFee ?? 0),
@@ -322,22 +330,14 @@ function applySettings(cfg) {
     updateHeroProgram(heroProgramRoot?.dataset.activeProgram || "campus", false);
   }
 
-  // Dynamic hostel fees from config
-  const hostelOnly = parseInt(cfg["hostel_only_fee"]);
-  const hostelFood = parseInt(cfg["hostel_food_fee"]);
-  if (!isNaN(hostelOnly)) HOSTEL_FEES.hostel_only = hostelOnly;
-  if (!isNaN(hostelFood)) HOSTEL_FEES.hostel_food = hostelFood;
+  // Dynamic hostel daily rates from config
+  HOSTEL_DAILY_RATES.hostel_only = normalizedHostelDailyRate(cfg["hostel_only_fee"], HOSTEL_DAILY_RATES.hostel_only);
+  HOSTEL_DAILY_RATES.hostel_food = normalizedHostelDailyRate(cfg["hostel_food_fee"], HOSTEL_DAILY_RATES.hostel_food);
 
   // Update hostel price labels on register page
   updateHostelPriceLabels();
 
-  // Update hostel prices on homepage
-  document.querySelectorAll('.hostel-option').forEach((el, i) => {
-    const strong = el.querySelector('strong');
-    if (!strong) return;
-    if (i === 0 && !isNaN(hostelOnly)) strong.textContent = `Rs. ${hostelOnly.toLocaleString("en-IN")}`;
-    if (i === 1 && !isNaN(hostelFood)) strong.textContent = `Rs. ${hostelFood.toLocaleString("en-IN")}`;
-  });
+  updateHomepageHostelPrices();
 
   // Program dates
   const startDate = cfg["event_start_date"];
@@ -880,21 +880,69 @@ function formatFee(amount) {
 }
 
 const GST_RATE = 0.18;
+const HOSTEL_DAILY_RATES = { none: 0, hostel_only: 100, hostel_food: 300 };
+const HOSTEL_LABELS = { none: "No hostel", hostel_only: "Non-AC hostel bed", hostel_food: "AC hostel bed" };
+const HOSTEL_DAY_FALLBACKS = { campus: 14, "staff-camp": 21, immersion: 14 };
 
 function gstPercentLabel(rate = GST_RATE) {
   const percent = Number(rate || GST_RATE) * 100;
   return `${Number.isInteger(percent) ? percent : percent.toFixed(2).replace(/\.?0+$/, "")}%`;
 }
 
+function hostelChargeDays(program = selectedRegistrationProgram()) {
+  const duration = String(program?.meta?.duration || program?.facts?.duration || "").toLowerCase();
+  const weekMatch = duration.match(/(\d+)\s*week/);
+  if (weekMatch) return Math.max(Number(weekMatch[1]) * 7, 1);
+
+  const dayMatch = duration.match(/(\d+)\s*day/);
+  if (dayMatch) return Math.max(Number(dayMatch[1]), 1);
+
+  if (program?.startDate && program?.endDate) {
+    const start = new Date(`${program.startDate}T00:00:00+05:30`);
+    const end = new Date(`${program.endDate}T00:00:00+05:30`);
+    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+      return Math.max(Math.round((end - start) / 86400000) + 1, 1);
+    }
+  }
+
+  return HOSTEL_DAY_FALLBACKS[program?.slug] || 1;
+}
+
+function hostelDailyRate(option) {
+  return HOSTEL_DAILY_RATES[option] || 0;
+}
+
+function normalizedHostelDailyRate(value, fallback) {
+  const rate = Number.parseInt(value, 10);
+  if (Number.isNaN(rate) || rate < 0) return fallback;
+  return rate <= 1000 ? rate : fallback;
+}
+
+function hostelTotalForOption(option, program = selectedRegistrationProgram()) {
+  return hostelDailyRate(option) * hostelChargeDays(program);
+}
+
 function updateHostelPriceLabels(rate = selectedRegistrationProgram()?.gstRate ?? GST_RATE) {
+  const days = hostelChargeDays();
   document.querySelectorAll(".hostel-radio").forEach((radio) => {
     const input = radio.querySelector('input[name="hostel"]');
     const priceEl = radio.querySelector(".hostel-radio-price");
     if (!input || !priceEl) return;
-    const fee = HOSTEL_FEES[input.value];
-    if (fee > 0) {
-      priceEl.innerHTML = `<em>Rs. ${fee.toLocaleString("en-IN")}</em><small>+ ${gstPercentLabel(rate)} GST</small>`;
+    const dailyRate = hostelDailyRate(input.value);
+    if (dailyRate > 0) {
+      priceEl.innerHTML = `<em>Rs. ${dailyRate.toLocaleString("en-IN")}/day</em><small>Per bed, ${days} days + ${gstPercentLabel(rate)} GST</small>`;
     }
+  });
+}
+
+function updateHomepageHostelPrices() {
+  document.querySelectorAll(".hostel-option[data-hostel-option]").forEach((el) => {
+    const option = el.dataset.hostelOption;
+    const strong = el.querySelector("strong");
+    const label = el.querySelector("span");
+    const dailyRate = hostelDailyRate(option);
+    if (strong && dailyRate > 0) strong.textContent = `Rs. ${dailyRate.toLocaleString("en-IN")}/day`;
+    if (label) label.textContent = `${HOSTEL_LABELS[option] || "Hostel bed"} per student`;
   });
 }
 
@@ -903,7 +951,6 @@ function esc(str) {
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-const HOSTEL_FEES = { none: 0, hostel_only: 1400, hostel_food: 3000 };
 let registrationDeadline = null;
 
 function selectedRegistrationProgram() {
@@ -1039,7 +1086,7 @@ function updateRegistrationProgram(slug, options = {}) {
 
 function getHostelFee() {
   const checked = document.querySelector('input[name="hostel"]:checked');
-  return HOSTEL_FEES[checked?.value] || 0;
+  return hostelTotalForOption(checked?.value);
 }
 
 function updateRegistrationState() {
@@ -1059,7 +1106,7 @@ function updateRegistrationState() {
   document.querySelectorAll("[data-gst-detail]").forEach((el) => {
     if (!baseFee) { el.innerHTML = ""; return; }
     const parts = [];
-    if (hostelFee) parts.push(`<div class="fee-line"><span>Hostel</span><strong>${formatFee(hostelFee)}</strong></div>`);
+    if (hostelFee) parts.push(`<div class="fee-line"><span>Hostel bed (${hostelChargeDays(program)} days)</span><strong>${formatFee(hostelFee)}</strong></div>`);
     parts.push(`<div class="fee-line"><span>GST ${gstLabel}</span><strong>${formatFee(gst)}</strong></div>`);
     el.innerHTML = parts.join("");
   });
@@ -1543,8 +1590,6 @@ function renderHeroGalleryStrip(images) {
 })();
 
 // ── Receipt display ─────────────────────────────────────────────────
-const HOSTEL_LABELS = { none: "No hostel", hostel_only: "Hostel only", hostel_food: "Hostel + Food" };
-
 function showReceipt(data) {
   const receiptEl = document.querySelector("[data-receipt]");
   const table = document.querySelector("[data-receipt-table]");
@@ -1566,7 +1611,7 @@ function showReceipt(data) {
   rows.push(["Mode", esc(receiptProgram?.meta?.mode || "As per selected program")]);
   rows.push(["Venue", esc(receiptProgram?.meta?.location || "LPU Campus, Phagwara, Punjab")]);
   rows.push(["Session Fee", formatFee(data.session_fee || 0)]);
-  if ((data.hostel_amount || 0) > 0) rows.push(["Hostel Fee", formatFee(data.hostel_amount)]);
+  if ((data.hostel_amount || 0) > 0) rows.push([`Hostel Bed (${data.hostel_days || hostelChargeDays(receiptProgram)} days)`, formatFee(data.hostel_amount)]);
   rows.push([`GST (${receiptGstLabel})`, formatFee(data.gst_amount || 0)]);
 
   const infoRows = [
@@ -1909,7 +1954,7 @@ function showPaymentSection(data) {
   section.querySelector("[data-pay-total]").textContent = formatFee(data.total_amount);
 
   let splitText = `Session fee: ${formatFee(data.session_fee)}`;
-  if (data.hostel_amount > 0) splitText += ` + Hostel: ${formatFee(data.hostel_amount)}`;
+  if (data.hostel_amount > 0) splitText += ` + Hostel bed (${data.hostel_days || hostelChargeDays(getProgram(data.program_slug || registrationProgramSlug))} days): ${formatFee(data.hostel_amount)}`;
   splitText += ` + GST ${gstPercentLabel(getProgram(data.program_slug || registrationProgramSlug)?.gstRate ?? GST_RATE)}: ${formatFee(data.gst_amount)}`;
   section.querySelector("[data-pay-split]").textContent = splitText;
 

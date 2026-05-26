@@ -598,7 +598,7 @@ function renderRegistrations(rows) {
   `).join("");
 }
 
-const HOSTEL_LABELS = { none: "No hostel", hostel_only: "Hostel only", hostel_food: "Hostel + Food" };
+const HOSTEL_LABELS = { none: "No hostel", hostel_only: "Non-AC hostel bed", hostel_food: "AC hostel bed" };
 
 window.viewRegistration = async function(id) {
   const rows = await apiGet("registrations", `id=eq.${id}`);
@@ -1152,6 +1152,11 @@ const SETTING_TYPES = {
   hero_bg_immersion: "image-url",
 };
 
+const SETTING_LABELS = {
+  hostel_only_fee: "Non-AC hostel bed daily rate",
+  hostel_food_fee: "AC hostel bed daily rate"
+};
+
 function settingInput(key, value) {
   const type = SETTING_TYPES[key];
   if (type === "image-url") {
@@ -1193,7 +1198,7 @@ function settingInput(key, value) {
 function renderSettings() {
   $("#settingsGrid").innerHTML = settingsData.map((s) => `
     <div class="setting-item">
-      <label>${esc(HERO_BACKGROUND_SETTINGS.find((setting) => setting.key === s.key)?.label || s.key.replace(/_/g, " "))}</label>
+      <label>${esc(HERO_BACKGROUND_SETTINGS.find((setting) => setting.key === s.key)?.label || SETTING_LABELS[s.key] || s.key.replace(/_/g, " "))}</label>
       ${settingInput(s.key, s.value)}
       ${s.description && !SETTING_TYPES[s.key]?.startsWith("datetime") ? `<div class="desc">${esc(s.description)}</div>` : ""}
     </div>

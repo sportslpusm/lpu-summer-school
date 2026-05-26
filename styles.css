@@ -887,7 +887,8 @@ h1 {
 .progress-step.done { color: var(--green); }
 .progress-step.done span { color: var(--white); background: var(--green); }
 .progress-step.done::after { background: var(--green); }
-.full-form { display: grid; gap: 18px; max-width: 1120px; margin: 0 auto; padding: 0 clamp(18px, 4vw, 58px); }
+.full-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; max-width: 1120px; margin: 0 auto; padding: 0 clamp(18px, 4vw, 58px); }
+.form-block, .submit-bar { min-width: 0; }
 .form-block { padding: clamp(18px, 3vw, 28px); background: var(--white); border-radius: 12px; }
 .form-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
 .form-heading span { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 8px; color: var(--white); background: var(--orange); font-weight: 950; }

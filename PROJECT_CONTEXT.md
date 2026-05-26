@@ -1,6 +1,6 @@
 # Project Context: LPU Summer School
 
-Last audited: 2026-05-22, Asia/Calcutta.
+Last audited: 2026-05-26, Asia/Calcutta.
 
 This file is the permanent project memory for the LPU Summer School site. Update it whenever changing routes, data shape, Supabase objects, payment behavior, admin behavior, deployment settings, environment requirements, or major UI flows.
 
@@ -38,6 +38,7 @@ Tracked source files:
 - `supabase/migrations/20260521170842_program_model.sql`: program-aware schema, seed programs, and public registration RPC.
 - `supabase/migrations/20260521171245_tighten_program_security.sql`: tightened RPC/admin execute surface.
 - `supabase/migrations/20260521181947_tighten_program_public_policy.sql`: narrowed active program public read policy to anon.
+- `supabase/migrations/20260526084756_update_hostel_daily_rates.sql`: updates hostel config to daily per-bed rates and recalculates hostel totals in the registration RPC from daily rate times program duration days.
 - `assets/dsosww-logo.png`, `assets/lpu-naac-logo.png`, `assets/sww-logo.png`: tracked local image assets.
 - `.gitignore`: ignores `node_modules/`, `.playwright-mcp/`, `.code-review-graph/`, root `*.png` screenshots except `assets/*.png`, `.claude/`, and `.vercel/`.
 
@@ -160,7 +161,7 @@ Local Codex Supabase access setup on 2026-05-20:
 - `~/.codex/config.toml` has a remote MCP server named `supabase` pointing to `https://mcp.supabase.com/mcp?project_ref=bynpuhoysivxxlblxica`.
 - `remote_mcp_client_enabled = true` is enabled in the local Codex config.
 - `codex mcp login supabase` completed successfully through OAuth.
-- Supabase MCP tools are available in the current Codex app session.
+- Supabase MCP is configured. On 2026-05-26 the Codex MCP client needed a fresh OAuth login before tools became available; after re-login, migration `20260526084756_update_hostel_daily_rates` was applied through Supabase MCP. The local Supabase CLI account still does not have direct project access through `supabase link`.
 
 The Supabase anon key is also hardcoded in both files. Do not duplicate the key in docs unless necessary; rotate/update both JS files together if the anon key changes.
 
@@ -298,8 +299,8 @@ Verified keys:
 - `hero_bg_online`
 - `hero_bg_skills`
 - `hero_bg_staff_camp`
-- `hostel_food_fee`
-- `hostel_only_fee`
+- `hostel_food_fee` (daily AC hostel bed rate per student bed; currently intended as Rs. 300/day)
+- `hostel_only_fee` (daily Non-AC hostel bed rate per student bed; currently intended as Rs. 100/day)
 - `max_seats`
 - `program_director`
 - `project_manager_1`
@@ -313,7 +314,7 @@ Used by:
 - Public contact/footer settings.
 - Program date/deadline display.
 - Desktop/tablet hero program backgrounds through `hero_bg_*` keys. These are separate from `gallery_images`.
-- Hostel fee labels and calculations.
+- Hostel daily per-bed rate labels and calculations.
 - Admin Settings tab.
 - Inferred Edge Function payment setup through `upi_id`.
 
@@ -415,7 +416,7 @@ Server/database responsibilities:
 - Reject inactive programs, closed registration, or fee-to-be-announced programs.
 - Validate selected course IDs are active, belong to the selected program, and do not duplicate a session.
 - Recalculate fee from program-specific `fee_tiers` or `programs.base_fee`.
-- Apply hostel fee only when the program allows hostel.
+- Apply hostel fee only when the program allows hostel. Hostel settings are daily per-bed rates; the RPC multiplies the selected daily rate by program duration days, preferring duration text such as `2 weeks` -> 14 days, then falling back to program start/end dates.
 - Calculate GST from `programs.gst_rate`.
 - Create a pending registration with program snapshot and unique payment reference.
 - Return UPI payment data and receipt-ready fields.
@@ -509,7 +510,7 @@ Important: REST fetch failures are mostly silent and leave hardcoded HTML/JS fal
 5. Hostel UI is hidden/disabled when the selected program does not allow hostel.
 6. Validation runs per field/block and controls the submit button.
 7. Session fee is based on the selected program's fee mode and fee tiers.
-8. Hostel fee is added from `HOSTEL_FEES`, which can be overridden by `site_config`.
+8. Hostel fee is calculated from `HOSTEL_DAILY_RATES`, overridden by `site_config`, then multiplied by the selected program's chargeable duration days. The public labels must say per student bed, per day.
 9. GST is calculated client-side from the selected program GST rate for display only.
 10. On submit, the browser calls `public.create_program_registration`.
 11. The database/RPC recalculates all server-truth amounts and creates the registration.
@@ -664,7 +665,7 @@ Missing deployment details:
 - Registration supports exactly three static session selectors and legacy `session1_course`, `session2_course`, `session3_course` columns; admin can create more sessions, but registration will not adapt beyond three without schema/UI changes.
 - New registration course choices store `selected_course_ids` JSONB plus legacy course-name fields. Renames are safer than before but the legacy text fields can still become ambiguous.
 - Dynamic sessions are mapped by selected program and sorted array position to `session1`, `session2`, `session3`; reordering sessions changes registration meaning unless controlled carefully.
-- Fee/hostel/GST calculation happens in the client for display and is recalculated server-side by `create_program_registration`.
+- Fee/hostel/GST calculation happens in the client for display and is recalculated server-side by `create_program_registration`. Hostel options use legacy values `hostel_only` and `hostel_food` for compatibility, but the visible labels are now Non-AC hostel bed and AC hostel bed.
 - Public content fetch failures are mostly silent, leaving stale hardcoded fallback content.
 - Deadline/countdown display is advisory. The RPC enforces program open/closed and fee status, but it does not currently hard-block registrations after `registration_deadline`.
 - The homepage hero displays program-specific but simulated seats-left urgency from client-side time/deadline logic, not actual capacity or registration count.
