@@ -37,6 +37,8 @@ const trackEmpty = document.getElementById("trackEmpty");
 const registrationProgramRoot = document.querySelector("[data-registration-programs]");
 const registrationProgramInput = document.querySelector("[data-program-slug]");
 const registrationProgramStatus = document.querySelector("[data-program-status]");
+const registrationSelectionHeading = document.querySelector("[data-selection-heading]");
+const registrationSelectionHelp = document.querySelector("[data-selection-help]");
 const sessionSelectorsRoot = document.querySelector("[data-session-selectors]");
 const hostelBlock = document.querySelector("[data-hostel-block]");
 const heroProgramFacts = {
@@ -276,6 +278,12 @@ let feeBySessionCount = {
   3: 1400
 };
 let feeByProgramSessionCount = {};
+
+const FIXED_SCHEDULE_PROGRAMS = new Set(["staff-camp"]);
+
+function programUsesFixedSchedule(program) {
+  return FIXED_SCHEDULE_PROGRAMS.has(program?.slug);
+}
 
 function phoneDigits(phone) { return phone.replace(/[^0-9+]/g, ""); }
 function phoneWA(phone) { return phone.replace(/[^0-9]/g, ""); }
@@ -937,6 +945,27 @@ function selectedSessions() {
   });
 }
 
+function fixedScheduleCourses(program = selectedRegistrationProgram()) {
+  if (!programUsesFixedSchedule(program)) return [];
+  const sessions = programSessions(program.slug);
+  return sessions.flatMap((session) => publicCourses
+    .filter((course) => (
+      course.program_id === program.id &&
+      course.session_id === session.id &&
+      course.is_active !== false
+    ))
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)));
+}
+
+function registrationCourseIds(program = selectedRegistrationProgram(), formData = new FormData(form || document.createElement("form"))) {
+  if (programUsesFixedSchedule(program)) {
+    return fixedScheduleCourses(program).map((course) => course.id).filter(Boolean);
+  }
+  return selectedSessions()
+    .map((toggle) => formData.get(`${toggle.value}Course`))
+    .filter(Boolean);
+}
+
 function formatFee(amount) {
   return `Rs. ${amount.toLocaleString("en-IN")}`;
 }
@@ -1108,7 +1137,9 @@ function renderRegistrationSessionCards(program) {
   if (!sessionSelectorsRoot) return;
   const sessions = programSessions(program.slug);
   const open = registrationProgramIsOpen(program);
+  const fixedSchedule = programUsesFixedSchedule(program);
   sessionCourses = {};
+  sessionSelectorsRoot.classList.toggle("fixed-schedule-list", fixedSchedule);
 
   if (!sessions.length) {
     sessionSelectorsRoot.innerHTML = `
@@ -1117,6 +1148,34 @@ function renderRegistrationSessionCards(program) {
         <p>Admin needs to add sessions and courses before this program can accept registrations.</p>
       </article>
     `;
+    refreshSessionElements();
+    return;
+  }
+
+  if (fixedSchedule) {
+    sessionSelectorsRoot.innerHTML = sessions.map((session, index) => {
+      const courses = publicCourses
+        .filter((course) => course.program_id === program.id && course.session_id === session.id && course.is_active !== false)
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      return `
+        <article class="selection-card fixed-schedule-card ${!courses.length ? "selection-card-empty" : ""}">
+          <div class="fixed-schedule-head">
+            <span class="fixed-schedule-kicker">${esc(session.time_slot || `Schedule ${index + 1}`)}</span>
+            <strong>${esc(session.name || `Schedule ${index + 1}`)}</strong>
+          </div>
+          <div class="fixed-schedule-items">
+            ${courses.length
+              ? courses.map((course) => `
+                <div class="fixed-schedule-item">
+                  <strong>${esc(course.name)}</strong>
+                  ${course.description ? `<small>${esc(course.description)}</small>` : ""}
+                </div>
+              `).join("")
+              : `<p>No active activities added for this schedule block.</p>`}
+          </div>
+        </article>
+      `;
+    }).join("");
     refreshSessionElements();
     return;
   }
@@ -1172,6 +1231,16 @@ function updateRegistrationProgram(slug, options = {}) {
   renderRegistrationSessionCards(program);
   if (!options.preserveSelection) resetSessionCards();
 
+  const fixedSchedule = programUsesFixedSchedule(program);
+  if (registrationSelectionHeading) {
+    registrationSelectionHeading.textContent = fixedSchedule ? "Camp schedule" : "Session and class selection";
+  }
+  if (registrationSelectionHelp) {
+    registrationSelectionHelp.textContent = fixedSchedule
+      ? "This camp follows a fixed schedule. Review the included activities; no class selection is needed."
+      : "Choose the program first. The sessions, classes, dates, and fee will update automatically.";
+  }
+
   if (hostelBlock) {
     hostelBlock.hidden = !program.allowHostel;
     hostelBlock.querySelectorAll("input").forEach((input) => {
@@ -1204,6 +1273,8 @@ function updateRegistrationProgram(slug, options = {}) {
     } else if (!hasSchedule) {
       registrationProgramStatus.textContent = `${program.name} needs sessions and courses before registration can open.`;
       registrationProgramStatus.classList.add("warning");
+    } else if (programUsesFixedSchedule(program)) {
+      registrationProgramStatus.textContent = `${program.name} has a fixed schedule. No class selection is needed.`;
     } else {
       registrationProgramStatus.textContent = `You are registering for ${program.name}.`;
     }
@@ -1222,7 +1293,10 @@ function getHostelFee() {
 function updateRegistrationState() {
   const program = selectedRegistrationProgram();
   const selected = selectedSessions();
-  const sessionFee = selectedProgramFee(selected.length);
+  const fixedSchedule = programUsesFixedSchedule(program);
+  const fixedCourses = fixedSchedule ? fixedScheduleCourses(program) : [];
+  const selectionCount = fixedSchedule ? fixedCourses.length : selected.length;
+  const sessionFee = selectedProgramFee(selectionCount);
   const hostelFee = program?.allowHostel ? getHostelFee() : 0;
   const baseFee = sessionFee + hostelFee;
   const gstRate = Number(program?.gstRate ?? GST_RATE);
@@ -1247,6 +1321,10 @@ function updateRegistrationState() {
   if (feeNote) {
     if (!registrationProgramIsOpen(program)) {
       feeNote.textContent = "Fee will appear after this program opens for registration.";
+    } else if (fixedSchedule) {
+      feeNote.textContent = fixedCourses.length
+        ? `${program.name} fixed schedule is included. No class selection is needed.`
+        : "Admin needs to add fixed schedule activities before registration can continue.";
     } else if (program.feeMode !== "session_count") {
       feeNote.textContent = selected.length
         ? `${program.name} fixed program fee applies.`
@@ -1345,6 +1423,9 @@ function validateBlock(blockIndex) {
   if (blockIndex === 2) {
     const program = selectedRegistrationProgram();
     if (!registrationProgramIsOpen(program)) return false;
+    if (programUsesFixedSchedule(program)) {
+      return fixedScheduleCourses(program).length > 0;
+    }
     const selected = selectedSessions();
     if (selected.length === 0) return false;
     return selected.every((toggle) => {
@@ -1370,6 +1451,10 @@ function validateBlock(blockIndex) {
 function validateSessionCards() {
   let allValid = true;
   const program = selectedRegistrationProgram();
+  if (programUsesFixedSchedule(program)) {
+    document.querySelectorAll(".selection-card.invalid").forEach((card) => card.classList.remove("invalid"));
+    return true;
+  }
   sessionToggles.forEach((toggle) => {
     const card = toggle.closest(".selection-card");
     const sel = document.querySelector(`[data-session-course="${toggle.value}"]`);
@@ -2276,12 +2361,17 @@ form?.addEventListener("submit", async (event) => {
     return;
   }
 
-  const selected = selectedSessions();
   const formData = new FormData(form);
   const hostelOption = formData.get("hostel");
-  const selectedCourseIds = selected
-    .map((toggle) => formData.get(`${toggle.value}Course`))
-    .filter(Boolean);
+  const selectedCourseIds = registrationCourseIds(program, formData);
+
+  if (!selectedCourseIds.length) {
+    statusMessage.textContent = programUsesFixedSchedule(program)
+      ? "This fixed schedule is not ready yet. Please contact the admin team."
+      : "Please select at least one class before proceeding.";
+    statusMessage.classList.add("error");
+    return;
+  }
 
   submitButton.disabled = true;
   submitButton.textContent = "Creating registration...";

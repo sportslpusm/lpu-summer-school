@@ -40,6 +40,7 @@ Tracked source files:
 - `supabase/migrations/20260521181947_tighten_program_public_policy.sql`: narrowed active program public read policy to anon.
 - `supabase/migrations/20260526084756_update_hostel_daily_rates.sql`: updates hostel config to daily per-bed rates and recalculates hostel totals in the registration RPC from daily rate times program duration days.
 - `supabase/migrations/20260526155902_admin_logic_cleanup.sql`: adds durable `course_names` and `payment_review_note`, adds real program registration stats RPC, and updates registration RPC validation for dynamic program/session/course selections, real capacity, dates, and per-program fees.
+- `supabase/migrations/20260527034215_staff_camp_fixed_schedule.sql`: updates `create_program_registration` so `staff-camp` ignores parent-selected course IDs and automatically registers the full active fixed schedule.
 - `assets/dsosww-logo.png`, `assets/lpu-naac-logo.png`, `assets/sww-logo.png`: tracked local image assets.
 - `.gitignore`: ignores `node_modules/`, `.playwright-mcp/`, `.code-review-graph/`, root `*.png` screenshots except `assets/*.png`, `.claude/`, and `.vercel/`.
 
@@ -196,7 +197,7 @@ Seeded programs:
 
 - `campus`: 2 Week Campus Program; registration open; session-count fee tiers; hostel allowed.
 - `online`: Online Course; date/fee to be announced; registration closed until admin enables it.
-- `staff-camp`: LPU Staff Kid Summer Camp; date known; fee to be announced; registration closed.
+- `staff-camp`: LPU Staff Kid Summer Camp; fixed schedule package where parents do not choose courses; active sessions/courses are displayed as included schedule items and are auto-attached by the registration RPC.
 - `skills`: Tailor-Made Skills Workshop; date/fee to be announced; registration closed.
 - `immersion`: LPU Immersion Program; date known; fee to be announced; registration closed.
 
@@ -411,6 +412,7 @@ Request payload:
 - `email`
 - `emergency_phone`
 - `course_ids`
+- For `staff-camp`, `course_ids` may be empty. The RPC ignores browser selections and auto-selects all active courses in active staff-camp sessions because this program has a fixed schedule.
 - `hostel_option`
 - `medical_note`
 
@@ -420,6 +422,7 @@ Server/database responsibilities:
 - Reject inactive programs, closed registration, fee-to-be-announced programs, and programs missing start/end dates.
 - Enforce `registration_deadline` and real `programs.seats_base` capacity before creating a registration.
 - Validate selected course IDs are active, belong to the selected program, and do not duplicate a session.
+- For `staff-camp`, auto-select all active schedule items from active sessions and allow those fixed activities to be submitted without parent selection.
 - Recalculate fee from program-specific `fee_tiers` or `programs.base_fee`.
 - Apply hostel fee only when the program allows hostel. Hostel settings are daily per-bed rates; the RPC multiplies the selected daily rate by program duration days, preferring duration text such as `2 weeks` -> 14 days, then falling back to program start/end dates.
 - Calculate GST from `programs.gst_rate`.
@@ -523,13 +526,13 @@ Important: REST fetch failures are mostly silent and leave hardcoded HTML/JS fal
 1. User chooses one of the five active programs.
 2. Registration only opens if that program has `registration_enabled = true`, start/end dates, `fee_status = ready`, usable fee configuration, and at least one active session/course.
 3. User fills student, guardian, session/course or activity/course, hostel, medical note, and consent fields.
-4. Session/course cards are generated from the selected program and filtered to that program; staff-camp currently renders eight activity cards from production data.
+4. Session/course cards are generated from the selected program and filtered to that program. `staff-camp` is a fixed schedule: parents see the active schedule items from admin data, but no checkboxes/dropdowns are shown and no course choice is required.
 5. Hostel UI is hidden/disabled when the selected program does not allow hostel.
 6. Validation runs per field/block and controls the submit button.
 7. Main fee is based on the selected program's fee mode: `session_count` uses fee tiers by selected count, while `package`/`custom` use `programs.base_fee`.
 8. Hostel fee is calculated from `HOSTEL_DAILY_RATES`, overridden by `site_config`, then multiplied by the selected program's chargeable duration days. The public labels must say per student bed, per day.
 9. GST is calculated client-side from the selected program GST rate for display only.
-10. On submit, the browser calls `public.create_program_registration`.
+10. On submit, the browser calls `public.create_program_registration`. Selectable programs send the chosen course IDs; `staff-camp` sends the active fixed schedule IDs when available, and the database also auto-fills them as a server-side guard.
 11. The database/RPC recalculates all server-truth amounts and creates the registration.
 12. The returned payment data opens the UPI payment modal.
 13. Pending registration state is stored in `sessionStorage` as `lpu_pending_reg` for up to two hours.
@@ -611,6 +614,7 @@ Payment is not gateway-verified. It is a manual UPI flow:
 - Course form filters the session dropdown to the selected program and validates that the selected session belongs to the selected program before saving.
 - Can upload image to `images` bucket or enter an image URL.
 - Categories supported in UI: `tech`, `creative`, `career`, `sports`, `general`.
+- For `staff-camp`, Courses are schedule items, not choices. Admin should keep one or more active course/activity rows under the desired staff-camp sessions; registration will include all active rows automatically.
 
 ### Fees
 
@@ -685,6 +689,7 @@ Missing deployment details:
 - `verified_by` now uses the stored admin email when available, but the admin auth/session model is still browser-local and should eventually store a stable user id/audit table server-side.
 - Confirmation email failure is non-blocking and only logged to console, so admins may think email was sent when it failed.
 - Programs without dates, fee, sessions, or courses now appear as coming soon/closed in registration, but admins can still make content inconsistent if they enable display before setup is complete.
+- `staff-camp` fixed-schedule behavior is currently slug-based in `script.js` and `create_program_registration`. If future programs need fixed schedules, add a real `selection_mode` column instead of hardcoding more slugs.
 - Legacy `session1_course`, `session2_course`, `session3_course` columns still exist for older exports/email compatibility. New complete selections are stored in `course_names` and `selected_course_ids`; future schema cleanup should move registration-course joins into a relational child table.
 - Fee/hostel/GST calculation happens in the client for display and is recalculated server-side by `create_program_registration`. Hostel options use legacy values `hostel_only` and `hostel_food` for compatibility, but the visible labels are now Non-AC hostel bed and AC hostel bed.
 - Public content fetch failures are mostly silent, leaving stale hardcoded fallback content.
