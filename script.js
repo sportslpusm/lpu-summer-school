@@ -515,7 +515,7 @@ function updateHeroBackground(program, animate = true) {
   preload.src = nextSrc;
 }
 
-function updateHeroProgram(programKey, animate = true) {
+function updateHeroProgram(programKey, animate = true, options = {}) {
   const program = getProgram(programKey);
   if (!heroProgramRoot || !program) return;
   programKey = program.slug || programKey;
@@ -536,7 +536,9 @@ function updateHeroProgram(programKey, animate = true) {
     });
 
     updateHeroUrgency(program);
-    setTrackProgram(programKey, { fromHero: true });
+    if (options.syncTracks) {
+      setTrackProgram(programKey, { fromHero: true });
+    }
 
     heroProgramTabs.forEach((tab) => {
       const active = tab.dataset.programOption === programKey;
@@ -585,7 +587,7 @@ function startHeroProgramAutoRotation() {
     const tabs = Array.from(heroProgramTabs);
     const nextTab = tabs[(activeHeroProgramIndex() + 1) % tabs.length];
     if (!nextTab) return;
-    updateHeroProgram(nextTab.dataset.programOption);
+    updateHeroProgram(nextTab.dataset.programOption, true, { syncTracks: false });
     centerHeroProgramTab(nextTab);
   }, 5200);
 }
@@ -599,7 +601,7 @@ if (heroProgramRoot && heroProgramTabs.length) {
   heroProgramTabs.forEach((tab, index) => {
     tab.tabIndex = tab.classList.contains("active") ? 0 : -1;
     tab.addEventListener("click", () => {
-      updateHeroProgram(tab.dataset.programOption);
+      updateHeroProgram(tab.dataset.programOption, true, { syncTracks: true });
       centerHeroProgramTab(tab);
       resetHeroProgramAutoRotation();
     });
@@ -721,7 +723,7 @@ function setTrackProgram(slug, options = {}) {
   trackProgramSlug = slug;
   renderTrackProgramFilters();
   renderHomepageProgramContent();
-  if (!options.fromHero && heroProgramRoot) updateHeroProgram(slug);
+  if (!options.fromHero && heroProgramRoot) updateHeroProgram(slug, true, { syncTracks: false });
 }
 
 function renderTrackProgramFilters() {

@@ -514,9 +514,9 @@ On page load, `script.js`:
 5. Builds per-program fee maps and filters sessions/courses by selected program.
 6. Populates registration program cards, dynamic selected-program session/course cards, homepage track cards, session cards, and fee table.
 7. Initializes the homepage hero program selector. The main heading stays fixed; only description, metadata, deadline/countdown, seats-left note/count, and active tab state change. Legacy facts targets are optional because the visible hero stats cards were removed.
-8. Auto-rotates the selected hero program every few seconds while preserving click/tap and keyboard selection.
+8. Auto-rotates the selected hero program every few seconds while preserving click/tap and keyboard selection. Hero auto-rotation must not change the Program tracks section; only explicit user program selection should change tracks/sessions/fees.
 9. Hero media loads active `gallery_images` rows from Supabase/admin and rebuilds the homepage hero strip without adding duplicate loop images. The strip auto-advances through existing cards in JS, pauses on user interaction, and uses centered container `scrollTo` rather than card `scrollIntoView` to avoid page-level horizontal shifting. On mobile the centered card intentionally shows small previous/next peeks. Desktop/tablet program backgrounds load from separate `site_config` `hero_bg_*` keys, with hardcoded fallbacks if those settings are empty.
-10. Homepage Program tracks, Sessions, and Fees sections follow the selected hero/program filter. Programs without configured tracks show an empty-state message instead of showing campus courses.
+10. Homepage Program tracks, Sessions, and Fees sections follow the Program tracks selector and manual hero tab clicks, but not hero auto-rotation. Programs without configured tracks show an empty-state message instead of showing campus courses.
 11. Runs nav, countdown, real capacity-based seats display, reveal, and contact overlay. Fake social-proof registration popups are intentionally disabled.
 
 Important: REST fetch failures are mostly silent and leave hardcoded HTML/JS fallback content in place.
