@@ -957,6 +957,18 @@ h1 {
   gap: 10px;
   margin: 12px 0 14px;
 }
+.registration-form .registration-program-select-wrap {
+  display: none;
+  margin: 12px 0 14px;
+}
+.registration-program-select-wrap select {
+  min-height: 50px;
+  border-radius: 12px;
+  border-color: rgba(243, 112, 13, 0.28);
+  background: linear-gradient(135deg, #fff8f2, #ffffff);
+  color: var(--ink);
+  font-weight: 850;
+}
 .registration-program-card {
   min-height: 116px;
   border: 1px solid var(--line);
@@ -1241,20 +1253,8 @@ h1 {
   .progress-step span { width: 24px; height: 24px; font-size: 0.7rem; }
   .form-progress { gap: 0; padding: 0 6px; }
   .form-progress-wrapper { padding: 8px 0; top: 64px; margin-left: -16px; margin-right: -16px; }
-  .registration-programs {
-    display: flex;
-    overflow-x: auto;
-    gap: 10px;
-    padding: 2px 2px 8px;
-    scrollbar-width: none;
-    scroll-snap-type: x mandatory;
-  }
-  .registration-programs::-webkit-scrollbar { display: none; }
-  .registration-program-card {
-    min-width: min(82vw, 300px);
-    min-height: 104px;
-    scroll-snap-align: start;
-  }
+  .registration-form .registration-program-select-wrap { display: grid; }
+  .registration-programs { display: none; }
   /* Hostel cards stack on mobile */
   .hostel-radios { grid-template-columns: 1fr; }
   .submit-bar .button, .hero-actions .button { width: 100%; }

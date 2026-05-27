@@ -118,7 +118,7 @@ Registration page with:
 - Registration hero and step progress.
 - Student details block.
 - Parent/guardian details block.
-- Dynamic program picker for all active programs.
+- Dynamic program picker for all active programs. Registration now starts with no default program selected; mobile uses a native dropdown so families explicitly choose the program before seeing schedules/classes/fees.
 - Dynamic session/class cards generated from the selected program's `sessions` and `courses`; supports more than three sessions while preserving first-three legacy columns for older admin/export compatibility.
 - Optional hostel/meals radio group.
 - Additional info and consent.
@@ -523,7 +523,7 @@ Important: REST fetch failures are mostly silent and leave hardcoded HTML/JS fal
 
 ## Registration Flow
 
-1. User chooses one of the five active programs.
+1. User explicitly chooses one of the five active programs. No program is selected by default; mobile shows a dropdown instead of swipe cards for clearer selection.
 2. Registration only opens if that program has `registration_enabled = true`, start/end dates, `fee_status = ready`, usable fee configuration, and at least one active session/course.
 3. User fills student, guardian, session/course or activity/course, hostel, medical note, and consent fields.
 4. Session/course cards are generated from the selected program and filtered to that program. `staff-camp` is a fixed schedule: parents see the active schedule items from admin data, but no checkboxes/dropdowns are shown and no course choice is required.

@@ -37,6 +37,7 @@ const trackEmpty = document.getElementById("trackEmpty");
 const registrationProgramRoot = document.querySelector("[data-registration-programs]");
 const registrationProgramInput = document.querySelector("[data-program-slug]");
 const registrationProgramStatus = document.querySelector("[data-program-status]");
+const registrationProgramSelect = document.querySelector("[data-registration-program-select]");
 const registrationSelectionHeading = document.querySelector("[data-selection-heading]");
 const registrationSelectionHelp = document.querySelector("[data-selection-help]");
 const sessionSelectorsRoot = document.querySelector("[data-session-selectors]");
@@ -238,7 +239,11 @@ function setPrograms(rows = []) {
     HERO_PROGRAMS[program.slug] = program;
   });
   if (!programBySlug[trackProgramSlug]) trackProgramSlug = programs[0]?.slug || "campus";
-  if (!programBySlug[registrationProgramSlug]) registrationProgramSlug = programs[0]?.slug || "campus";
+  if (form) {
+    if (registrationProgramSlug && !programBySlug[registrationProgramSlug]) registrationProgramSlug = "";
+  } else if (!programBySlug[registrationProgramSlug]) {
+    registrationProgramSlug = programs[0]?.slug || "campus";
+  }
   renderHeroProgramTabs();
 }
 
@@ -267,7 +272,7 @@ let publicCourses = [];
 let publicFees = [];
 let programStatsById = {};
 let trackProgramSlug = "campus";
-let registrationProgramSlug = "campus";
+let registrationProgramSlug = form ? "" : "campus";
 
 let sessionCourses = {};
 
@@ -976,7 +981,8 @@ const HOSTEL_LABELS = { none: "No hostel", hostel_only: "Non-AC hostel bed", hos
 const HOSTEL_DAY_FALLBACKS = { campus: 14, "staff-camp": 21, immersion: 14 };
 
 function gstPercentLabel(rate = GST_RATE) {
-  const percent = Number(rate || GST_RATE) * 100;
+  const normalizedRate = Number(rate ?? GST_RATE);
+  const percent = (Number.isFinite(normalizedRate) ? normalizedRate : GST_RATE) * 100;
   return `${Number.isInteger(percent) ? percent : percent.toFixed(2).replace(/\.?0+$/, "")}%`;
 }
 
@@ -1045,6 +1051,7 @@ function esc(str) {
 let registrationDeadline = null;
 
 function selectedRegistrationProgram() {
+  if (!registrationProgramSlug) return null;
   return getProgram(registrationProgramSlug);
 }
 
@@ -1084,7 +1091,20 @@ function selectedProgramFee(selectedCount) {
 }
 
 function renderRegistrationPrograms() {
-  if (!registrationProgramRoot || !programs.length) return;
+  if (!programs.length) return;
+  if (registrationProgramSelect) {
+    registrationProgramSelect.innerHTML = `
+      <option value="">Choose a program</option>
+      ${programs.map((program) => `<option value="${esc(program.slug)}">${esc(program.name)} - ${esc(program.meta?.dates || "Date to be decided")}</option>`).join("")}
+    `;
+    registrationProgramSelect.value = registrationProgramSlug || "";
+    if (registrationProgramSelect.dataset.bound !== "true") {
+      registrationProgramSelect.dataset.bound = "true";
+      registrationProgramSelect.addEventListener("change", () => updateRegistrationProgram(registrationProgramSelect.value));
+    }
+  }
+
+  if (!registrationProgramRoot) return;
   registrationProgramRoot.innerHTML = programs.map((program) => {
     const open = registrationProgramIsOpen(program);
     const active = program.slug === registrationProgramSlug;
@@ -1135,6 +1155,19 @@ function attachSessionInputListeners() {
 
 function renderRegistrationSessionCards(program) {
   if (!sessionSelectorsRoot) return;
+  if (!program) {
+    sessionCourses = {};
+    sessionSelectorsRoot.classList.remove("fixed-schedule-list");
+    sessionSelectorsRoot.innerHTML = `
+      <article class="selection-card selection-empty">
+        <strong>Choose a program first</strong>
+        <p>The schedule, class choices, and fee will appear after you select a program.</p>
+      </article>
+    `;
+    refreshSessionElements();
+    return;
+  }
+
   const sessions = programSessions(program.slug);
   const open = registrationProgramIsOpen(program);
   const fixedSchedule = programUsesFixedSchedule(program);
@@ -1223,10 +1256,10 @@ function resetSessionCards() {
 }
 
 function updateRegistrationProgram(slug, options = {}) {
-  const program = getProgram(slug);
-  if (!program) return;
-  registrationProgramSlug = program.slug;
-  if (registrationProgramInput) registrationProgramInput.value = program.slug;
+  const program = slug ? getProgram(slug) : null;
+  if (slug && !program) return;
+  registrationProgramSlug = program?.slug || "";
+  if (registrationProgramInput) registrationProgramInput.value = registrationProgramSlug;
   renderRegistrationPrograms();
   renderRegistrationSessionCards(program);
   if (!options.preserveSelection) resetSessionCards();
@@ -1236,47 +1269,53 @@ function updateRegistrationProgram(slug, options = {}) {
     registrationSelectionHeading.textContent = fixedSchedule ? "Camp schedule" : "Session and class selection";
   }
   if (registrationSelectionHelp) {
-    registrationSelectionHelp.textContent = fixedSchedule
+    registrationSelectionHelp.textContent = !program
+      ? "Choose your program first. Nothing is selected by default, so you know exactly what you are registering for."
+      : fixedSchedule
       ? "This camp follows a fixed schedule. Review the included activities; no class selection is needed."
       : "Choose the program first. The sessions, classes, dates, and fee will update automatically.";
   }
 
   if (hostelBlock) {
-    hostelBlock.hidden = !program.allowHostel;
+    hostelBlock.hidden = !program?.allowHostel;
     hostelBlock.querySelectorAll("input").forEach((input) => {
-      input.disabled = !program.allowHostel;
+      input.disabled = !program?.allowHostel;
     });
-    if (!program.allowHostel) {
+    if (!program?.allowHostel) {
       const noneHostel = hostelBlock.querySelector('input[name="hostel"][value="none"]');
       if (noneHostel) noneHostel.checked = true;
     }
   }
-  updateHostelPriceLabels(program.gstRate);
+  updateHostelPriceLabels(program?.gstRate ?? GST_RATE);
 
   if (registrationProgramStatus) {
-    const hasFee = programHasFeeConfig(program);
-    const hasSchedule = programHasSchedule(program);
-    const hasDates = Boolean(program.startDate && program.endDate);
     registrationProgramStatus.classList.remove("warning");
-    if (!program.registrationEnabled) {
-      registrationProgramStatus.textContent = `${program.name} registration is currently closed by admin.`;
-      registrationProgramStatus.classList.add("warning");
-    } else if (!hasDates && !hasFee && !hasSchedule) {
-      registrationProgramStatus.textContent = `${program.name} needs dates, schedule, courses, and fee before registration can open.`;
-      registrationProgramStatus.classList.add("warning");
-    } else if (!hasDates) {
-      registrationProgramStatus.textContent = `${program.name} dates are not announced yet.`;
-      registrationProgramStatus.classList.add("warning");
-    } else if (!hasFee) {
-      registrationProgramStatus.textContent = `${program.name} fee is not announced yet.`;
-      registrationProgramStatus.classList.add("warning");
-    } else if (!hasSchedule) {
-      registrationProgramStatus.textContent = `${program.name} needs sessions and courses before registration can open.`;
-      registrationProgramStatus.classList.add("warning");
-    } else if (programUsesFixedSchedule(program)) {
-      registrationProgramStatus.textContent = `${program.name} has a fixed schedule. No class selection is needed.`;
+    if (!program) {
+      registrationProgramStatus.textContent = "Select a program to see its schedule, fee, and registration status.";
     } else {
-      registrationProgramStatus.textContent = `You are registering for ${program.name}.`;
+      const hasFee = programHasFeeConfig(program);
+      const hasSchedule = programHasSchedule(program);
+      const hasDates = Boolean(program.startDate && program.endDate);
+      if (!program.registrationEnabled) {
+        registrationProgramStatus.textContent = `${program.name} registration is currently closed by admin.`;
+        registrationProgramStatus.classList.add("warning");
+      } else if (!hasDates && !hasFee && !hasSchedule) {
+        registrationProgramStatus.textContent = `${program.name} needs dates, schedule, courses, and fee before registration can open.`;
+        registrationProgramStatus.classList.add("warning");
+      } else if (!hasDates) {
+        registrationProgramStatus.textContent = `${program.name} dates are not announced yet.`;
+        registrationProgramStatus.classList.add("warning");
+      } else if (!hasFee) {
+        registrationProgramStatus.textContent = `${program.name} fee is not announced yet.`;
+        registrationProgramStatus.classList.add("warning");
+      } else if (!hasSchedule) {
+        registrationProgramStatus.textContent = `${program.name} needs sessions and courses before registration can open.`;
+        registrationProgramStatus.classList.add("warning");
+      } else if (programUsesFixedSchedule(program)) {
+        registrationProgramStatus.textContent = `${program.name} has a fixed schedule. No class selection is needed.`;
+      } else {
+        registrationProgramStatus.textContent = `You are registering for ${program.name}.`;
+      }
     }
   }
 
@@ -1319,7 +1358,9 @@ function updateRegistrationState() {
   });
 
   if (feeNote) {
-    if (!registrationProgramIsOpen(program)) {
+    if (!program) {
+      feeNote.textContent = "Choose a program to see the fee.";
+    } else if (!registrationProgramIsOpen(program)) {
       feeNote.textContent = "Fee will appear after this program opens for registration.";
     } else if (fixedSchedule) {
       feeNote.textContent = fixedCourses.length
@@ -1512,12 +1553,14 @@ function updateSubmitState() {
   const complete = isFormComplete();
   submitButton.disabled = !complete;
   const program = selectedRegistrationProgram();
-  if (!registrationProgramIsOpen(program)) {
+  if (submitButton.textContent === "Creating registration...") return;
+  if (!program) {
+    submitButton.disabled = true;
+    submitButton.textContent = "Select Program First";
+  } else if (!registrationProgramIsOpen(program)) {
     submitButton.disabled = true;
     submitButton.textContent = "Registration Opening Soon";
-  } else if (!submitButton.disabled && submitButton.textContent === "Registration Opening Soon") {
-    submitButton.textContent = "Proceed to Payment";
-  } else if (submitButton.disabled && submitButton.textContent === "Registration Opening Soon") {
+  } else if (submitButton.textContent === "Registration Opening Soon" || submitButton.textContent === "Select Program First") {
     submitButton.textContent = "Proceed to Payment";
   }
 }
@@ -2339,6 +2382,11 @@ form?.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const program = selectedRegistrationProgram();
+  if (!program) {
+    statusMessage.textContent = "Please choose a program before proceeding.";
+    statusMessage.classList.add("error");
+    return;
+  }
   const programDeadline = program?.urgency?.deadline ? new Date(program.urgency.deadline) : registrationDeadline;
   // Block submission if deadline has passed
   if (programDeadline && new Date() > programDeadline) {

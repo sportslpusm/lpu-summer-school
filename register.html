@@ -136,9 +136,15 @@
               <h2 data-selection-heading>Session and class selection</h2>
             </div>
             <p class="form-help" data-selection-help>Choose the program first. The sessions, classes, dates, and fee will update automatically.</p>
-            <input type="hidden" name="programSlug" value="campus" data-program-slug>
+            <input type="hidden" name="programSlug" value="" data-program-slug>
+            <label class="registration-program-select-wrap">
+              Select program
+              <select data-registration-program-select aria-label="Choose program">
+                <option value="">Choose a program</option>
+              </select>
+            </label>
             <div class="registration-programs" data-registration-programs aria-label="Choose program"></div>
-            <p class="form-help program-status" data-program-status>You are registering for 2 Week Campus Program.</p>
+            <p class="form-help program-status" data-program-status>Select a program to see its schedule, fee, and registration status.</p>
             <div class="session-selectors" data-session-selectors></div>
           </div>
 
