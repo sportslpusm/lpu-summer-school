@@ -321,6 +321,11 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 .program-tab:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
 .program-tab.active { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(243,112,13,0.16), var(--shadow); }
 .program-tab.active span { color: var(--orange-dark); }
+/* desktop: 5 equal columns that fill the rail width (no right-hand gap) */
+@media (min-width: 1000px) {
+  .program-selector { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 14px; overflow: visible; padding: 4px 0 4px; -webkit-mask-image: none; mask-image: none; }
+  .program-tab { width: auto; max-width: none; min-width: 0; scroll-snap-align: none; }
+}
 
 /* ===================== impact strip ===================== */
 .impact {
