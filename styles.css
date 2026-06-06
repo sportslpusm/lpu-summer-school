@@ -718,3 +718,15 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
   .hero-meta dt { font-size: 0.5rem; }
   .hero-meta dd { font-size: 0.68rem; line-height: 1.15; }
 }
+
+/* program picker on phones: one card + clean peek, snap, soft right edge
+   (instead of a hard crop at the screen edge) */
+@media (max-width: 760px) {
+  .program-selector {
+    scroll-snap-type: x mandatory;
+    scroll-padding-left: 4px;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent);
+  }
+  .program-tab { width: 70vw; min-width: 208px; max-width: 270px; }
+}
