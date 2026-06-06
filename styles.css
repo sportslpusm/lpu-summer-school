@@ -22,6 +22,8 @@
   --muted-2: #8a7c6c;
   --cream: #fdf7ee;        /* page paper */
   --cream-2: #f7eede;
+  --band: #f3e6cd;         /* alternating section band (warm sand) */
+  --band-line: #ead9bd;
   --surface: #ffffff;
   --line: #ece0cf;
   --line-2: #e2d4bf;
@@ -343,6 +345,16 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 
 /* ===================== generic section ===================== */
 .section { max-width: calc(1280px + 2 * var(--pad-x)); margin: 0 auto; padding: var(--section-y) var(--pad-x); }
+
+/* Alternating full-width section bands give the page rhythm so each section
+   reads as its own zone (warm sand band vs cream page). */
+.story, .sessions, .recognition { position: relative; isolation: isolate; }
+.story::before, .sessions::before, .recognition::before {
+  content: ""; position: absolute; inset: 0 calc(50% - 50vw); z-index: -1;
+  background: var(--band);
+  border-top: 1px solid var(--band-line);
+  border-bottom: 1px solid var(--band-line);
+}
 .section-head { max-width: 760px; margin-bottom: clamp(26px, 3vw, 44px); }
 .section-head.center { margin-left: auto; margin-right: auto; text-align: center; }
 .section-head.split { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 18px; max-width: none; }
