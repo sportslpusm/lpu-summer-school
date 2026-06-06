@@ -323,14 +323,14 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 .program-tab.active span { color: var(--orange-dark); }
 /* desktop: 5 equal columns that fill the rail width (no right-hand gap) */
 @media (min-width: 1000px) {
-  .program-selector { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 14px; overflow: visible; padding: 4px 0 4px; -webkit-mask-image: none; mask-image: none; }
+  .program-selector { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; overflow: visible; padding: 4px 0 4px; -webkit-mask-image: none; mask-image: none; }
   .program-tab { width: auto; max-width: none; min-width: 0; scroll-snap-align: none; }
 }
 
 /* ===================== impact strip ===================== */
 .impact {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  max-width: calc(1280px + 2 * var(--pad-x)); margin: 0 auto; padding: 0 var(--pad-x);
+  max-width: calc(1280px + 2 * var(--pad-x)); margin: 0 auto clamp(40px, 3.6vw, 60px); padding: 0 var(--pad-x);
 }
 .impact article {
   padding: clamp(22px, 2.6vw, 34px) clamp(20px, 2.4vw, 30px);
@@ -575,8 +575,6 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 /* ===================== hero desktop layout ===================== */
 @media (min-width: 1000px) {
   .hero-inner { grid-template-columns: 1.04fr 0.96fr; }
-  .hero-photo { aspect-ratio: 5 / 6; }
-  .program-tab { width: 220px; }
 }
 
 /* ===================== reduced motion ===================== */
