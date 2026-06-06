@@ -14,8 +14,11 @@ skills-lock.json
 .vercel
 .env*.local
 
-# Internal security/audit docs — never publish to the public repo
+# Internal security/audit/planning docs — never publish to the public repo
 AUDIT_REPORT.md
 KNOWN_ISSUES.md
 WEBSITE_REFERENCE.md
+REBUILD_PLAN.md
+REBUILD_PROMPT.md
+SECURITY_INTERNAL.md
 supabase/functions/_deprecated_backup/
