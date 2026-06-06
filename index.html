@@ -250,14 +250,9 @@
               <thead><tr><th scope="col">Sessions</th><th scope="col">Description</th><th scope="col">Fee</th></tr></thead>
               <tbody id="feeTableBody"><!-- populated by script.js --></tbody>
             </table>
-            <div class="hostel-info">
-              <h3>Optional: on-campus stay</h3>
-              <p>Hostel beds for outstation students. Rates are per student bed, per day.</p>
-              <div class="hostel-options">
-                <div class="hostel-option" data-hostel-option="hostel_only"><strong>Rs. 100/day</strong><span>Non-AC hostel bed per student</span></div>
-                <div class="hostel-option" data-hostel-option="hostel_food"><strong>Rs. 300/day</strong><span>AC hostel bed per student</span></div>
-              </div>
-            </div>
+            <!-- Accommodation block is rendered per selected program by script.js
+                 (optional = hostel options, included = bundled message, none = hidden). -->
+            <div class="hostel-info" id="feeAccommodation" hidden></div>
           </div>
         </div>
       </section>

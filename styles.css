@@ -500,6 +500,10 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 .hostel-option { padding: 14px; border-radius: var(--radius-sm); background: rgba(255,255,255,0.7); border: 1px solid var(--orange-soft); }
 .hostel-option strong { display: block; font-family: var(--font-display); font-size: 1.16rem; font-weight: 600; color: var(--orange-dark); }
 .hostel-option span { display: block; margin-top: 3px; font-size: 0.8rem; color: var(--ink-soft); }
+.hostel-mess-note { margin: 12px 0 0; font-size: 0.82rem; font-style: italic; color: var(--ink-soft); }
+.hostel-info-included h3 { display: flex; align-items: center; gap: 8px; }
+.hostel-info-included h3::before { content: "\2713"; display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--orange); color: #fff; font-size: 0.82rem; font-family: var(--font-body); font-weight: 800; }
+.hostel-info-included > p { margin: 8px 0 0; }
 @media (min-width: 900px) { .fee-shell { grid-template-columns: 0.82fr 1.18fr; } .fee-intro { position: sticky; top: 100px; } }
 @media (max-width: 460px) { .hostel-options { grid-template-columns: 1fr; } }
 

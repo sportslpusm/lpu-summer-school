@@ -1153,6 +1153,10 @@ function renderHomepageFees() {
   const program = getProgram(trackProgramSlug);
   const fees = publicFees.filter((fee) => fee.program_id === program?.id && fee.session_count > 0).sort((a, b) => a.session_count - b.session_count);
 
+  // Accommodation block depends only on the program (not the fee mode), so render
+  // it first — the fee table has several early returns below.
+  renderHomepageAccommodation(program);
+
   if (program?.feeStatus !== "ready" || program?.feeMode === "to_be_announced") {
     feeTableBody.innerHTML = `<tr><td>${esc(program.name)}</td><td>Fee details are being finalized.</td><td>To be announced</td></tr>`;
     return;
@@ -1166,6 +1170,45 @@ function renderHomepageFees() {
   feeTableBody.innerHTML = fees.length
     ? fees.map((fee) => `<tr><td>${fee.session_count} Session${fee.session_count > 1 ? "s" : ""}</td><td>${esc(fee.label || "")}</td><td>${formatFee(Number(fee.fee_amount || 0))}</td></tr>`).join("")
     : `<tr><td>${esc(program.name)}</td><td>Fee tiers are not configured yet.</td><td>To be announced</td></tr>`;
+}
+
+// The on-campus stay block differs per program, so render it from the program's
+// accommodation rules: "optional" -> hostel options, "included" -> bundled note,
+// "none" -> hidden. Keeps the fees card honest as the user switches programs.
+function renderHomepageAccommodation(program) {
+  const block = document.getElementById("feeAccommodation");
+  if (!block) return;
+  const mode = programAccommodationMode(program);
+
+  if (mode === "included") {
+    block.hidden = false;
+    block.className = "hostel-info hostel-info-included";
+    const text = program?.includedServices || "Stay, food, and campus activities are included in this program.";
+    block.innerHTML = `<h3>Stay &amp; meals included</h3><p>${esc(text)}</p>`;
+    return;
+  }
+
+  if (mode === "optional" && (program?.allowHostel || program?.allowMess)) {
+    block.hidden = false;
+    block.className = "hostel-info";
+    const nonAc = hostelDailyRate("hostel_only");
+    const ac = hostelDailyRate("hostel_food");
+    const messNote = program?.allowMess
+      ? `<p class="hostel-mess-note">Mess meals can be added per day during registration.</p>`
+      : "";
+    block.innerHTML = `
+      <h3>Optional: on-campus stay</h3>
+      <p>Hostel beds for outstation students. Rates are per student bed, per day.</p>
+      <div class="hostel-options">
+        <div class="hostel-option"><strong>Rs. ${nonAc.toLocaleString("en-IN")}/day</strong><span>Non-AC hostel bed per student</span></div>
+        <div class="hostel-option"><strong>Rs. ${ac.toLocaleString("en-IN")}/day</strong><span>AC hostel bed per student</span></div>
+      </div>${messNote}`;
+    return;
+  }
+
+  // mode === "none": this program has no on-campus stay option.
+  block.hidden = true;
+  block.innerHTML = "";
 }
 
 // Course detail sheet — tap ANY class card (any program, any screen size) to read
