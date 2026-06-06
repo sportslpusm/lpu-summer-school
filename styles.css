@@ -1198,6 +1198,13 @@ h1 {
 .registration-program-card span { font-size: 0.95rem; font-weight: 950; line-height: 1.25; }
 .registration-program-card small { margin-top: 8px; color: var(--orange); font-weight: 850; }
 .registration-program-card em { margin-top: 10px; color: var(--muted); font-size: 0.74rem; font-style: normal; font-weight: 850; text-transform: uppercase; letter-spacing: 0.08em; }
+.registration-program-card em[data-reg-status="open"] { color: #1a7f37; }
+.registration-program-card em[data-reg-status="started"] { color: #b45309; }
+.registration-program-card em[data-reg-status="closed"] { color: #b42318; }
+.registration-program-card em[data-reg-status="soon"] { color: var(--muted); }
+.chip-status { display: block; margin-top: 4px; font-size: 0.62rem; font-weight: 900; font-style: normal; text-transform: uppercase; letter-spacing: 0.04em; }
+.chip-status[data-reg-status="started"] { color: #b45309; }
+.chip-status[data-reg-status="closed"] { color: #b42318; }
 .program-status.warning { color: #b45309; }
 .check-row, .consent-row { grid-template-columns: auto 1fr; align-items: center; }
 .check-row input, .consent-row input { width: 18px; height: 18px; }

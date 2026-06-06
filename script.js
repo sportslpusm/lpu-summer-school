@@ -920,10 +920,15 @@ function renderTrackProgramFilters() {
   if (!trackProgramFilters || !programs.length) return;
   trackProgramFilters.innerHTML = programs.map((program) => {
     const courseCount = programCourses(program.slug).length;
+    const status = programStatusBadge(program);
+    const statusTag = (status.state === "started" || status.state === "closed")
+      ? `<em class="chip-status" data-reg-status="${esc(status.state)}">${esc(status.label)}</em>`
+      : "";
     return `
     <button class="track-program-chip ${program.slug === trackProgramSlug ? "active" : ""}" type="button" data-track-program="${esc(program.slug)}">
       <span>${esc(program.name)}</span>
       <small>${courseCount} ${courseCount === 1 ? "course" : "courses"}</small>
+      ${statusTag}
     </button>
   `;
   }).join("");
@@ -1607,8 +1612,29 @@ function programDeadlinePassed(program) {
   return !Number.isNaN(d.getTime()) && new Date() > d;
 }
 
+// A dated program that has reached its start date is "in progress" — registration is
+// closed, but the program data stays visible on the site.
+function programHasStarted(program) {
+  if (!program?.startDate) return false;
+  if (program.dateDisplayMode === "self_paced" || program.dateDisplayMode === "to_be_announced") return false;
+  const start = new Date(`${program.startDate}T00:00:00+05:30`);
+  return !Number.isNaN(start.getTime()) && new Date() >= start;
+}
+
 function registrationProgramIsOpen(program = selectedRegistrationProgram()) {
-  return Boolean(program?.registrationEnabled && programHasAnnouncedTiming(program) && programHasFeeConfig(program) && programHasSchedule(program) && !programDeadlinePassed(program));
+  return Boolean(program?.registrationEnabled && programHasAnnouncedTiming(program) && programHasFeeConfig(program) && programHasSchedule(program) && !programDeadlinePassed(program) && !programHasStarted(program));
+}
+
+// Status pill text + state for any program surface (cards, register page).
+function programStatusBadge(program) {
+  if (!program) return { label: "Coming soon", state: "soon" };
+  if (programHasStarted(program)) return { label: "In progress", state: "started" };
+  if (programDeadlinePassed(program)) return { label: "Registration closed", state: "closed" };
+  if (registrationProgramIsOpen(program)) return { label: "Registration open", state: "open" };
+  if (program.registrationEnabled === false && programHasAnnouncedTiming(program) && programHasFeeConfig(program) && programHasSchedule(program)) {
+    return { label: "Registration closed", state: "closed" };
+  }
+  return { label: "Coming soon", state: "soon" };
 }
 
 function registrationScheduleSummary(program) {
@@ -1660,13 +1686,13 @@ function renderRegistrationPrograms() {
 
   if (!registrationProgramRoot) return;
   registrationProgramRoot.innerHTML = programs.map((program) => {
-    const open = registrationProgramIsOpen(program);
     const active = program.slug === registrationProgramSlug;
+    const status = programStatusBadge(program);
     return `
       <button class="registration-program-card ${active ? "active" : ""}" type="button" data-registration-program="${esc(program.slug)}" aria-pressed="${active ? "true" : "false"}">
         <span>${esc(program.name)}</span>
         <small>${esc(program.meta?.dates || "Date to be announced")}</small>
-        <em>${open ? "Registration open" : "Coming soon"}</em>
+        <em data-reg-status="${esc(status.state)}">${esc(status.label)}</em>
       </button>
     `;
   }).join("");
@@ -1956,7 +1982,13 @@ function updateRegistrationProgram(slug, options = {}) {
       const hasFee = programHasFeeConfig(program);
       const hasSchedule = programHasSchedule(program);
       const hasTiming = programHasAnnouncedTiming(program);
-      if (!program.registrationEnabled) {
+      if (programHasStarted(program)) {
+        registrationProgramStatus.textContent = `${program.name} has already started — registration is closed.`;
+        registrationProgramStatus.classList.add("warning");
+      } else if (programDeadlinePassed(program)) {
+        registrationProgramStatus.textContent = `${program.name} registration is closed — the deadline has passed.`;
+        registrationProgramStatus.classList.add("warning");
+      } else if (!program.registrationEnabled) {
         registrationProgramStatus.textContent = `${program.name} registration is currently closed by admin.`;
         registrationProgramStatus.classList.add("warning");
       } else if (!hasTiming && !hasFee && !hasSchedule) {
