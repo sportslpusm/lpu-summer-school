@@ -679,7 +679,17 @@ function updateHeroUrgency(program) {
     const status = programStatusBadge(program);
     heroStatusEl.textContent = status.label;
     heroStatusEl.dataset.state = status.state;
-    if (heroProgramRoot) heroProgramRoot.classList.toggle("is-reg-closed", status.state !== "open");
+    const closed = status.state !== "open";
+    if (heroProgramRoot) heroProgramRoot.classList.toggle("is-reg-closed", closed);
+    const heroStatusMsg = document.querySelector("[data-hero-status-msg]");
+    if (heroStatusMsg) {
+      const msgs = {
+        started: "This program has already started.",
+        closed: "Registration is closed for this program.",
+        soon: "Registration opens soon — dates to be announced."
+      };
+      heroStatusMsg.textContent = closed ? (msgs[status.state] || "") : "";
+    }
   }
 
   updateCountdown();

@@ -676,5 +676,38 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 .hero-status[data-state="started"] { color: var(--gold); }
 .hero-status[data-state="closed"] { color: #c0392b; }
 .hero-status[data-state="soon"] { color: var(--muted-2); }
-.is-reg-closed .countdown { opacity: 0.4; }
+
+/* ===== urgency card v2 — compact; started/closed show status only ===== */
+.hero-urgency { gap: 5px 16px; padding: 10px 15px; margin-top: 16px; min-height: 84px; align-content: center; }
+.hero-status { min-height: 0; margin-bottom: 0; font-size: 0.7rem; }
+.urgency-msg { flex-basis: 100%; margin: 4px 0 0; font-size: 0.88rem; color: var(--muted); display: none; }
+.urgency-label { font-size: 0.62rem; }
+.urgency-deadline { font-size: 1rem; }
+.urgency-block { gap: 0; }
+.countdown { gap: 3px; }
+.countdown-cell { min-width: 33px; padding: 4px; border-radius: 9px; }
+.countdown-cell strong { font-size: 0.94rem; }
+.countdown-cell span { font-size: 0.5rem; }
+.countdown-sep { margin-top: 4px; font-size: 0.78rem; }
+.urgency-seats-count { font-size: 1.12rem; }
+.urgency-note { display: none !important; }
+/* non-open: only the status badge + one-line message */
+.is-reg-closed .countdown,
+.is-reg-closed .urgency-seats,
+.is-reg-closed .urgency-block { display: none; }
+.is-reg-closed .urgency-msg { display: block; }
 .is-reg-closed .urgency-deadline { color: var(--muted); }
+@media (min-width: 1000px) { .hero-urgency { min-height: 96px; } }
+@media (max-width: 999px) {
+  .hero-urgency { row-gap: 6px; min-height: 120px; }
+  .hero-status { order: 0; }
+  .urgency-msg { order: 1; }
+  .urgency-block:not(.urgency-seats) { order: 1; }
+  .urgency-seats { order: 2; margin-left: auto; text-align: right; }
+  .urgency-seats-count { font-size: 1rem; }
+  .countdown { order: 3; flex-basis: 100%; gap: 11px; }
+  .countdown-cell { flex-direction: row; align-items: baseline; gap: 3px; min-width: 0; padding: 0; background: none; border: 0; }
+  .countdown-cell strong { font-size: 1.02rem; }
+  .countdown-cell span { font-size: 0.62rem; color: var(--muted); text-transform: none; }
+  .countdown-sep { display: none; }
+}
