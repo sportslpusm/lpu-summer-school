@@ -932,21 +932,29 @@ function renderHomepageTrackCards(program, trackGrid) {
   const tracks = programTrackList(program);
   if (trackEmpty) trackEmpty.hidden = tracks.length > 0;
   if (trackScrollHint) trackScrollHint.hidden = true;
-  trackGrid.classList.add("track-grid-umbrella");
+  trackGrid.classList.add("track-grid-sections");
   trackGrid.innerHTML = tracks.map((track) => {
-    const classes = track.courses.map((c) => {
-      const slot = publicSessions.find((s) => s.id === c.session_id);
-      return `<li><span class="t-slot">${esc(formatSlotTime(slot?.time_slot))}</span><span class="t-class">${esc(c.name)}</span></li>`;
+    const cards = track.courses.map((course) => {
+      const slot = publicSessions.find((s) => s.id === course.session_id);
+      return `
+        <article class="track-card">
+          <img src="${esc(course.image_url || fallbackCourseImage(program))}" alt="${esc(course.name)}" loading="lazy" decoding="async">
+          <div>
+            <span>${esc(formatSlotTime(slot?.time_slot))} &middot; ${esc(courseEligibilityLabel(course))}</span>
+            <h3>${esc(course.name)}</h3>
+            <p>${esc(course.description || "")}</p>
+          </div>
+        </article>`;
     }).join("");
     return `
-      <article class="track-umbrella-card" data-category="${esc(track.slug)}">
-        <header class="track-umbrella-head">
+      <section class="track-section" data-category="${esc(track.slug)}">
+        <div class="track-section-head">
           <h3>${esc(track.name)}</h3>
           <p>${esc(track.blurb)}</p>
-        </header>
-        <ol class="track-umbrella-classes">${classes}</ol>
-        <footer class="track-umbrella-foot">Plus daily Lunch &amp; Dance / Sports / PEP</footer>
-      </article>
+        </div>
+        <div class="track-section-courses">${cards}</div>
+        <p class="track-section-foot">Plus daily Lunch &amp; Dance / Sports / PEP</p>
+      </section>
     `;
   }).join("");
 }
@@ -955,11 +963,14 @@ function renderHomepageTracks() {
   const trackGrid = document.getElementById("trackGrid");
   if (!trackGrid) return;
   const program = getProgram(trackProgramSlug);
-  if (programUsesTracks(program)) {
+  const usesTracks = programUsesTracks(program);
+  const filterRow = document.querySelector(".track-filter-row");
+  if (filterRow) filterRow.hidden = usesTracks;
+  if (usesTracks) {
     renderHomepageTrackCards(program, trackGrid);
     return;
   }
-  trackGrid.classList.remove("track-grid-umbrella");
+  trackGrid.classList.remove("track-grid-sections");
   const category = activeTrackCategory();
   const allCourses = programCourses(trackProgramSlug);
   const visibleCourses = allCourses.filter((course) => category === "all" || course.category === category);
