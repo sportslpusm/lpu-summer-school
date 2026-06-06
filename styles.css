@@ -86,6 +86,7 @@ body::before {
 body > * { position: relative; z-index: 1; }
 
 img { display: block; max-width: 100%; height: auto; }
+[hidden] { display: none !important; }
 a { color: inherit; text-decoration: none; }
 button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; border-radius: 6px; }
@@ -385,16 +386,19 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 .story-card p { margin: 0; color: var(--muted); }
 
 /* ===================== tracks ===================== */
-.track-program-selector { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+.track-program-selector { display: grid; grid-template-columns: repeat(auto-fit, minmax(186px, 1fr)); gap: 10px; margin-bottom: 22px; }
 .track-program-chip {
-  display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px;
-  padding: 11px 18px; border-radius: var(--radius-pill); cursor: pointer; text-align: left;
+  display: flex; flex-direction: column; justify-content: center; gap: 3px;
+  padding: 12px 16px; min-height: 64px; border-radius: 15px; cursor: pointer; text-align: left;
   background: var(--surface); border: 1.5px solid var(--line); position: relative;
   transition: transform 200ms var(--ease), border-color 200ms var(--ease), box-shadow 200ms var(--ease);
 }
-.track-program-chip span { font-weight: 800; font-size: 0.96rem; color: var(--ink); }
-.track-program-chip small { font-size: 0.74rem; font-weight: 600; color: var(--muted); }
-.track-program-chip:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.track-program-chip span {
+  font-weight: 800; font-size: 0.92rem; color: var(--ink); line-height: 1.22;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.track-program-chip small { font-size: 0.73rem; font-weight: 600; color: var(--muted); }
+.track-program-chip:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); border-color: var(--orange-soft); }
 .track-program-chip.active { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(243,112,13,0.16); }
 .track-program-chip.active span { color: var(--orange-dark); }
 .chip-status {
