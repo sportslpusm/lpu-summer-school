@@ -640,6 +640,7 @@ h1 {
 .session-card ul { padding: 0; margin: 0; list-style: none; }
 .session-card li { min-height: 58px; padding: 18px 20px; border-bottom: 1px solid var(--line); color: #344054; font-weight: 800; }
 .session-card li:last-child { border-bottom: 0; }
+.session-track-tag { display: inline-block; margin-left: 4px; color: var(--orange); font-size: 0.66rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; vertical-align: middle; }
 .fees { background: var(--white); }
 .fee-shell { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 34px; align-items: start; }
 .fee-shell .button { margin-top: 16px; }

@@ -1139,11 +1139,13 @@ async function loadRegistrations() {
 function paymentBadgeClass(ps) {
   if (ps === "paid") return "confirmed";
   if (ps === "verification_pending") return "warning";
+  if (ps === "failed") return "cancelled";
   return "pending";
 }
 function paymentBadgeLabel(ps) {
   if (ps === "paid") return "verified";
   if (ps === "verification_pending") return "needs review";
+  if (ps === "failed") return "rejected";
   return ps || "unpaid";
 }
 
@@ -1357,10 +1359,15 @@ window.rejectRegistration = async function(id, button) {
 };
 
 window.changeRegStatus = async function(id, status, button) {
-  const label = status === "confirmed" ? "confirm this registration" : "cancel this registration";
+  const label = status === "confirmed" ? "confirm this registration (this marks the payment as verified)" : "cancel this registration";
   if (!confirm(`Are you sure you want to ${label}?`)) return;
   await runAdminAction(async () => {
-    await apiUpdate("registrations", id, { status });
+    // Confirming a registration also marks it paid + verified, mirroring "Approve",
+    // so a family is never emailed "confirmed" while the record still reads unpaid.
+    const patch = status === "confirmed"
+      ? { status, payment_status: "paid", verified_by: localStorage.getItem("sb_email") || "admin", verified_at: new Date().toISOString() }
+      : { status };
+    await apiUpdate("registrations", id, patch);
 
     if (status === "confirmed") {
       const rows = await apiGet("registrations", `id=eq.${id}`);
@@ -1561,7 +1568,7 @@ function renderCourses(courses) {
       </td>
       <td data-label="Program">${esc(c.programs?.name || programName(c.program_id))}</td>
       <td data-label="Session">${esc(c.sessions?.name) || "\u2014"}</td>
-      <td data-label="Category"><span class="badge badge-${c.category === 'tech' ? 'pending' : c.category === 'sports' ? 'confirmed' : 'cancelled'}">${esc(c.category)}</span></td>
+      <td data-label="Category"><span class="badge badge-${c.category === 'sports' ? 'confirmed' : 'pending'}">${esc(c.category)}</span></td>
       <td data-label="Minimum Age">${esc(courseMinAgeLabel(c))}</td>
       <td data-label="Active"><button type="button" class="toggle ${c.is_active ? "on" : ""}" onclick="toggleCourse('${c.id}', ${!c.is_active}, this)" aria-label="${c.is_active ? "Deactivate" : "Activate"} ${esc(c.name)}"></button></td>
       <td class="row-actions" data-label="Actions">

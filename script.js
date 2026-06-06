@@ -380,26 +380,40 @@ const TRACK_SLUGS = new Set(TRACK_META.map((t) => t.slug));
 const TRACK_LABELS = TRACK_META.reduce((acc, t) => { acc[t.slug] = t.name; return acc; }, {});
 let selectedTrack = "";
 
+const TRACK_PROGRAMS = new Set(["campus"]);
+
 function programUsesTracks(program) {
-  if (!program) return false;
+  if (!program || !TRACK_PROGRAMS.has(program.slug)) return false;
   return publicCourses.some((c) => c.program_id === program.id && c.is_active !== false && TRACK_SLUGS.has(c.category));
 }
 
 function programTrackList(program) {
   if (!program) return [];
+  // Only include a course whose session is active and belongs to this program (mirror the RPC's inner join).
+  const validSession = (c) => publicSessions.some((s) => s.id === c.session_id && s.is_active !== false && s.program_id === program.id);
   const byTrack = new Map();
   publicCourses
-    .filter((c) => c.program_id === program.id && c.is_active !== false && TRACK_SLUGS.has(c.category))
+    .filter((c) => c.program_id === program.id && c.is_active !== false && TRACK_SLUGS.has(c.category) && validSession(c))
     .forEach((c) => {
       if (!byTrack.has(c.category)) byTrack.set(c.category, []);
       byTrack.get(c.category).push(c);
     });
   return TRACK_META
     .filter((t) => byTrack.has(t.slug))
-    .map((t) => ({
-      ...t,
-      courses: byTrack.get(t.slug).slice().sort((a, b) => courseSessionSort(a) - courseSessionSort(b) || (a.sort_order || 0) - (b.sort_order || 0))
-    }));
+    .map((t) => {
+      const sorted = byTrack.get(t.slug).slice().sort((a, b) =>
+        courseSessionSort(a) - courseSessionSort(b) ||
+        (a.sort_order || 0) - (b.sort_order || 0) ||
+        String(a.name || "").localeCompare(String(b.name || "")));
+      // One class per session (mirror the RPC's "one class per session" rule).
+      const seenSessions = new Set();
+      const courses = sorted.filter((c) => {
+        if (seenSessions.has(c.session_id)) return false;
+        seenSessions.add(c.session_id);
+        return true;
+      });
+      return { ...t, courses };
+    });
 }
 
 function selectedTrackData(program = selectedRegistrationProgram()) {
@@ -1021,7 +1035,13 @@ function renderHomepageSessions() {
   }
   sessionColumns.innerHTML = sessions.map((session) => {
     const courses = programCourses(trackProgramSlug).filter((course) => course.session_id === session.id);
-    return `<article class="session-card"><h3>${esc(session.name)} <span>${esc(session.time_slot)}</span></h3><ul>${courses.length ? courses.map((course) => `<li>${esc(course.name)}</li>`).join("") : "<li>Courses coming soon</li>"}</ul></article>`;
+    const items = courses.length
+      ? courses.map((course) => {
+          const trackName = tracksMode ? (TRACK_LABELS[course.category] || "") : "";
+          return `<li>${esc(course.name)}${trackName ? ` <small class="session-track-tag">${esc(trackName)}</small>` : ""}</li>`;
+        }).join("")
+      : "<li>Courses coming soon</li>";
+    return `<article class="session-card"><h3>${esc(session.name)} <span>${esc(session.time_slot)}</span></h3><ul>${items}</ul></article>`;
   }).join("");
 }
 
@@ -1580,8 +1600,15 @@ function programHasAnnouncedTiming(program) {
   return Boolean(program.startDate && program.endDate);
 }
 
+function programDeadlinePassed(program) {
+  const raw = program?.urgency?.deadline;
+  if (!raw) return false;
+  const d = new Date(raw);
+  return !Number.isNaN(d.getTime()) && new Date() > d;
+}
+
 function registrationProgramIsOpen(program = selectedRegistrationProgram()) {
-  return Boolean(program?.registrationEnabled && programHasAnnouncedTiming(program) && programHasFeeConfig(program) && programHasSchedule(program));
+  return Boolean(program?.registrationEnabled && programHasAnnouncedTiming(program) && programHasFeeConfig(program) && programHasSchedule(program) && !programDeadlinePassed(program));
 }
 
 function registrationScheduleSummary(program) {
@@ -1913,11 +1940,10 @@ function updateRegistrationProgram(slug, options = {}) {
     if (!hostelAllowed) {
       const noneHostel = hostelBlock.querySelector('input[name="hostel"][value="none"]');
       if (noneHostel) noneHostel.checked = true;
-    } else if (!options.preserveSelection) {
-      hostelBlock.querySelectorAll('input[name="hostel"]').forEach((input) => {
-        input.checked = false;
-      });
     }
+    // Note: when accommodation IS available, renderHostelOptions() already leaves the
+    // "none" option checked by default, so the optional step is pre-satisfied and never
+    // blocks submit. (Previously this branch un-checked every radio, leaving the step invalid.)
   }
   updateProgressStepVisibility(program);
   updateHostelPriceLabels();
@@ -2628,6 +2654,7 @@ document.querySelector("[data-print-receipt]")?.addEventListener("click", () => 
 
 // ── Paytm Payment Section ──────────────────────────────────────────
 let pendingRegistration = null;
+let submissionInFlight = false;
 let paymentModalBound = false; // guard against duplicate event binding
 const LPU_PAYTM_PAYMENT_URL = "https://secure.paytmpayments.com/link/paymentForm/38633/LL_920680970";
 
@@ -3095,6 +3122,12 @@ function showPaymentSection(data) {
       resetUploadSelection(section, "payment modal closed");
       section.hidden = true;
       document.body.style.overflow = "";
+      // Restore the submit button (it was left on "Creating registration..."). The
+      // registration is already saved, so clicking it reopens payment (it never duplicates).
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = "Resume Payment";
+      }
     });
   }
 
@@ -3125,6 +3158,10 @@ if (form) checkPendingRegistration();
 // ── Form submission ─────────────────────────────────────────────────
 form?.addEventListener("submit", async (event) => {
   event.preventDefault();
+
+  // Duplicate-submission guard: never create a second registration.
+  if (submissionInFlight) return;
+  if (pendingRegistration) { showPaymentSection(pendingRegistration); return; }
 
   const program = selectedRegistrationProgram();
   if (!program) {
@@ -3187,6 +3224,7 @@ form?.addEventListener("submit", async (event) => {
 
   submitButton.disabled = true;
   submitButton.textContent = "Creating registration...";
+  submissionInFlight = true;
   statusMessage.classList.remove("error");
   statusMessage.textContent = "";
 
@@ -3243,7 +3281,9 @@ form?.addEventListener("submit", async (event) => {
     };
     queueRegistrationCreatedEmail(pending);
     showPaymentSection(pending);
+    submissionInFlight = false;
   } catch (error) {
+    submissionInFlight = false;
     statusMessage.classList.add("error");
     statusMessage.textContent = `Something went wrong: ${error.message}. Please try again.`;
     submitButton.textContent = "Proceed to Payment";
