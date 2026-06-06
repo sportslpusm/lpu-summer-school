@@ -368,6 +368,55 @@ function programUsesFixedSchedule(program) {
   return program?.scheduleType === "fixed" || FIXED_SCHEDULE_PROGRAMS.has(program?.slug);
 }
 
+// --- Track model (e.g. 2 Week Campus): pick ONE umbrella track, attend all its classes ---
+const TRACK_META = [
+  { slug: "ai-robots",        name: "AI, Robots & Future Tech",      blurb: "Code, build and create with AI, IoT, web and CAD tools." },
+  { slug: "creative-arts",    name: "Creative Arts",                 blurb: "Photography, textile art, paper craft and hands-on making." },
+  { slug: "agri-food",        name: "Agri-Food & Healthy Living",    blurb: "Hydroponics, mushroom farming and teen health & fitness." },
+  { slug: "entrepreneurship", name: "Entrepreneurship / Shark Tank", blurb: "Design thinking, pitching, law and real founder skills." },
+  { slug: "eng-tech",         name: "Eng & Tech",                    blurb: "Drones, sustainable engineering and build-it-yourself innovation." }
+];
+const TRACK_SLUGS = new Set(TRACK_META.map((t) => t.slug));
+const TRACK_LABELS = TRACK_META.reduce((acc, t) => { acc[t.slug] = t.name; return acc; }, {});
+let selectedTrack = "";
+
+function programUsesTracks(program) {
+  if (!program) return false;
+  return publicCourses.some((c) => c.program_id === program.id && c.is_active !== false && TRACK_SLUGS.has(c.category));
+}
+
+function programTrackList(program) {
+  if (!program) return [];
+  const byTrack = new Map();
+  publicCourses
+    .filter((c) => c.program_id === program.id && c.is_active !== false && TRACK_SLUGS.has(c.category))
+    .forEach((c) => {
+      if (!byTrack.has(c.category)) byTrack.set(c.category, []);
+      byTrack.get(c.category).push(c);
+    });
+  return TRACK_META
+    .filter((t) => byTrack.has(t.slug))
+    .map((t) => ({
+      ...t,
+      courses: byTrack.get(t.slug).slice().sort((a, b) => courseSessionSort(a) - courseSessionSort(b) || (a.sort_order || 0) - (b.sort_order || 0))
+    }));
+}
+
+function selectedTrackData(program = selectedRegistrationProgram()) {
+  if (!selectedTrack) return null;
+  return programTrackList(program).find((t) => t.slug === selectedTrack) || null;
+}
+
+function formatSlotTime(slot) {
+  const start = String(slot || "").split("-")[0].trim();
+  const match = start.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return start;
+  const h = Number(match[1]);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hr = ((h + 11) % 12) + 1;
+  return `${hr}:${match[2]} ${ampm}`;
+}
+
 function programAccommodationMode(program) {
   if (!program) return "none";
   return program.accommodationMode || (program.allowHostel ? "optional" : "none");
@@ -879,10 +928,38 @@ function fallbackCourseImage(program) {
   return program?.imageUrl || program?.backgroundImage || FALLBACK_HERO_IMAGES[0].src;
 }
 
+function renderHomepageTrackCards(program, trackGrid) {
+  const tracks = programTrackList(program);
+  if (trackEmpty) trackEmpty.hidden = tracks.length > 0;
+  if (trackScrollHint) trackScrollHint.hidden = true;
+  trackGrid.classList.add("track-grid-umbrella");
+  trackGrid.innerHTML = tracks.map((track) => {
+    const classes = track.courses.map((c) => {
+      const slot = publicSessions.find((s) => s.id === c.session_id);
+      return `<li><span class="t-slot">${esc(formatSlotTime(slot?.time_slot))}</span><span class="t-class">${esc(c.name)}</span></li>`;
+    }).join("");
+    return `
+      <article class="track-umbrella-card" data-category="${esc(track.slug)}">
+        <header class="track-umbrella-head">
+          <h3>${esc(track.name)}</h3>
+          <p>${esc(track.blurb)}</p>
+        </header>
+        <ol class="track-umbrella-classes">${classes}</ol>
+        <footer class="track-umbrella-foot">Plus daily Lunch &amp; Dance / Sports / PEP</footer>
+      </article>
+    `;
+  }).join("");
+}
+
 function renderHomepageTracks() {
   const trackGrid = document.getElementById("trackGrid");
   if (!trackGrid) return;
   const program = getProgram(trackProgramSlug);
+  if (programUsesTracks(program)) {
+    renderHomepageTrackCards(program, trackGrid);
+    return;
+  }
+  trackGrid.classList.remove("track-grid-umbrella");
   const category = activeTrackCategory();
   const allCourses = programCourses(trackProgramSlug);
   const visibleCourses = allCourses.filter((course) => category === "all" || course.category === category);
@@ -919,6 +996,13 @@ function renderHomepageTracks() {
 function renderHomepageSessions() {
   const sessionColumns = document.getElementById("sessionColumns");
   if (!sessionColumns) return;
+  const tracksMode = programUsesTracks(getProgram(trackProgramSlug));
+  const sessionsHeading = document.querySelector("[data-sessions-heading]");
+  const sessionsSub = document.querySelector("[data-sessions-sub]");
+  if (sessionsHeading) sessionsHeading.textContent = tracksMode ? "Your day, slot by slot." : "One class per session.";
+  if (sessionsSub) sessionsSub.textContent = tracksMode
+    ? "Pick one track and follow its full-day schedule. Lunch and Dance / Sports / PEP are included for everyone."
+    : "Students can register for one, two, or all three sessions. Each session has its own allowed class list.";
   const sessions = programSessions(trackProgramSlug);
   if (!sessions.length) {
     sessionColumns.innerHTML = `<article class="session-card empty-session-card"><h3>Schedule coming soon</h3><ul><li>Admin can add sessions for ${esc(getProgram(trackProgramSlug).name)} from the admin panel.</li></ul></article>`;
@@ -1102,6 +1186,9 @@ function fixedScheduleCourses(program = selectedRegistrationProgram()) {
 function registrationCourseIds(program = selectedRegistrationProgram(), formData = new FormData(form || document.createElement("form"))) {
   if (programUsesFixedSchedule(program)) {
     return fixedScheduleCourses(program).map((course) => course.id).filter(Boolean);
+  }
+  if (programUsesTracks(program)) {
+    return (selectedTrackData(program)?.courses || []).map((course) => course.id).filter(Boolean);
   }
   return selectedSessions()
     .map((toggle) => formData.get(`${toggle.value}Course`))
@@ -1524,6 +1611,11 @@ function renderRegistrationSessionCards(program) {
     return;
   }
 
+  if (programUsesTracks(program)) {
+    renderRegistrationTrackCards(program);
+    return;
+  }
+
   if (fixedSchedule) {
     sessionSelectorsRoot.innerHTML = sessions.map((session, index) => {
       const courses = publicCourses
@@ -1598,6 +1690,78 @@ function renderRegistrationSessionCards(program) {
   attachSessionInputListeners();
 }
 
+function renderRegistrationTrackCards(program) {
+  if (!sessionSelectorsRoot) return;
+  const studentAge = studentAgeValue();
+  const hasAge = hasValidStudentAge(studentAge);
+  const open = registrationProgramIsOpen(program);
+  const tracks = programTrackList(program);
+  sessionCourses = {};
+  sessionSelectorsRoot.classList.remove("fixed-schedule-list");
+  sessionSelectorsRoot.classList.add("track-picker-list");
+
+  if (selectedTrack && !tracks.some((t) => t.slug === selectedTrack)) selectedTrack = "";
+
+  const cards = tracks.map((track) => {
+    const isSel = selectedTrack === track.slug;
+    const ineligible = hasAge && track.courses.some((c) => !courseAgeEligible(c, studentAge));
+    const classes = track.courses.map((c) => {
+      const slot = publicSessions.find((s) => s.id === c.session_id);
+      return `<span class="track-class"><b>${esc(formatSlotTime(slot?.time_slot))}</b>${esc(c.name)}</span>`;
+    }).join("");
+    return `
+      <label class="track-option ${isSel ? "selected" : ""} ${isSel && ineligible ? "invalid" : ""}">
+        <input type="radio" name="track" value="${esc(track.slug)}" data-track-select ${isSel ? "checked" : ""} ${open ? "" : "disabled"}>
+        <span class="track-option-radio" aria-hidden="true"></span>
+        <span class="track-option-body">
+          <span class="track-option-head">
+            <strong>${esc(track.name)}</strong>
+            <small>${esc(track.blurb)}</small>
+          </span>
+          <span class="track-option-classes">${classes}</span>
+        </span>
+      </label>
+    `;
+  }).join("");
+
+  const selData = selectedTrackData(program);
+  const selIneligible = selData && hasAge && selData.courses.some((c) => !courseAgeEligible(c, studentAge));
+
+  sessionSelectorsRoot.innerHTML = `
+    <div class="track-picker" data-track-picker role="radiogroup" aria-label="Choose your track">
+      ${cards || `<article class="selection-card selection-empty"><strong>Tracks coming soon</strong><p>Admin needs to add the track classes before this program can accept registrations.</p></article>`}
+    </div>
+    <div class="track-common-note">
+      <span>Every track also includes:</span>
+      <strong>Lunch break</strong> 12:30 - 1:30 PM <i>&middot;</i> <strong>Dance / Sports / PEP</strong> 4:30 PM onwards
+    </div>
+    <p class="eligibility-note ${selIneligible ? "warning" : ""}">
+      ${!open
+        ? "Registration is not open for this program yet."
+        : !selectedTrack
+        ? "Choose one track. You will attend every class listed in that track."
+        : !hasAge
+        ? "Enter the student age above to confirm eligibility (14+)."
+        : selIneligible
+        ? "Some classes in this track need an older age. Please review."
+        : `You picked the ${esc(TRACK_LABELS[selectedTrack] || "")} track (${selData?.courses.length || 0} classes).`}
+    </p>
+  `;
+
+  sessionSelectorsRoot.querySelectorAll("[data-track-select]").forEach((radio) => {
+    radio.addEventListener("change", () => {
+      if (radio.checked) selectedTrack = radio.value;
+      renderRegistrationTrackCards(program);
+      updateRegistrationState();
+      validateSessionCards();
+      updateBlockStates();
+      updateSubmitState();
+    });
+  });
+
+  refreshSessionElements();
+}
+
 function resetSessionCards() {
   sessionToggles.forEach((toggle) => {
     toggle.checked = false;
@@ -1617,16 +1781,20 @@ function updateRegistrationProgram(slug, options = {}) {
   if (registrationProgramInput) registrationProgramInput.value = registrationProgramSlug;
   updateRegistrationHeroSummary(program);
   renderRegistrationPrograms();
+  if (!options.preserveSelection) selectedTrack = "";
   renderRegistrationSessionCards(program);
   if (!options.preserveSelection) resetSessionCards();
 
   const fixedSchedule = programUsesFixedSchedule(program);
+  const tracksMode = programUsesTracks(program);
   if (registrationSelectionHeading) {
-    registrationSelectionHeading.textContent = fixedSchedule ? "Fixed program schedule" : "Session and class selection";
+    registrationSelectionHeading.textContent = tracksMode ? "Choose your track" : fixedSchedule ? "Fixed program schedule" : "Session and class selection";
   }
   if (registrationSelectionHelp) {
     registrationSelectionHelp.textContent = !program
       ? "Choose your program first. Nothing is selected by default, so you know exactly what you are registering for."
+      : tracksMode
+      ? "Pick ONE track. You will attend every class in that track for the full program — no mixing between tracks."
       : fixedSchedule
       ? "This program follows a fixed schedule. Review the included activities; no class selection is needed."
       : "Choose the program first. The sessions, classes, dates, and fee will update automatically.";
@@ -1697,8 +1865,10 @@ function updateRegistrationState() {
   const selected = selectedSessions();
   const fixedSchedule = programUsesFixedSchedule(program);
   const fixedCourses = fixedSchedule ? fixedScheduleCourses(program) : [];
-  const selectionCount = fixedSchedule ? fixedCourses.length : selected.length;
-  const sessionFee = selectedProgramFee(selectionCount);
+  const tracksMode = programUsesTracks(program);
+  const trackData = tracksMode ? selectedTrackData(program) : null;
+  const selectionCount = fixedSchedule ? fixedCourses.length : tracksMode ? (trackData?.courses.length || 0) : selected.length;
+  const sessionFee = (tracksMode && !trackData) ? 0 : selectedProgramFee(selectionCount);
   const hostelFee = programShowsHostelStep(program) ? getHostelFee() : 0;
   const baseFee = sessionFee + hostelFee;
   const total = baseFee;
@@ -1723,6 +1893,10 @@ function updateRegistrationState() {
       feeNote.textContent = fixedCourses.length
         ? `${program.name} fixed schedule is included. No class selection is needed.`
         : "Admin needs to add fixed schedule activities before registration can continue.";
+    } else if (tracksMode) {
+      feeNote.textContent = trackData
+        ? `Flat fee for the ${TRACK_LABELS[selectedTrack] || "selected"} track.`
+        : "Select one track to see the fee.";
     } else if (programIncludesAccommodation(program) && program.includedServices) {
       feeNote.textContent = `${program.name} package fee includes ${program.includedServices}`;
     } else if (program.feeMode !== "session_count") {
@@ -1869,6 +2043,10 @@ function validateBlock(blockIndex) {
       const fixedCourses = fixedScheduleCourses(program);
       return fixedCourses.length > 0 && fixedCourses.every((course) => courseAgeEligible(course, age));
     }
+    if (programUsesTracks(program)) {
+      const track = selectedTrackData(program);
+      return !!track && track.courses.length > 0 && track.courses.every((course) => courseAgeEligible(course, age));
+    }
     const selected = selectedSessions();
     if (selected.length === 0) return false;
     return selected.every((toggle) => {
@@ -1900,6 +2078,12 @@ function validateSessionCards() {
     const fixedCourses = fixedScheduleCourses(program);
     const valid = hasValidStudentAge(age) && fixedCourses.length > 0 && fixedCourses.every((course) => courseAgeEligible(course, age));
     document.querySelectorAll(".fixed-schedule-card").forEach((card) => card.classList.toggle("invalid", !valid));
+    return valid;
+  }
+  if (programUsesTracks(program)) {
+    const track = selectedTrackData(program);
+    const valid = hasValidStudentAge(age) && !!track && track.courses.length > 0 && track.courses.every((course) => courseAgeEligible(course, age));
+    document.querySelectorAll(".track-option").forEach((el) => el.classList.toggle("invalid", !!selectedTrack && !valid));
     return valid;
   }
   sessionToggles.forEach((toggle) => {

@@ -1639,6 +1639,11 @@ function courseForm(c = {}) {
       <option value="career" ${c.category === "career" ? "selected" : ""}>Career</option>
       <option value="sports" ${c.category === "sports" ? "selected" : ""}>Sports</option>
       <option value="general" ${c.category === "general" ? "selected" : ""}>General</option>
+      <option value="ai-robots" ${c.category === "ai-robots" ? "selected" : ""}>Track: AI, Robots & Future Tech</option>
+      <option value="creative-arts" ${c.category === "creative-arts" ? "selected" : ""}>Track: Creative Arts</option>
+      <option value="agri-food" ${c.category === "agri-food" ? "selected" : ""}>Track: Agri-Food & Healthy Living</option>
+      <option value="entrepreneurship" ${c.category === "entrepreneurship" ? "selected" : ""}>Track: Entrepreneurship / Shark Tank</option>
+      <option value="eng-tech" ${c.category === "eng-tech" ? "selected" : ""}>Track: Eng & Tech</option>
     </select></label>
     <label>Minimum Age <input id="mCourseMinAge" type="number" min="0" max="70" value="${minAgeValue}" required></label>
     <label>Description <textarea id="mCourseDesc" rows="3">${esc(c.description || "")}</textarea></label>

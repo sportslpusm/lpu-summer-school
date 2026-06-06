@@ -1002,6 +1002,113 @@ h1 {
 .fixed-schedule-item.course-ineligible {
   opacity: 0.64;
 }
+
+/* --- Track picker (registration: pick ONE umbrella track) --- */
+.track-picker-list { display: block; }
+.track-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+}
+.track-option {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: #fffaf6;
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.track-option:hover { border-color: rgba(243, 112, 13, 0.5); }
+.track-option input { position: absolute; opacity: 0; pointer-events: none; }
+.track-option-radio {
+  margin-top: 3px;
+  width: 20px; height: 20px;
+  border: 2px solid #cbd2dc;
+  border-radius: 50%;
+  display: inline-block;
+  position: relative;
+}
+.track-option.selected {
+  border-color: var(--orange);
+  background: linear-gradient(135deg, #fff4e9, #ffffff);
+  box-shadow: 0 6px 22px rgba(243, 112, 13, 0.14);
+}
+.track-option.selected .track-option-radio { border-color: var(--orange); }
+.track-option.selected .track-option-radio::after {
+  content: ""; position: absolute; inset: 3px;
+  background: var(--orange); border-radius: 50%;
+}
+.track-option.invalid { border-color: #e6483d; background: #fff5f4; }
+.track-option-body { display: grid; gap: 10px; min-width: 0; }
+.track-option-head strong { display: block; color: var(--ink); font-size: 1.02rem; line-height: 1.25; }
+.track-option-head small { display: block; margin-top: 3px; color: var(--muted); font-size: 0.82rem; font-weight: 650; line-height: 1.4; }
+.track-option-classes { display: grid; gap: 6px; }
+.track-class {
+  display: grid;
+  grid-template-columns: 62px 1fr;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 0.86rem;
+  color: var(--ink);
+  font-weight: 600;
+  line-height: 1.35;
+}
+.track-class b { color: var(--orange); font-size: 0.7rem; font-weight: 900; letter-spacing: 0.02em; }
+.track-common-note {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px dashed rgba(243, 112, 13, 0.3);
+  border-radius: 10px;
+  background: #fff8f1;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 650;
+  line-height: 1.55;
+}
+.track-common-note span { display: block; color: var(--ink); font-weight: 800; margin-bottom: 2px; }
+.track-common-note strong { color: var(--ink); }
+.track-common-note i { color: var(--orange); font-style: normal; padding: 0 4px; }
+
+/* --- Homepage track umbrella cards --- */
+.track-grid-umbrella {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+  gap: 18px !important;
+  overflow: visible !important;
+}
+.track-umbrella-card {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 14px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: linear-gradient(160deg, #fff8f1, #ffffff);
+  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.05);
+}
+.track-umbrella-head h3 { margin: 0 0 6px; color: var(--ink); font-size: 1.12rem; line-height: 1.25; }
+.track-umbrella-head p { margin: 0; color: var(--muted); font-size: 0.86rem; font-weight: 600; line-height: 1.45; }
+.track-umbrella-classes { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.track-umbrella-classes li {
+  display: grid; grid-template-columns: 68px 1fr; gap: 10px; align-items: baseline;
+  padding-top: 9px; border-top: 1px solid var(--line);
+  font-size: 0.9rem; color: var(--ink); font-weight: 600; line-height: 1.35;
+}
+.track-umbrella-classes .t-slot { color: var(--orange); font-size: 0.7rem; font-weight: 900; letter-spacing: 0.02em; }
+.track-umbrella-foot {
+  margin-top: 2px; padding-top: 12px; border-top: 1px dashed rgba(243, 112, 13, 0.3);
+  color: var(--muted); font-size: 0.82rem; font-weight: 750;
+}
+@media (max-width: 600px) {
+  .track-picker { grid-template-columns: 1fr; }
+  .track-class { grid-template-columns: 56px 1fr; }
+}
+
 .eligibility-note {
   margin: -4px 0 0;
   color: var(--muted);
