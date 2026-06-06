@@ -14,7 +14,7 @@ const feeTotals = document.querySelectorAll("[data-fee-total]");
 const feeNote = document.querySelector("[data-fee-note]");
 const countdowns = document.querySelectorAll("[data-countdown]");
 const floatingRegister = document.querySelector("[data-floating-register]");
-const registerButtons = document.querySelectorAll('a[href="register.html"]:not([data-floating-register])');
+const registerButtons = document.querySelectorAll('a[href="register.html"]:not([data-floating-register]), a[href="/register"]:not([data-floating-register])');
 const seatsLeftItems = document.querySelectorAll("[data-seats-left]");
 const seatsNotes = document.querySelectorAll("[data-seats-note]");
 const galleryMain = document.querySelector("[data-gallery-main]");
@@ -33,15 +33,24 @@ const heroProgramSeatsLabel = document.querySelector("[data-hero-seats-label]");
 const heroProgramBgImage = document.querySelector("[data-hero-bg-image]");
 const heroProgramTabs = document.querySelectorAll("[data-program-option]");
 const trackProgramFilters = document.querySelector("[data-track-programs]");
+const trackScrollHint = document.querySelector("[data-track-scroll-hint]");
 const trackEmpty = document.getElementById("trackEmpty");
 const registrationProgramRoot = document.querySelector("[data-registration-programs]");
 const registrationProgramInput = document.querySelector("[data-program-slug]");
 const registrationProgramStatus = document.querySelector("[data-program-status]");
 const registrationProgramSelect = document.querySelector("[data-registration-program-select]");
+const studentAgeInput = form?.querySelector('input[name="studentAge"]');
 const registrationSelectionHeading = document.querySelector("[data-selection-heading]");
 const registrationSelectionHelp = document.querySelector("[data-selection-help]");
 const sessionSelectorsRoot = document.querySelector("[data-session-selectors]");
 const hostelBlock = document.querySelector("[data-hostel-block]");
+const hostelOptionsRoot = document.querySelector("[data-hostel-options]");
+const registrationSummaryFields = {
+  dates: document.querySelector('[data-reg-summary="dates"]'),
+  schedule: document.querySelector('[data-reg-summary="schedule"]'),
+  venue: document.querySelector('[data-reg-summary="venue"]'),
+  deadline: document.querySelector('[data-reg-summary="deadline"]')
+};
 const heroProgramFacts = {
   eligibility: document.querySelector('[data-hero-fact="eligibility"]'),
   duration: document.querySelector('[data-hero-fact="duration"]'),
@@ -74,6 +83,11 @@ const HERO_PROGRAMS = {
     backgroundImage: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779163726439-f0drdpdqahd.png",
     startDate: "2026-06-15",
     endDate: "2026-06-27",
+    scheduleType: "selectable",
+    dateDisplayMode: "date_range",
+    accommodationMode: "optional",
+    allowHostel: true,
+    allowMess: true,
     facts: { eligibility: "Grades 6-12", duration: "2 weeks", mode: "On Campus", focus: "Session-wise tracks" },
     urgency: { deadlineLabel: "14 June 2026", deadline: "2026-06-14T23:59:59+05:30", seatsBase: 24, seatsMin: 6, note: "Final seats moving fast. Register today." },
     meta: { dates: "15–27 June 2026", mode: "On Campus", duration: "2 weeks", location: "LPU Campus, Phagwara" }
@@ -83,9 +97,14 @@ const HERO_PROGRAMS = {
     description: "A flexible online learning track for students who want guided skill-building from home with structured lessons, mentor touchpoints, and practical outcomes.",
     context: "For learners who need remote access without losing the rhythm of a guided summer program.",
     backgroundImage: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188840605-uiunxfem2bh.png",
-    facts: { eligibility: "Open learners", duration: "To be announced", mode: "Online", focus: "Remote skill-building" },
+    scheduleType: "selectable",
+    dateDisplayMode: "self_paced",
+    accommodationMode: "none",
+    allowHostel: false,
+    allowMess: false,
+    facts: { eligibility: "Open learners", duration: "Self-paced", mode: "Online", focus: "Remote skill-building" },
     urgency: { deadlineLabel: "To be announced", deadline: "", seatsBase: 30, seatsMin: 12, note: "Dates and seats will be announced with the online schedule." },
-    meta: { dates: "Date to be decided", mode: "Online", duration: "To be announced", location: "Online" }
+    meta: { dates: "Self-paced", mode: "Online", duration: "Self-paced", location: "Online" }
   },
   "staff-camp": {
     name: "LPU Staff Kid Summer Camp",
@@ -94,6 +113,11 @@ const HERO_PROGRAMS = {
     backgroundImage: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779089835922-qm6ldbzss5.png",
     startDate: "2026-06-06",
     endDate: "2026-06-27",
+    scheduleType: "fixed",
+    dateDisplayMode: "date_range",
+    accommodationMode: "none",
+    allowHostel: false,
+    allowMess: false,
     facts: { eligibility: "LPU staff kids", duration: "3 weeks", mode: "On Campus", focus: "Camp + activities" },
     urgency: { deadlineLabel: "31 May 2026", deadline: "2026-05-31T23:59:59+05:30", seatsBase: 18, seatsMin: 5, note: "Limited camp seats for staff children." },
     meta: { dates: "6–27 June 2026", mode: "On Campus", duration: "3 weeks", location: "LPU Campus, Phagwara" }
@@ -103,6 +127,11 @@ const HERO_PROGRAMS = {
     description: "A custom workshop format shaped around specific skill goals, cohorts, or institutional needs, with practical modules designed for the selected learners.",
     context: "For groups that need a focused skill-building experience with a tailored learning plan.",
     backgroundImage: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779191793080-mgw718dwqh9.png",
+    scheduleType: "selectable",
+    dateDisplayMode: "to_be_announced",
+    accommodationMode: "none",
+    allowHostel: false,
+    allowMess: false,
     facts: { eligibility: "Custom cohorts", duration: "Flexible", mode: "LPU / Hybrid", focus: "Designed to need" },
     urgency: { deadlineLabel: "To be announced", deadline: "", seatsBase: 16, seatsMin: 6, note: "Seats depend on the selected custom workshop cohort." },
     meta: { dates: "Date to be decided", mode: "Custom Workshop", duration: "Flexible", location: "LPU / Hybrid" }
@@ -114,6 +143,12 @@ const HERO_PROGRAMS = {
     backgroundImage: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188603214-x7q34c5kfq.png",
     startDate: "2026-06-15",
     endDate: "2026-06-27",
+    scheduleType: "selectable",
+    dateDisplayMode: "date_range",
+    accommodationMode: "included",
+    allowHostel: false,
+    allowMess: false,
+    includedServices: "Stay, food, campus experiences, and guided activities are included when this package is announced.",
     facts: { eligibility: "Students / groups", duration: "2 weeks", mode: "On Campus", focus: "Campus immersion" },
     urgency: { deadlineLabel: "14 June 2026", deadline: "2026-06-14T23:59:59+05:30", seatsBase: 20, seatsMin: 6, note: "Immersion seats are limited for a guided campus experience." },
     meta: { dates: "15–27 June 2026", mode: "On Campus", duration: "2 weeks", location: "LPU Campus, Phagwara" }
@@ -168,21 +203,50 @@ function durationFromProgramDates(startDate, endDate, fallback = "To be announce
   return `${days} day${days > 1 ? "s" : ""}`;
 }
 
+function normalizedDateDisplayMode(row = {}, fallback = {}) {
+  const explicitMode = row.date_display_mode;
+  if (["date_range", "self_paced", "to_be_announced"].includes(explicitMode)) return explicitMode;
+  if (row.start_date || row.end_date) return "date_range";
+  const label = String(row.dates_label || fallback.meta?.dates || "").toLowerCase();
+  if (label.includes("self-paced") || label.includes("self paced")) return "self_paced";
+  const fallbackMode = fallback.dateDisplayMode;
+  if (["date_range", "self_paced", "to_be_announced"].includes(fallbackMode)) return fallbackMode;
+  if (fallback.startDate || fallback.endDate) return "date_range";
+  return "to_be_announced";
+}
+
+function displayDatesForProgram(row = {}, fallback = {}, hasRemoteProgram = false) {
+  const mode = normalizedDateDisplayMode(row, fallback);
+  if (mode === "self_paced") return "Self-paced";
+  if (mode === "to_be_announced") return "Date to be announced";
+  return row.start_date || row.end_date
+    ? formatDisplayDateRange(row.start_date, row.end_date)
+    : row.dates_label || (hasRemoteProgram ? "Date to be announced" : fallback.meta?.dates || "Date to be announced");
+}
+
+function displayDurationForProgram(row = {}, fallback = {}, hasRemoteProgram = false) {
+  const mode = normalizedDateDisplayMode(row, fallback);
+  if (mode === "self_paced") return "Self-paced";
+  if (mode === "to_be_announced") return "To be announced";
+  return row.start_date || row.end_date
+    ? durationFromProgramDates(row.start_date, row.end_date)
+    : row.duration || (hasRemoteProgram ? "To be announced" : fallback.meta?.duration || "To be announced");
+}
+
 function normalizeProgram(row = {}, fallbackKey = "campus") {
   const slug = row.slug || fallbackKey;
   const fallback = HERO_PROGRAMS[slug] || HERO_PROGRAMS[fallbackKey] || HERO_PROGRAMS.campus;
   const hasRemoteProgram = Boolean(row.id);
   const deadline = hasRemoteProgram ? row.registration_deadline || "" : fallback.urgency?.deadline || "";
   const hasProgramBackground = Boolean(row.background_image_url);
-  const datesLabel = row.start_date || row.end_date
-    ? formatDisplayDateRange(row.start_date, row.end_date)
-    : row.dates_label || (hasRemoteProgram ? "Date to be decided" : fallback.meta?.dates || "Date to be decided");
-  const durationLabel = row.start_date || row.end_date
-    ? durationFromProgramDates(row.start_date, row.end_date)
-    : row.duration || (hasRemoteProgram ? "To be announced" : fallback.meta?.duration || "To be announced");
+  const dateDisplayMode = normalizedDateDisplayMode(row, fallback);
+  const datesLabel = displayDatesForProgram(row, fallback, hasRemoteProgram);
+  const durationLabel = displayDurationForProgram(row, fallback, hasRemoteProgram);
   const deadlineLabel = row.registration_deadline
     ? formatDisplayDate(row.registration_deadline.slice(0, 10))
     : row.deadline_label || (hasRemoteProgram ? "To be announced" : fallback.urgency?.deadlineLabel || "To be announced");
+  const scheduleType = row.schedule_type || fallback.scheduleType || (slug === "staff-camp" ? "fixed" : "selectable");
+  const accommodationMode = row.accommodation_mode || fallback.accommodationMode || (row.allow_hostel ? "optional" : "none");
   return {
     ...fallback,
     id: row.id || fallback.id || null,
@@ -199,8 +263,14 @@ function normalizeProgram(row = {}, fallbackKey = "campus") {
     feeMode: row.fee_mode || fallback.feeMode || "session_count",
     feeStatus: row.fee_status || fallback.feeStatus || "ready",
     baseFee: Number(row.base_fee ?? fallback.baseFee ?? 0),
-    gstRate: Number(row.gst_rate ?? fallback.gstRate ?? 0.18),
     allowHostel: Boolean(row.allow_hostel ?? fallback.allowHostel ?? false),
+    allowMess: Boolean(row.allow_mess ?? fallback.allowMess ?? false),
+    scheduleType,
+    dateDisplayMode,
+    accommodationMode,
+    messMealRate: Number(row.mess_meal_rate ?? fallback.messMealRate ?? 0),
+    messMealsPerDay: Number(row.mess_meals_per_day ?? fallback.messMealsPerDay ?? 0),
+    includedServices: row.included_services || fallback.includedServices || "",
     registrationEnabled: Boolean(row.registration_enabled ?? fallback.registrationEnabled ?? true),
     sortOrder: Number(row.sort_order ?? fallback.sortOrder ?? 0),
     isActive: Boolean(row.is_active ?? fallback.isActive ?? true),
@@ -285,14 +355,69 @@ let feeBySessionCount = {
 let feeByProgramSessionCount = {};
 
 const FIXED_SCHEDULE_PROGRAMS = new Set(["staff-camp"]);
+const PHONE_MIN_DIGITS = 10;
+const PHONE_MAX_DIGITS = 15;
+const AGE_MIN = 1;
+const AGE_MAX = 70;
+const DEFAULT_MESS_MEAL_RATE = 80;
+const DEFAULT_MESS_MEALS_PER_DAY = 3;
+let globalMessMealRate = DEFAULT_MESS_MEAL_RATE;
+let globalMessMealsPerDay = DEFAULT_MESS_MEALS_PER_DAY;
 
 function programUsesFixedSchedule(program) {
-  return FIXED_SCHEDULE_PROGRAMS.has(program?.slug);
+  return program?.scheduleType === "fixed" || FIXED_SCHEDULE_PROGRAMS.has(program?.slug);
+}
+
+function programAccommodationMode(program) {
+  if (!program) return "none";
+  return program.accommodationMode || (program.allowHostel ? "optional" : "none");
+}
+
+function programShowsHostelStep(program) {
+  return programAccommodationMode(program) === "optional" && Boolean(program?.allowHostel || program?.allowMess);
+}
+
+function programIncludesAccommodation(program) {
+  return programAccommodationMode(program) === "included";
 }
 
 function phoneDigits(phone) { return phone.replace(/[^0-9+]/g, ""); }
 function phoneWA(phone) { return phone.replace(/[^0-9]/g, ""); }
 const waText = encodeURIComponent("Hi, I have a query about LPU Summer School 2026");
+
+function phoneDigitCount(value) {
+  return String(value || "").replace(/\D/g, "").length;
+}
+
+function trimPhoneValue(value, maxDigits = PHONE_MAX_DIGITS) {
+  const raw = String(value || "").replace(/[^\d+\s().-]/g, "");
+  let digits = 0;
+  let output = "";
+  for (const char of raw) {
+    if (/\d/.test(char)) {
+      if (digits >= maxDigits) continue;
+      digits += 1;
+    }
+    if (char === "+" && output.length > 0) continue;
+    output += char;
+  }
+  return output.trimStart();
+}
+
+function isValidPhoneNumber(value) {
+  const raw = String(value || "").trim();
+  const digits = phoneDigitCount(raw);
+  return digits >= PHONE_MIN_DIGITS && digits <= PHONE_MAX_DIGITS && /^\+?[0-9\s().-]+$/.test(raw);
+}
+
+function isValidEmail(value) {
+  const email = String(value || "").trim();
+  return email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function formatGuardianName(title, name) {
+  return [String(title || "").trim(), String(name || "").trim()].filter(Boolean).join(" ");
+}
 
 function applySettings(cfg) {
   const phone1 = cfg["contact_phone_1"] || "";
@@ -394,6 +519,8 @@ function applySettings(cfg) {
   // Dynamic hostel daily rates from config
   HOSTEL_DAILY_RATES.hostel_only = normalizedHostelDailyRate(cfg["hostel_only_fee"], HOSTEL_DAILY_RATES.hostel_only);
   HOSTEL_DAILY_RATES.hostel_food = normalizedHostelDailyRate(cfg["hostel_food_fee"], HOSTEL_DAILY_RATES.hostel_food);
+  globalMessMealRate = normalizedHostelDailyRate(cfg["mess_meal_fee"], globalMessMealRate || DEFAULT_MESS_MEAL_RATE);
+  globalMessMealsPerDay = normalizedHostelDailyRate(cfg["mess_meals_per_day"], globalMessMealsPerDay || DEFAULT_MESS_MEALS_PER_DAY);
 
   // Update hostel price labels on register page
   updateHostelPriceLabels();
@@ -728,12 +855,15 @@ function setTrackProgram(slug, options = {}) {
 
 function renderTrackProgramFilters() {
   if (!trackProgramFilters || !programs.length) return;
-  trackProgramFilters.innerHTML = programs.map((program) => `
+  trackProgramFilters.innerHTML = programs.map((program) => {
+    const courseCount = programCourses(program.slug).length;
+    return `
     <button class="track-program-chip ${program.slug === trackProgramSlug ? "active" : ""}" type="button" data-track-program="${esc(program.slug)}">
       <span>${esc(program.name)}</span>
-      <small>${esc(program.meta?.dates || program.urgency?.deadlineLabel || "")}</small>
+      <small>${courseCount} ${courseCount === 1 ? "course" : "courses"}</small>
     </button>
-  `).join("");
+  `;
+  }).join("");
   trackProgramFilters.querySelectorAll("[data-track-program]").forEach((button) => {
     button.addEventListener("click", () => setTrackProgram(button.dataset.trackProgram));
   });
@@ -759,6 +889,7 @@ function renderHomepageTracks() {
 
   if (!visibleCourses.length) {
     trackGrid.innerHTML = "";
+    if (trackScrollHint) trackScrollHint.hidden = true;
     if (trackEmpty) {
       trackEmpty.hidden = false;
       trackEmpty.textContent = allCourses.length ? "No tracks match this filter yet." : `${program.name} tracks will appear here after admin adds them.`;
@@ -767,11 +898,15 @@ function renderHomepageTracks() {
   }
 
   if (trackEmpty) trackEmpty.hidden = true;
+  if (trackScrollHint) {
+    trackScrollHint.hidden = true;
+    trackScrollHint.textContent = "";
+  }
   trackGrid.innerHTML = visibleCourses.map((course, i) => `
     <article class="track-card" data-category="${esc(course.category)}" data-course-idx="${i}">
-      <img src="${esc(course.image_url || fallbackCourseImage(program))}" alt="${esc(course.name)}">
+      <img src="${esc(course.image_url || fallbackCourseImage(program))}" alt="${esc(course.name)}" loading="lazy" decoding="async">
       <div>
-        <span>${esc(course.class_range || "Classes 6-12")}</span>
+        <span>${esc(courseEligibilityLabel(course))}</span>
         <h3>${esc(course.name)}</h3>
         <p>${esc(course.description || "")}</p>
       </div>
@@ -859,7 +994,7 @@ function initCourseBottomSheet(grid, courses, sessions) {
   function openSheet(course) {
     sheetImg.src = course.image_url || fallbackCourseImage(getProgram(trackProgramSlug));
     sheetImg.alt = course.name;
-    sheetBadge.textContent = course.class_range || "Classes 6-12";
+    sheetBadge.textContent = courseEligibilityLabel(course);
     sheetTitle.textContent = course.name;
     sheetSession.textContent = sessionMap[course.session_id] || "";
     sheetDesc.textContent = course.description || "";
@@ -977,16 +1112,17 @@ function formatFee(amount) {
   return `Rs. ${amount.toLocaleString("en-IN")}`;
 }
 
-const GST_RATE = 0.18;
 const HOSTEL_DAILY_RATES = { none: 0, hostel_only: 100, hostel_food: 300 };
-const HOSTEL_LABELS = { none: "No hostel", hostel_only: "Non-AC hostel bed", hostel_food: "AC hostel bed" };
+const HOSTEL_LABELS = {
+  none: "No accommodation or meals",
+  hostel_only: "Non-AC hostel bed",
+  hostel_only_mess: "Non-AC hostel bed + mess food",
+  hostel_food: "AC hostel bed",
+  hostel_food_mess: "AC hostel bed + mess food",
+  mess_only: "Mess food only",
+  included: "Included in program fee"
+};
 const HOSTEL_DAY_FALLBACKS = { campus: 14, "staff-camp": 21, immersion: 14 };
-
-function gstPercentLabel(rate = GST_RATE) {
-  const normalizedRate = Number(rate ?? GST_RATE);
-  const percent = (Number.isFinite(normalizedRate) ? normalizedRate : GST_RATE) * 100;
-  return `${Number.isInteger(percent) ? percent : percent.toFixed(2).replace(/\.?0+$/, "")}%`;
-}
 
 function hostelChargeDays(program = selectedRegistrationProgram()) {
   const duration = String(program?.meta?.duration || program?.facts?.duration || "").toLowerCase();
@@ -1011,25 +1147,131 @@ function hostelDailyRate(option) {
   return HOSTEL_DAILY_RATES[option] || 0;
 }
 
+function messDailyRate(program = selectedRegistrationProgram()) {
+  const mealRate = Number(program?.messMealRate || globalMessMealRate || DEFAULT_MESS_MEAL_RATE);
+  const mealsPerDay = Number(program?.messMealsPerDay || globalMessMealsPerDay || DEFAULT_MESS_MEALS_PER_DAY);
+  return Math.max(mealRate, 0) * Math.max(mealsPerDay, 0);
+}
+
 function normalizedHostelDailyRate(value, fallback) {
   const rate = Number.parseInt(value, 10);
   if (Number.isNaN(rate) || rate < 0) return fallback;
   return rate <= 1000 ? rate : fallback;
 }
 
-function hostelTotalForOption(option, program = selectedRegistrationProgram()) {
-  return hostelDailyRate(option) * hostelChargeDays(program);
+function hostelOptionDailyRate(option, program = selectedRegistrationProgram()) {
+  if (!option || option === "none" || option === "included") return 0;
+  let rate = 0;
+  if (option === "hostel_only" || option === "hostel_only_mess") rate += hostelDailyRate("hostel_only");
+  if (option === "hostel_food" || option === "hostel_food_mess") rate += hostelDailyRate("hostel_food");
+  if (option === "mess_only" || option === "hostel_only_mess" || option === "hostel_food_mess") rate += messDailyRate(program);
+  return rate;
 }
 
-function updateHostelPriceLabels(rate = selectedRegistrationProgram()?.gstRate ?? GST_RATE) {
+function hostelTotalForOption(option, program = selectedRegistrationProgram()) {
+  return hostelOptionDailyRate(option, program) * hostelChargeDays(program);
+}
+
+function hostelOptionChoices(program = selectedRegistrationProgram()) {
+  if (!programShowsHostelStep(program)) return [];
+  const choices = [{
+    value: "none",
+    title: "No accommodation or meals",
+    description: "I do not need hostel bed or mess food.",
+    price: "Free"
+  }];
+  const messRate = messDailyRate(program);
+  if (program.allowHostel) {
+    choices.push({
+      value: "hostel_only",
+      title: "Non-AC hostel bed",
+      description: "Per student bed, charged per day.",
+      price: `Rs. ${hostelDailyRate("hostel_only").toLocaleString("en-IN")}/day`
+    });
+  }
+  if (program.allowHostel && program.allowMess) {
+    const mealsPerDay = program.messMealsPerDay || globalMessMealsPerDay || DEFAULT_MESS_MEALS_PER_DAY;
+    choices.push({
+      value: "hostel_only_mess",
+      title: "Non-AC bed + mess food",
+      description: `Bed plus ${mealsPerDay} mess meals per day.`,
+      price: `Rs. ${hostelOptionDailyRate("hostel_only_mess", program).toLocaleString("en-IN")}/day`
+    });
+  }
+  if (program.allowHostel) {
+    choices.push({
+      value: "hostel_food",
+      title: "AC hostel bed",
+      description: "Per student bed, charged per day.",
+      price: `Rs. ${hostelDailyRate("hostel_food").toLocaleString("en-IN")}/day`
+    });
+  }
+  if (program.allowHostel && program.allowMess) {
+    const mealsPerDay = program.messMealsPerDay || globalMessMealsPerDay || DEFAULT_MESS_MEALS_PER_DAY;
+    choices.push({
+      value: "hostel_food_mess",
+      title: "AC bed + mess food",
+      description: `Bed plus ${mealsPerDay} mess meals per day.`,
+      price: `Rs. ${hostelOptionDailyRate("hostel_food_mess", program).toLocaleString("en-IN")}/day`
+    });
+  } else if (!program.allowHostel && program.allowMess) {
+    choices.push({
+      value: "mess_only",
+      title: "Mess food add-on",
+      description: `${program.messMealsPerDay || globalMessMealsPerDay || DEFAULT_MESS_MEALS_PER_DAY} meals per day.`,
+      price: `Rs. ${messRate.toLocaleString("en-IN")}/day`
+    });
+  }
+  return choices;
+}
+
+function renderHostelOptions(program = selectedRegistrationProgram(), options = {}) {
+  if (!hostelOptionsRoot) return;
+  const choices = hostelOptionChoices(program);
+  if (!choices.length) {
+    hostelOptionsRoot.innerHTML = "";
+    return;
+  }
+  const checkedValue = options.preserveSelection
+    ? document.querySelector('input[name="hostel"]:checked')?.value
+    : "";
+  const defaultValue = choices.some((choice) => choice.value === checkedValue) ? checkedValue : "none";
+  const days = hostelChargeDays(program);
+  hostelOptionsRoot.innerHTML = choices.map((choice) => `
+    <label class="hostel-radio">
+      <input type="radio" name="hostel" value="${esc(choice.value)}" ${choice.value === defaultValue ? "checked" : ""}>
+      <div class="hostel-radio-body">
+        <strong>${esc(choice.title)}</strong>
+        <span>${esc(choice.description)}</span>
+      </div>
+      <div class="hostel-radio-price">
+        <em>${esc(choice.price)}</em>
+        ${choice.value === "none" ? "" : `<small>Per student, ${days} days</small>`}
+      </div>
+    </label>
+  `).join("");
+  hostelOptionsRoot.querySelectorAll('input[name="hostel"]').forEach((radio) => {
+    radio.addEventListener("change", () => {
+      updateRegistrationState();
+      updateBlockStates();
+      updateSubmitState();
+    });
+  });
+}
+
+function hostelLabelForOption(option) {
+  return HOSTEL_LABELS[option] || "No accommodation or meals";
+}
+
+function updateHostelPriceLabels() {
   const days = hostelChargeDays();
   document.querySelectorAll(".hostel-radio").forEach((radio) => {
     const input = radio.querySelector('input[name="hostel"]');
     const priceEl = radio.querySelector(".hostel-radio-price");
     if (!input || !priceEl) return;
-    const dailyRate = hostelDailyRate(input.value);
+    const dailyRate = hostelOptionDailyRate(input.value);
     if (dailyRate > 0) {
-      priceEl.innerHTML = `<em>Rs. ${dailyRate.toLocaleString("en-IN")}/day</em><small>Per bed, ${days} days + ${gstPercentLabel(rate)} GST</small>`;
+      priceEl.innerHTML = `<em>Rs. ${dailyRate.toLocaleString("en-IN")}/day</em><small>Per student, ${days} days</small>`;
     }
   });
 }
@@ -1048,6 +1290,68 @@ function updateHomepageHostelPrices() {
 function esc(str) {
   if (!str) return "";
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function queueRegistrationCreatedEmail(data) {
+  if (!data?.registration_id || !data?.payment_reference) return;
+  fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${SUPABASE_KEY}`
+    },
+    body: JSON.stringify({
+      type: "registration_received",
+      registration_id: data.registration_id,
+      payment_reference: data.payment_reference
+    })
+  }).then(async (res) => {
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(text || `Email API error ${res.status}`);
+    }
+  }).catch((err) => {
+    console.warn("Registration received email failed:", err?.message || err);
+  });
+}
+
+function courseMinAge(course) {
+  const age = Number.parseInt(course?.min_age, 10);
+  if (Number.isFinite(age) && age > 0) return age;
+  if (course?.programs?.slug === "staff-camp") return 5;
+  const range = String(course?.class_range || "").toLowerCase();
+  const ageMatch = range.match(/age\s*(\d+)/);
+  if (ageMatch) return Number.parseInt(ageMatch[1], 10);
+  const classMatch = range.match(/classes?\s*(\d+)/);
+  if (!classMatch) return 0;
+  const minClass = Number.parseInt(classMatch[1], 10);
+  if (minClass >= 10) return 15;
+  if (minClass >= 8) return 14;
+  return 12;
+}
+
+function courseEligibilityLabel(course) {
+  const minAge = courseMinAge(course);
+  return minAge > 0 ? `Age ${minAge}+` : "All eligible ages";
+}
+
+function studentAgeValue() {
+  if (!studentAgeInput) return null;
+  const age = Number.parseInt(studentAgeInput.value, 10);
+  return Number.isFinite(age) ? age : null;
+}
+
+function hasValidStudentAge(age = studentAgeValue()) {
+  return Number.isFinite(age) && age >= AGE_MIN && age <= AGE_MAX;
+}
+
+function courseAgeEligible(course, age = studentAgeValue()) {
+  return hasValidStudentAge(age) && age >= courseMinAge(course);
+}
+
+function courseById(id) {
+  return publicCourses.find((course) => course.id === id);
 }
 
 let registrationDeadline = null;
@@ -1079,8 +1383,39 @@ function programHasSchedule(program) {
   )));
 }
 
+function programHasAnnouncedTiming(program) {
+  if (!program) return false;
+  if (program.dateDisplayMode === "self_paced") return true;
+  if (program.dateDisplayMode === "to_be_announced") return false;
+  return Boolean(program.startDate && program.endDate);
+}
+
 function registrationProgramIsOpen(program = selectedRegistrationProgram()) {
-  return Boolean(program?.registrationEnabled && program.startDate && program.endDate && programHasFeeConfig(program) && programHasSchedule(program));
+  return Boolean(program?.registrationEnabled && programHasAnnouncedTiming(program) && programHasFeeConfig(program) && programHasSchedule(program));
+}
+
+function registrationScheduleSummary(program) {
+  if (!program) return "Varies by selected program";
+  const slots = [...new Set(programSessions(program.slug).map((session) => session.time_slot).filter(Boolean))];
+  if (programUsesFixedSchedule(program)) {
+    if (slots.length === 1) return slots[0];
+    return "Fixed program schedule";
+  }
+  if (!slots.length) return "Shown after schedule setup";
+  if (slots.length === 1) return slots[0];
+  return "Session-wise timings";
+}
+
+function updateRegistrationHeroSummary(program = selectedRegistrationProgram()) {
+  if (!registrationSummaryFields.dates) return;
+  registrationSummaryFields.dates.textContent = program?.meta?.dates || "Choose program";
+  registrationSummaryFields.schedule.textContent = registrationScheduleSummary(program);
+  registrationSummaryFields.venue.textContent = !program
+    ? "Campus / Online as selected"
+    : (String(program.meta?.mode || program.facts?.mode || "").toLowerCase().includes("online")
+      ? "Online"
+      : program.meta?.location || "As per selected program");
+  registrationSummaryFields.deadline.textContent = program?.urgency?.deadlineLabel || "Program-wise";
 }
 
 function selectedProgramFee(selectedCount) {
@@ -1097,7 +1432,7 @@ function renderRegistrationPrograms() {
   if (registrationProgramSelect) {
     registrationProgramSelect.innerHTML = `
       <option value="">Choose a program</option>
-      ${programs.map((program) => `<option value="${esc(program.slug)}">${esc(program.name)} - ${esc(program.meta?.dates || "Date to be decided")}</option>`).join("")}
+      ${programs.map((program) => `<option value="${esc(program.slug)}">${esc(program.name)} - ${esc(program.meta?.dates || "Date to be announced")}</option>`).join("")}
     `;
     registrationProgramSelect.value = registrationProgramSlug || "";
     if (registrationProgramSelect.dataset.bound !== "true") {
@@ -1113,7 +1448,7 @@ function renderRegistrationPrograms() {
     return `
       <button class="registration-program-card ${active ? "active" : ""}" type="button" data-registration-program="${esc(program.slug)}" aria-pressed="${active ? "true" : "false"}">
         <span>${esc(program.name)}</span>
-        <small>${esc(program.meta?.dates || "Date to be decided")}</small>
+        <small>${esc(program.meta?.dates || "Date to be announced")}</small>
         <em>${open ? "Registration open" : "Coming soon"}</em>
       </button>
     `;
@@ -1157,6 +1492,8 @@ function attachSessionInputListeners() {
 
 function renderRegistrationSessionCards(program) {
   if (!sessionSelectorsRoot) return;
+  const studentAge = studentAgeValue();
+  const hasAge = hasValidStudentAge(studentAge);
   if (!program) {
     sessionCourses = {};
     sessionSelectorsRoot.classList.remove("fixed-schedule-list");
@@ -1192,8 +1529,9 @@ function renderRegistrationSessionCards(program) {
       const courses = publicCourses
         .filter((course) => course.program_id === program.id && course.session_id === session.id && course.is_active !== false)
         .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      const ineligible = courses.filter((course) => !courseAgeEligible(course, studentAge));
       return `
-        <article class="selection-card fixed-schedule-card ${!courses.length ? "selection-card-empty" : ""}">
+        <article class="selection-card fixed-schedule-card ${!courses.length ? "selection-card-empty" : ""} ${hasAge && ineligible.length ? "invalid" : ""}">
           <div class="fixed-schedule-head">
             <span class="fixed-schedule-kicker">${esc(session.time_slot || `Schedule ${index + 1}`)}</span>
             <strong>${esc(session.name || `Schedule ${index + 1}`)}</strong>
@@ -1201,13 +1539,16 @@ function renderRegistrationSessionCards(program) {
           <div class="fixed-schedule-items">
             ${courses.length
               ? courses.map((course) => `
-                <div class="fixed-schedule-item">
+                <div class="fixed-schedule-item ${!courseAgeEligible(course, studentAge) ? "course-ineligible" : ""}">
                   <strong>${esc(course.name)}</strong>
+                  <em>${esc(courseEligibilityLabel(course))}</em>
                   ${course.description ? `<small>${esc(course.description)}</small>` : ""}
                 </div>
               `).join("")
               : `<p>No active activities added for this schedule block.</p>`}
           </div>
+          ${!hasAge ? `<p class="eligibility-note">Enter student age above to confirm eligibility for this fixed schedule.</p>` : ""}
+          ${hasAge && ineligible.length ? `<p class="eligibility-note warning">This schedule includes ${ineligible.length} activity${ineligible.length === 1 ? "" : "ies"} above the entered age.</p>` : ""}
         </article>
       `;
     }).join("");
@@ -1220,7 +1561,8 @@ function renderRegistrationSessionCards(program) {
     const courses = publicCourses
       .filter((course) => course.program_id === program.id && course.session_id === session.id && course.is_active !== false)
       .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-    const disabled = !open || !courses.length;
+    const eligibleCourses = courses.filter((course) => courseAgeEligible(course, studentAge));
+    const disabled = !open || !courses.length || !hasAge || !eligibleCourses.length;
     sessionCourses[key] = courses;
 
     return `
@@ -1233,10 +1575,21 @@ function renderRegistrationSessionCards(program) {
         <label>
           Class for ${esc(session.name || `Session ${index + 1}`)}
           <select name="${esc(key)}Course" data-session-course="${esc(key)}" disabled>
-            <option value="">${courses.length ? `Select ${esc(session.name || `Session ${index + 1}`)} class` : "No active classes added"}</option>
-            ${courses.map((course) => `<option value="${esc(course.id)}">${esc(course.name)}</option>`).join("")}
+            <option value="">${!courses.length ? "No active classes added" : !hasAge ? "Enter age first" : eligibleCourses.length ? `Select ${esc(session.name || `Session ${index + 1}`)} class` : "No age-eligible classes in this session"}</option>
+            ${courses.map((course) => {
+              const eligible = courseAgeEligible(course, studentAge);
+              const label = `${course.name} (${courseEligibilityLabel(course)}${eligible ? "" : " - not eligible yet"})`;
+              return `<option value="${esc(course.id)}" ${eligible ? "" : "disabled"}>${esc(label)}</option>`;
+            }).join("")}
           </select>
         </label>
+        <p class="eligibility-note ${hasAge && !eligibleCourses.length && courses.length ? "warning" : ""}">
+          ${!courses.length
+            ? "Admin needs to add classes for this session."
+            : !hasAge
+            ? "Enter student age above to unlock eligible classes."
+            : `${eligibleCourses.length} of ${courses.length} class${courses.length === 1 ? "" : "es"} available for age ${studentAge}.`}
+        </p>
       </article>
     `;
   }).join("");
@@ -1262,33 +1615,41 @@ function updateRegistrationProgram(slug, options = {}) {
   if (slug && !program) return;
   registrationProgramSlug = program?.slug || "";
   if (registrationProgramInput) registrationProgramInput.value = registrationProgramSlug;
+  updateRegistrationHeroSummary(program);
   renderRegistrationPrograms();
   renderRegistrationSessionCards(program);
   if (!options.preserveSelection) resetSessionCards();
 
   const fixedSchedule = programUsesFixedSchedule(program);
   if (registrationSelectionHeading) {
-    registrationSelectionHeading.textContent = fixedSchedule ? "Camp schedule" : "Session and class selection";
+    registrationSelectionHeading.textContent = fixedSchedule ? "Fixed program schedule" : "Session and class selection";
   }
   if (registrationSelectionHelp) {
     registrationSelectionHelp.textContent = !program
       ? "Choose your program first. Nothing is selected by default, so you know exactly what you are registering for."
       : fixedSchedule
-      ? "This camp follows a fixed schedule. Review the included activities; no class selection is needed."
+      ? "This program follows a fixed schedule. Review the included activities; no class selection is needed."
       : "Choose the program first. The sessions, classes, dates, and fee will update automatically.";
   }
 
   if (hostelBlock) {
-    hostelBlock.hidden = !program?.allowHostel;
+    const hostelAllowed = programShowsHostelStep(program);
+    hostelBlock.hidden = !hostelAllowed;
+    renderHostelOptions(program, options);
     hostelBlock.querySelectorAll("input").forEach((input) => {
-      input.disabled = !program?.allowHostel;
+      input.disabled = !hostelAllowed;
     });
-    if (!program?.allowHostel) {
+    if (!hostelAllowed) {
       const noneHostel = hostelBlock.querySelector('input[name="hostel"][value="none"]');
       if (noneHostel) noneHostel.checked = true;
+    } else if (!options.preserveSelection) {
+      hostelBlock.querySelectorAll('input[name="hostel"]').forEach((input) => {
+        input.checked = false;
+      });
     }
   }
-  updateHostelPriceLabels(program?.gstRate ?? GST_RATE);
+  updateProgressStepVisibility(program);
+  updateHostelPriceLabels();
 
   if (registrationProgramStatus) {
     registrationProgramStatus.classList.remove("warning");
@@ -1297,15 +1658,15 @@ function updateRegistrationProgram(slug, options = {}) {
     } else {
       const hasFee = programHasFeeConfig(program);
       const hasSchedule = programHasSchedule(program);
-      const hasDates = Boolean(program.startDate && program.endDate);
+      const hasTiming = programHasAnnouncedTiming(program);
       if (!program.registrationEnabled) {
         registrationProgramStatus.textContent = `${program.name} registration is currently closed by admin.`;
         registrationProgramStatus.classList.add("warning");
-      } else if (!hasDates && !hasFee && !hasSchedule) {
-        registrationProgramStatus.textContent = `${program.name} needs dates, schedule, courses, and fee before registration can open.`;
+      } else if (!hasTiming && !hasFee && !hasSchedule) {
+        registrationProgramStatus.textContent = `${program.name} needs schedule timing, courses, and fee before registration can open.`;
         registrationProgramStatus.classList.add("warning");
-      } else if (!hasDates) {
-        registrationProgramStatus.textContent = `${program.name} dates are not announced yet.`;
+      } else if (!hasTiming) {
+        registrationProgramStatus.textContent = `${program.name} schedule timing is not announced yet.`;
         registrationProgramStatus.classList.add("warning");
       } else if (!hasFee) {
         registrationProgramStatus.textContent = `${program.name} fee is not announced yet.`;
@@ -1338,25 +1699,19 @@ function updateRegistrationState() {
   const fixedCourses = fixedSchedule ? fixedScheduleCourses(program) : [];
   const selectionCount = fixedSchedule ? fixedCourses.length : selected.length;
   const sessionFee = selectedProgramFee(selectionCount);
-  const hostelFee = program?.allowHostel ? getHostelFee() : 0;
+  const hostelFee = programShowsHostelStep(program) ? getHostelFee() : 0;
   const baseFee = sessionFee + hostelFee;
-  const gstRate = Number(program?.gstRate ?? GST_RATE);
-  const gst = Math.round(baseFee * gstRate);
-  const gstLabel = gstPercentLabel(gstRate);
-  const total = baseFee + gst;
+  const total = baseFee;
 
   feeTotals.forEach((el) => { el.textContent = formatFee(total); });
 
   document.querySelectorAll("[data-fee-base]").forEach((el) => { el.textContent = formatFee(baseFee); });
-  document.querySelectorAll("[data-gst-detail]").forEach((el) => {
+  document.querySelectorAll("[data-fee-detail]").forEach((el) => {
     if (!baseFee) { el.innerHTML = ""; return; }
     const parts = [];
-    if (hostelFee) parts.push(`<div class="fee-line"><span>Hostel bed (${hostelChargeDays(program)} days)</span><strong>${formatFee(hostelFee)}</strong></div>`);
-    parts.push(`<div class="fee-line"><span>GST ${gstLabel}</span><strong>${formatFee(gst)}</strong></div>`);
+    if (hostelFee) parts.push(`<div class="fee-line"><span>Accommodation / meals (${hostelChargeDays(program)} days)</span><strong>${formatFee(hostelFee)}</strong></div>`);
+    if (programIncludesAccommodation(program) && program?.includedServices) parts.push(`<div class="fee-line"><span>${esc(program.includedServices)}</span><strong>Included</strong></div>`);
     el.innerHTML = parts.join("");
-  });
-  document.querySelectorAll("[data-gst-line]").forEach((el) => {
-    el.textContent = baseFee ? `Includes ${gstLabel} GST: ${formatFee(gst)}` : "";
   });
 
   if (feeNote) {
@@ -1368,6 +1723,8 @@ function updateRegistrationState() {
       feeNote.textContent = fixedCourses.length
         ? `${program.name} fixed schedule is included. No class selection is needed.`
         : "Admin needs to add fixed schedule activities before registration can continue.";
+    } else if (programIncludesAccommodation(program) && program.includedServices) {
+      feeNote.textContent = `${program.name} package fee includes ${program.includedServices}`;
     } else if (program.feeMode !== "session_count") {
       feeNote.textContent = selected.length
         ? `${program.name} fixed program fee applies.`
@@ -1399,6 +1756,17 @@ document.querySelectorAll('input[name="hostel"]').forEach((r) => {
   r.addEventListener("change", updateRegistrationState);
 });
 
+function refreshAgeEligibility() {
+  const program = selectedRegistrationProgram();
+  renderRegistrationSessionCards(program);
+  updateRegistrationState();
+  validateSessionCards();
+  updateBlockStates();
+  updateSubmitState();
+}
+
+studentAgeInput?.addEventListener("input", refreshAgeEligibility);
+
 updateRegistrationState();
 
 // ── Form validation system ──────────────────────────────────────────
@@ -1408,10 +1776,16 @@ const submitButton = form?.querySelector('button[type="submit"]');
 
 function getFieldError(field) {
   let err = field.nextElementSibling;
-  if (err && err.classList.contains("field-error")) return err;
+  if (err && err.classList.contains("field-error")) {
+    if (!err.id) err.id = `${field.name || field.id || "field"}-error`;
+    if (!err.getAttribute("role")) err.setAttribute("role", "alert");
+    return err;
+  }
   err = document.createElement("p");
   err.className = "field-error";
+  err.id = `${field.name || field.id || "field"}-error`;
   err.setAttribute("aria-live", "polite");
+  err.setAttribute("role", "alert");
   field.insertAdjacentElement("afterend", err);
   return err;
 }
@@ -1423,11 +1797,21 @@ function validateField(field) {
 
   if (field.required && !val) {
     msg = "This field is required.";
-  } else if (field.type === "email" && val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+  } else if (field.type === "number" && val) {
+    const num = Number.parseFloat(val);
+    const min = field.min !== "" ? Number.parseFloat(field.min) : null;
+    const max = field.max !== "" ? Number.parseFloat(field.max) : null;
+    if (!Number.isFinite(num)) {
+      msg = "Enter a valid number.";
+    } else if (min !== null && num < min) {
+      msg = `Enter ${min} or more.`;
+    } else if (max !== null && num > max) {
+      msg = `Enter ${max} or less.`;
+    }
+  } else if (field.type === "email" && val && !isValidEmail(val)) {
     msg = "Enter a valid email address.";
-  } else if (field.type === "tel" && val && field.pattern) {
-    const re = new RegExp("^" + field.pattern + "$");
-    if (!re.test(val)) msg = "Enter a valid phone number.";
+  } else if (field.type === "tel" && val && !isValidPhoneNumber(val)) {
+    msg = `Enter a valid phone number with ${PHONE_MIN_DIGITS} to ${PHONE_MAX_DIGITS} digits.`;
   } else if (field.tagName === "SELECT" && field.required && !val) {
     msg = "Please select an option.";
   }
@@ -1435,11 +1819,17 @@ function validateField(field) {
   const errEl = getFieldError(field);
   if (msg) {
     field.classList.add("invalid");
+    field.setAttribute("aria-invalid", "true");
+    field.setAttribute("aria-describedby", errEl.id);
+    field.closest("label")?.classList.add("field-has-error");
     errEl.textContent = msg;
     errEl.classList.add("visible");
     return false;
   }
   field.classList.remove("invalid");
+  field.setAttribute("aria-invalid", "false");
+  field.removeAttribute("aria-describedby");
+  field.closest("label")?.classList.remove("field-has-error");
   errEl.classList.remove("visible");
   errEl.textContent = "";
   return true;
@@ -1452,12 +1842,19 @@ function validateBlock(blockIndex) {
   if (blockIndex === 0 || blockIndex === 1) {
     const fields = block.querySelectorAll("input, select, textarea");
     return [...fields].every((f) => {
+      if (f.disabled) return true;
       const val = f.value.trim();
       if (f.required && !val) return false;
-      if (f.type === "email" && val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return false;
-      if (f.type === "tel" && val && f.pattern) {
-        return new RegExp("^" + f.pattern + "$").test(val);
+      if (f.type === "number" && val) {
+        const num = Number.parseFloat(val);
+        const min = f.min !== "" ? Number.parseFloat(f.min) : null;
+        const max = f.max !== "" ? Number.parseFloat(f.max) : null;
+        if (!Number.isFinite(num)) return false;
+        if (min !== null && num < min) return false;
+        if (max !== null && num > max) return false;
       }
+      if (f.type === "email" && val && !isValidEmail(val)) return false;
+      if (f.type === "tel" && val && !isValidPhoneNumber(val)) return false;
       if (f.tagName === "SELECT" && f.required && !val) return false;
       return true;
     });
@@ -1466,19 +1863,23 @@ function validateBlock(blockIndex) {
   if (blockIndex === 2) {
     const program = selectedRegistrationProgram();
     if (!registrationProgramIsOpen(program)) return false;
+    const age = studentAgeValue();
+    if (!hasValidStudentAge(age)) return false;
     if (programUsesFixedSchedule(program)) {
-      return fixedScheduleCourses(program).length > 0;
+      const fixedCourses = fixedScheduleCourses(program);
+      return fixedCourses.length > 0 && fixedCourses.every((course) => courseAgeEligible(course, age));
     }
     const selected = selectedSessions();
     if (selected.length === 0) return false;
     return selected.every((toggle) => {
       const sel = document.querySelector(`[data-session-course="${toggle.value}"]`);
-      return sel && sel.value.trim() !== "";
+      const course = courseById(sel?.value);
+      return sel && sel.value.trim() !== "" && course && courseAgeEligible(course, age);
     });
   }
 
   if (blockIndex === 3) {
-    if (hostelBlock?.hidden) return true;
+    if (hostelBlock?.hidden || !programShowsHostelStep(selectedRegistrationProgram())) return true;
     const hostelChecked = block.querySelector('input[name="hostel"]:checked');
     return !!hostelChecked;
   }
@@ -1494,9 +1895,12 @@ function validateBlock(blockIndex) {
 function validateSessionCards() {
   let allValid = true;
   const program = selectedRegistrationProgram();
+  const age = studentAgeValue();
   if (programUsesFixedSchedule(program)) {
-    document.querySelectorAll(".selection-card.invalid").forEach((card) => card.classList.remove("invalid"));
-    return true;
+    const fixedCourses = fixedScheduleCourses(program);
+    const valid = hasValidStudentAge(age) && fixedCourses.length > 0 && fixedCourses.every((course) => courseAgeEligible(course, age));
+    document.querySelectorAll(".fixed-schedule-card").forEach((card) => card.classList.toggle("invalid", !valid));
+    return valid;
   }
   sessionToggles.forEach((toggle) => {
     const card = toggle.closest(".selection-card");
@@ -1507,10 +1911,17 @@ function validateSessionCards() {
       return;
     }
 
+    const selectedCourse = courseById(sel.value);
     if (toggle.checked && !sel.value.trim()) {
       card.classList.add("invalid");
       const errEl = getFieldError(sel);
       errEl.textContent = "Select a class for this session.";
+      errEl.classList.add("visible");
+      allValid = false;
+    } else if (toggle.checked && (!selectedCourse || !courseAgeEligible(selectedCourse, age))) {
+      card.classList.add("invalid");
+      const errEl = getFieldError(sel);
+      errEl.textContent = "This class is not eligible for the entered age.";
       errEl.classList.add("visible");
       allValid = false;
     } else {
@@ -1523,8 +1934,35 @@ function validateSessionCards() {
   return allValid;
 }
 
+function updateProgressStepVisibility(program = selectedRegistrationProgram()) {
+  const hostelAllowed = programShowsHostelStep(program);
+  let visibleStepNumber = 1;
+
+  progressSteps.forEach((step) => {
+    const isHostelStep = step.dataset.step === "4";
+    step.hidden = isHostelStep && !hostelAllowed;
+    if (step.hidden) {
+      step.classList.remove("active", "done");
+      return;
+    }
+
+    const numberEl = step.querySelector("span");
+    if (numberEl) numberEl.textContent = String(visibleStepNumber);
+    visibleStepNumber += 1;
+  });
+
+  let visibleBlockNumber = 1;
+  formBlocks.forEach((block) => {
+    if (block.hidden) return;
+    const numberEl = block.querySelector(".form-heading span");
+    if (numberEl) numberEl.textContent = String(visibleBlockNumber).padStart(2, "0");
+    visibleBlockNumber += 1;
+  });
+}
+
 function updateBlockStates() {
   if (!formBlocks.length) return;
+  updateProgressStepVisibility();
 
   formBlocks.forEach((block, i) => {
     const valid = validateBlock(i);
@@ -1534,6 +1972,10 @@ function updateBlockStates() {
 
   // Update stepper done states based on completion
   progressSteps.forEach((step, i) => {
+    if (step.hidden) {
+      step.classList.remove("active", "done");
+      return;
+    }
     if (validateBlock(i)) {
       step.classList.add("done");
     } else {
@@ -1587,11 +2029,19 @@ function runFullValidation(showErrors) {
 if (form) {
   form.querySelectorAll("input, select, textarea").forEach((field) => {
     field.addEventListener("blur", () => {
+      if (field.type === "tel") field.value = trimPhoneValue(field.value);
+      if (field.type === "email") field.value = field.value.trim();
       validateField(field);
       updateBlockStates();
       updateSubmitState();
     });
     field.addEventListener("input", () => {
+      if (field.type === "tel") {
+        field.value = trimPhoneValue(field.value);
+      }
+      if (field.type === "email") {
+        field.value = field.value.trimStart();
+      }
       if (field.classList.contains("invalid")) {
         validateField(field);
       }
@@ -1798,6 +2248,8 @@ function renderHeroGalleryStrip(images) {
     const img = document.createElement("img");
     img.src = image.src;
     img.alt = hidden ? "" : (image.alt || "LPU Summer School highlight");
+    img.loading = "lazy";
+    img.decoding = "async";
     figure.appendChild(img);
     heroGalleryTrack.appendChild(figure);
   };
@@ -1842,21 +2294,18 @@ function showReceipt(data) {
   const receiptProgram = getProgram(data.program_slug || registrationProgramSlug);
   const progDatesEl = document.querySelector('[data-cfg="program-dates"]');
   const progDatesStr = receiptProgram?.meta?.dates || (progDatesEl ? progDatesEl.textContent : "");
-  const receiptGstLabel = gstPercentLabel(receiptProgram?.gstRate ?? GST_RATE);
-
   const rows = [
-    ["Student", `<strong>${esc(data.student_name || "")}</strong> (${esc(data.class_level || "")})`],
+    ["Student", `<strong>${esc(data.student_name || "")}</strong> (${esc(data.class_level || "")}${data.student_age ? `, Age ${esc(data.student_age)}` : ""})`],
     ["Guardian", esc(data.guardian_name || "")],
     ["Program", esc(data.program_name || "LPU Summer School 2026")],
     ["Courses", (data.courses || []).map(c => esc(c)).join(", ")],
-    ["Hostel", esc(HOSTEL_LABELS[data.hostel_option] || "No hostel")],
+    ["Accommodation / Meals", esc(hostelLabelForOption(data.hostel_option))],
   ];
   if (progDatesStr) rows.push(["Program Dates", esc(progDatesStr)]);
   rows.push(["Mode", esc(receiptProgram?.meta?.mode || "As per selected program")]);
   rows.push(["Venue", esc(receiptProgram?.meta?.location || "LPU Campus, Phagwara, Punjab")]);
   rows.push([receiptProgram?.feeMode === "session_count" ? "Session Fee" : "Program Fee", formatFee(data.session_fee || 0)]);
-  if ((data.hostel_amount || 0) > 0) rows.push([`Hostel Bed (${data.hostel_days || hostelChargeDays(receiptProgram)} days)`, formatFee(data.hostel_amount)]);
-  rows.push([`GST (${receiptGstLabel})`, formatFee(data.gst_amount || 0)]);
+  if ((data.hostel_amount || 0) > 0) rows.push([`Accommodation / Meals (${data.hostel_days || hostelChargeDays(receiptProgram)} days)`, formatFee(data.hostel_amount)]);
 
   const infoRows = [
     ["Payment Ref", `<code>${esc(data.payment_reference || "")}</code>`],
@@ -1889,9 +2338,10 @@ document.querySelector("[data-print-receipt]")?.addEventListener("click", () => 
   window.print();
 });
 
-// ── UPI Payment Section ────────────────────────────────────────────
+// ── Paytm Payment Section ──────────────────────────────────────────
 let pendingRegistration = null;
 let paymentModalBound = false; // guard against duplicate event binding
+const LPU_PAYTM_PAYMENT_URL = "https://secure.paytmpayments.com/link/paymentForm/38633/LL_920680970";
 
 // Body-level file input (outside modal — avoids overflow/clip/backdrop mobile bugs)
 const screenshotInput = document.getElementById("screenshotFileInput");
@@ -1919,7 +2369,9 @@ const uploadSelection = {
   uploadInProgress: false
 };
 
+const DEBUG_UPLOAD = false; // production: keep payment refs / registration IDs / file metadata out of the browser console
 function uploadLog(level, message, data) {
+  if (!DEBUG_UPLOAD) return;
   const fn = console[level] || console.log;
   if (data !== undefined) {
     fn.call(console, `${UPLOAD_LOG_PREFIX} ${message}`, data);
@@ -2200,28 +2652,20 @@ function showPaymentSection(data) {
   const paymentProgram = getProgram(data.program_slug || registrationProgramSlug);
   const mainFeeLabel = paymentProgram?.feeMode === "session_count" ? "Session fee" : "Program fee";
   let splitText = `${mainFeeLabel}: ${formatFee(data.session_fee)}`;
-  if (data.hostel_amount > 0) splitText += ` + Hostel bed (${data.hostel_days || hostelChargeDays(getProgram(data.program_slug || registrationProgramSlug))} days): ${formatFee(data.hostel_amount)}`;
-  splitText += ` + GST ${gstPercentLabel(paymentProgram?.gstRate ?? GST_RATE)}: ${formatFee(data.gst_amount)}`;
+  if (data.hostel_amount > 0) splitText += ` + Accommodation / meals (${data.hostel_days || hostelChargeDays(getProgram(data.program_slug || registrationProgramSlug))} days): ${formatFee(data.hostel_amount)}`;
+  if (data.hostel_option === "included" && data.included_services) splitText += ` + ${data.included_services}: Included`;
   section.querySelector("[data-pay-split]").textContent = splitText;
 
-  // UPI ID
-  section.querySelector("[data-upi-id]").textContent = data.upi_id;
+  const paytmName = `${data.student_name || data.guardian_name || "LPU Summer School"} - ${data.payment_reference || ""}`.trim();
+  const paytmPhone = data.phone || data.emergency_phone || "";
+  const paytmEmail = data.email || "";
+  const paytmAmount = String(Math.round(Number(data.total_amount || 0)));
 
-  // QR code
-  const qrImg = section.querySelector("[data-upi-qr]");
-  if (data.qr_data_url) {
-    qrImg.src = data.qr_data_url;
-    qrImg.closest(".upi-qr-box").hidden = false;
-  } else {
-    qrImg.closest(".upi-qr-box").hidden = true;
-  }
-
-  // Deep-link buttons
-  const upiBase = data.upi_url;
-  section.querySelector("[data-upi-gpay]").href = upiBase.replace("upi://", "tez://upi/");
-  section.querySelector("[data-upi-phonepe]").href = upiBase.replace("upi://", "phonepe://");
-  section.querySelector("[data-upi-paytm]").href = upiBase.replace("upi://", "paytmmp://");
-  section.querySelector("[data-upi-bhim]").href = upiBase;
+  section.querySelector("[data-paytm-name]").textContent = paytmName || "Student name";
+  section.querySelector("[data-paytm-phone]").textContent = paytmPhone || "Registered mobile number";
+  section.querySelector("[data-paytm-email]").textContent = paytmEmail || "Registered email";
+  section.querySelector("[data-paytm-amount]").textContent = paytmAmount || "0";
+  section.querySelector("[data-paytm-link]").href = LPU_PAYTM_PAYMENT_URL;
 
   resetUploadSelection(section, "payment section opened");
 
@@ -2229,22 +2673,33 @@ function showPaymentSection(data) {
   if (!paymentModalBound) {
     paymentModalBound = true;
 
-    // Copy UPI button
-    const copyBtn = section.querySelector("[data-copy-upi]");
+    // Copy Paytm payment details button
+    const copyBtn = section.querySelector("[data-copy-paytm-details]");
     copyBtn.addEventListener("click", () => {
-      const upiId = section.querySelector("[data-upi-id]").textContent;
-      navigator.clipboard.writeText(upiId).then(() => {
+      const details = [
+        "LPU Summer School 2026 Payment",
+        `Full Name: ${section.querySelector("[data-paytm-name]").textContent}`,
+        `Mobile no: ${section.querySelector("[data-paytm-phone]").textContent}`,
+        `e mail id: ${section.querySelector("[data-paytm-email]").textContent}`,
+        `Fee: ${section.querySelector("[data-paytm-amount]").textContent}`,
+        `Payment Ref: ${section.querySelector("[data-pay-ref]").textContent}`,
+        `Paytm link: ${LPU_PAYTM_PAYMENT_URL}`
+      ].join("\n");
+      const writeClipboard = navigator.clipboard?.writeText
+        ? navigator.clipboard.writeText(details)
+        : Promise.reject(new Error("Clipboard API unavailable"));
+      writeClipboard.then(() => {
         copyBtn.textContent = "Copied!";
-        setTimeout(() => { copyBtn.textContent = "Copy"; }, 2000);
+        setTimeout(() => { copyBtn.textContent = "Copy Payment Details"; }, 2000);
       }).catch(() => {
         const ta = document.createElement("textarea");
-        ta.value = upiId;
+        ta.value = details;
         document.body.appendChild(ta);
         ta.select();
         document.execCommand("copy");
         ta.remove();
         copyBtn.textContent = "Copied!";
-        setTimeout(() => { copyBtn.textContent = "Copy"; }, 2000);
+        setTimeout(() => { copyBtn.textContent = "Copy Payment Details"; }, 2000);
       });
     });
 
@@ -2412,8 +2867,11 @@ form?.addEventListener("submit", async (event) => {
   }
 
   const formData = new FormData(form);
-  const hostelOption = formData.get("hostel");
+  const hostelOption = programShowsHostelStep(program)
+    ? (formData.get("hostel") || "none")
+    : (programIncludesAccommodation(program) ? "included" : "none");
   const selectedCourseIds = registrationCourseIds(program, formData);
+  const studentAge = studentAgeValue();
 
   if (!selectedCourseIds.length) {
     statusMessage.textContent = programUsesFixedSchedule(program)
@@ -2423,21 +2881,43 @@ form?.addEventListener("submit", async (event) => {
     return;
   }
 
+  if (!hasValidStudentAge(studentAge)) {
+    statusMessage.textContent = "Please enter a valid student age before proceeding.";
+    statusMessage.classList.add("error");
+    studentAgeInput?.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+
+  const ineligibleSelected = selectedCourseIds
+    .map((id) => courseById(id))
+    .filter((course) => course && !courseAgeEligible(course, studentAge));
+  if (ineligibleSelected.length) {
+    statusMessage.textContent = `${ineligibleSelected[0].name} requires ${courseEligibilityLabel(ineligibleSelected[0])}.`;
+    statusMessage.classList.add("error");
+    return;
+  }
+
   submitButton.disabled = true;
   submitButton.textContent = "Creating registration...";
   statusMessage.classList.remove("error");
   statusMessage.textContent = "";
 
+  const guardianName = formatGuardianName(formData.get("guardianTitle"), formData.get("guardianName"));
+  const phone = trimPhoneValue(formData.get("phone"));
+  const emergencyPhone = trimPhoneValue(formData.get("emergencyPhone"));
+  const email = String(formData.get("email") || "").trim().toLowerCase();
+
   const registrationData = {
     program_slug: program.slug,
-    student_name: formData.get("studentName"),
-    class_level: formData.get("classLevel"),
-    school_name: formData.get("schoolName"),
-    city: formData.get("city"),
-    guardian_name: formData.get("guardianName"),
-    phone: formData.get("phone"),
-    email: formData.get("email"),
-    emergency_phone: formData.get("emergencyPhone"),
+    student_name: String(formData.get("studentName") || "").trim(),
+    student_age: studentAge,
+    class_level: String(formData.get("classLevel") || "").trim(),
+    school_name: String(formData.get("schoolName") || "").trim(),
+    city: String(formData.get("city") || "").trim(),
+    guardian_name: guardianName,
+    phone,
+    email,
+    emergency_phone: emergencyPhone,
     course_ids: selectedCourseIds,
     hostel_option: hostelOption,
     medical_note: formData.get("medicalNote") || null
@@ -2460,13 +2940,19 @@ form?.addEventListener("submit", async (event) => {
     }
 
     const result = await res.json();
-    showPaymentSection({
+    const pending = {
       ...result,
       student_name: registrationData.student_name,
+      student_age: registrationData.student_age,
       class_level: registrationData.class_level,
       guardian_name: registrationData.guardian_name,
+      phone: registrationData.phone,
+      email: registrationData.email,
+      emergency_phone: registrationData.emergency_phone,
       hostel_option: hostelOption || "none"
-    });
+    };
+    queueRegistrationCreatedEmail(pending);
+    showPaymentSection(pending);
   } catch (error) {
     statusMessage.classList.add("error");
     statusMessage.textContent = `Something went wrong: ${error.message}. Please try again.`;
@@ -2509,6 +2995,10 @@ if (progressSteps.length && formBlocks.length && "IntersectionObserver" in windo
       activeStepIndex = index;
 
       progressSteps.forEach((step, i) => {
+        if (step.hidden) {
+          step.classList.remove("active", "done");
+          return;
+        }
         step.classList.remove("active");
         if (i === index) step.classList.add("active");
         // done state is driven by validation via updateBlockStates()

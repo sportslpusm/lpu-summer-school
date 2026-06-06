@@ -3,8 +3,12 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://bynpuhoysivxxlblxica.supabase.co; font-src 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://bynpuhoysivxxlblxica.supabase.co; font-src 'self'; base-uri 'self'; form-action 'self';">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="theme-color" content="#f3700d">
     <title>Admin | LPU Summer School</title>
+    <link rel="icon" type="image/png" href="/assets/lpu-circle-logo.png">
+    <link rel="apple-touch-icon" href="/assets/lpu-circle-logo.png">
     <link rel="stylesheet" href="admin.css">
   </head>
   <body>
@@ -37,8 +41,9 @@
         </div>
       </header>
 
-      <nav class="admin-tabs">
-        <button class="tab active" data-tab="registrations">Registrations</button>
+      <nav class="admin-tabs" aria-label="Admin sections">
+        <button class="tab active" data-tab="dashboard">Home</button>
+        <button class="tab" data-tab="registrations">Registrations</button>
         <button class="tab" data-tab="programs">Programs</button>
         <button class="tab" data-tab="courses">Courses</button>
         <button class="tab" data-tab="sessions">Sessions</button>
@@ -48,8 +53,57 @@
       </nav>
 
       <main class="admin-main">
+        <!-- Dashboard Home -->
+        <section class="tab-panel active" id="panel-dashboard">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker">Today at a glance</p>
+              <h2>Admin Home</h2>
+            </div>
+            <button class="btn ghost small" id="refreshAdminBtn">Refresh Data</button>
+          </div>
+          <div class="dashboard-cards" id="dashboardCards">
+            <article class="dashboard-card">
+              <span>Total Registrations</span>
+              <strong data-stat="totalRegistrations">0</strong>
+              <small>All submitted records</small>
+            </article>
+            <article class="dashboard-card warning">
+              <span>Pending Payments</span>
+              <strong data-stat="pendingPayments">0</strong>
+              <small>Need screenshot review</small>
+            </article>
+            <article class="dashboard-card success">
+              <span>Verified Payments</span>
+              <strong data-stat="verifiedPayments">0</strong>
+              <small>Payment marked verified</small>
+            </article>
+            <article class="dashboard-card">
+              <span>Registrations Today</span>
+              <strong data-stat="registrationsToday">0</strong>
+              <small>Based on local date</small>
+            </article>
+          </div>
+          <div class="dashboard-grid">
+            <section class="dashboard-panel">
+              <div class="dashboard-panel-head">
+                <h3>Needs Attention</h3>
+                <button class="btn ghost small" data-switch-tab="registrations" data-payment-filter="verification_pending">Review Payments</button>
+              </div>
+              <div id="attentionList" class="attention-list"></div>
+            </section>
+            <section class="dashboard-panel">
+              <div class="dashboard-panel-head">
+                <h3>Program Setup</h3>
+                <button class="btn ghost small" data-switch-tab="programs">Manage Programs</button>
+              </div>
+              <div id="programSetupList" class="attention-list"></div>
+            </section>
+          </div>
+        </section>
+
         <!-- Registrations Tab -->
-        <section class="tab-panel active" id="panel-registrations">
+        <section class="tab-panel" id="panel-registrations">
           <div class="panel-header">
             <h2>Registrations</h2>
             <div class="panel-actions">
@@ -57,21 +111,21 @@
             </div>
           </div>
           <div class="admin-toolbar">
-            <input class="admin-search" type="search" id="regSearch" placeholder="Search student, guardian, school, phone...">
-            <select class="admin-filter" id="regStatusFilter">
+            <input class="admin-search" type="search" id="regSearch" aria-label="Search registrations" placeholder="Search student, guardian, school, phone...">
+            <select class="admin-filter" id="regStatusFilter" aria-label="Filter registration status">
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
               <option value="confirmed">Confirmed</option>
               <option value="cancelled">Cancelled</option>
               <option value="rejected">Rejected</option>
             </select>
-            <select class="admin-filter" id="regPaymentFilter">
+            <select class="admin-filter" id="regPaymentFilter" aria-label="Filter payment status">
               <option value="all">All Payment</option>
               <option value="verification_pending">Needs Verification</option>
               <option value="paid">Verified</option>
               <option value="unpaid">Unpaid</option>
             </select>
-            <select class="admin-filter" id="regProgramFilter">
+            <select class="admin-filter" id="regProgramFilter" aria-label="Filter registration program">
               <option value="all">All Programs</option>
             </select>
             <span class="toolbar-count" id="regCount"></span>
@@ -83,7 +137,7 @@
                   <th>Date</th>
                   <th>Student</th>
                   <th>Program</th>
-                  <th>Class</th>
+                  <th>Age / Class</th>
                   <th>School</th>
                   <th>Guardian</th>
                   <th>Phone</th>
@@ -99,6 +153,7 @@
             </table>
           </div>
           <p class="empty-state" id="regEmpty" hidden>No registrations found.</p>
+          <div class="pagination" id="regPagination" hidden></div>
         </section>
 
         <!-- Programs Tab -->
@@ -108,7 +163,18 @@
             <button class="btn primary small" id="addProgramBtn">+ Add Program</button>
           </div>
           <div class="admin-toolbar">
-            <input class="admin-search" type="search" id="programSearch" placeholder="Search program name...">
+            <input class="admin-search" type="search" id="programSearch" aria-label="Search programs" placeholder="Search program name...">
+            <select class="admin-filter" id="programReadinessFilter" aria-label="Filter program readiness">
+              <option value="all">All Readiness</option>
+              <option value="ready">Ready</option>
+              <option value="needs_setup">Needs Setup</option>
+              <option value="draft">Draft</option>
+            </select>
+            <select class="admin-filter" id="programActiveFilter" aria-label="Filter active programs">
+              <option value="all">All Visibility</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
             <span class="toolbar-count" id="programCount"></span>
           </div>
           <div class="table-wrap">
@@ -128,6 +194,7 @@
               <tbody id="programBody"></tbody>
             </table>
           </div>
+          <p class="empty-state" id="programEmpty" hidden>No programs found. Try clearing search or filters.</p>
         </section>
 
         <!-- Courses Tab -->
@@ -137,14 +204,14 @@
             <button class="btn primary small" id="addCourseBtn">+ Add Course</button>
           </div>
           <div class="admin-toolbar">
-            <input class="admin-search" type="search" id="courseSearch" placeholder="Search course name...">
-            <select class="admin-filter" id="courseProgramFilter">
+            <input class="admin-search" type="search" id="courseSearch" aria-label="Search courses" placeholder="Search course name...">
+            <select class="admin-filter" id="courseProgramFilter" aria-label="Filter course program">
               <option value="all">All Programs</option>
             </select>
-            <select class="admin-filter" id="courseSessionFilter">
+            <select class="admin-filter" id="courseSessionFilter" aria-label="Filter course session">
               <option value="all">All Sessions</option>
             </select>
-            <select class="admin-filter" id="courseCategoryFilter">
+            <select class="admin-filter" id="courseCategoryFilter" aria-label="Filter course category">
               <option value="all">All Categories</option>
               <option value="tech">Tech</option>
               <option value="creative">Creative</option>
@@ -163,7 +230,7 @@
                   <th>Program</th>
                   <th>Session</th>
                   <th>Category</th>
-                  <th>Class Range</th>
+                  <th>Minimum Age</th>
                   <th>Active</th>
                   <th>Actions</th>
                 </tr>
@@ -171,6 +238,7 @@
               <tbody id="courseBody"></tbody>
             </table>
           </div>
+          <p class="empty-state" id="courseEmpty" hidden>No courses found. Try clearing search or filters.</p>
         </section>
 
         <!-- Sessions Tab -->
@@ -180,8 +248,8 @@
             <button class="btn primary small" id="addSessionBtn">+ Add Session</button>
           </div>
           <div class="admin-toolbar">
-            <input class="admin-search" type="search" id="sessionSearch" placeholder="Search session name...">
-            <select class="admin-filter" id="sessionProgramFilter">
+            <input class="admin-search" type="search" id="sessionSearch" aria-label="Search sessions" placeholder="Search session name...">
+            <select class="admin-filter" id="sessionProgramFilter" aria-label="Filter session program">
               <option value="all">All Programs</option>
             </select>
             <span class="toolbar-count" id="sessionCount"></span>
@@ -201,6 +269,7 @@
               <tbody id="sessionBody"></tbody>
             </table>
           </div>
+          <p class="empty-state" id="sessionEmpty" hidden>No sessions found. Try clearing search or filters.</p>
         </section>
 
         <!-- Fees Tab -->
@@ -210,9 +279,11 @@
             <button class="btn primary small" id="addFeeBtn">+ Add Tier</button>
           </div>
           <div class="admin-toolbar">
-            <select class="admin-filter" id="feeProgramFilter">
+            <input class="admin-search" type="search" id="feeSearch" aria-label="Search fee tiers" placeholder="Search program or label...">
+            <select class="admin-filter" id="feeProgramFilter" aria-label="Filter fee program">
               <option value="all">All Programs</option>
             </select>
+            <span class="toolbar-count" id="feeCount"></span>
           </div>
           <div class="table-wrap">
             <table id="feeTable">
@@ -228,6 +299,7 @@
               <tbody id="feeBody"></tbody>
             </table>
           </div>
+          <p class="empty-state" id="feeEmpty" hidden>No fee tiers found. Try clearing search or filters.</p>
         </section>
 
         <!-- Gallery Tab -->
@@ -236,7 +308,17 @@
             <h2>Gallery Images</h2>
             <button class="btn primary small" id="addImageBtn">+ Add Image</button>
           </div>
+          <div class="admin-toolbar">
+            <input class="admin-search" type="search" id="gallerySearch" aria-label="Search gallery images" placeholder="Search image alt text or URL...">
+            <select class="admin-filter" id="galleryStatusFilter" aria-label="Filter gallery image status">
+              <option value="all">All Images</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <span class="toolbar-count" id="galleryCount"></span>
+          </div>
           <div class="gallery-grid" id="galleryGrid"></div>
+          <p class="empty-state" id="galleryEmpty" hidden>No gallery images found. Try clearing search or filters.</p>
         </section>
 
         <!-- Settings Tab -->
@@ -245,7 +327,12 @@
             <h2>Site Settings</h2>
             <button class="btn primary small" id="saveSettingsBtn">Save All</button>
           </div>
+          <div class="admin-toolbar">
+            <input class="admin-search" type="search" id="settingsSearch" aria-label="Search settings" placeholder="Search setting name or description...">
+            <span class="toolbar-count" id="settingsCount"></span>
+          </div>
           <div class="settings-grid" id="settingsGrid"></div>
+          <p class="empty-state" id="settingsEmpty" hidden>No settings found. Try clearing search.</p>
         </section>
       </main>
     </div>
@@ -255,7 +342,7 @@
       <div class="modal" id="modal">
         <div class="modal-header">
           <h3 id="modalTitle">Modal</h3>
-          <button class="modal-close" id="modalClose">&times;</button>
+          <button class="modal-close" id="modalClose" aria-label="Close modal">&times;</button>
         </div>
         <div class="modal-body" id="modalBody"></div>
         <div class="modal-footer">
@@ -264,6 +351,8 @@
         </div>
       </div>
     </div>
+
+    <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
 
     <script src="admin.js"></script>
   </body>

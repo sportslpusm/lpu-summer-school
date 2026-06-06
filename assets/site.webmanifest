@@ -1,0 +1,18 @@
+{
+  "name": "LPU Summer School 2026",
+  "short_name": "LPU Summer",
+  "description": "LPU Summer School 2026 programs by Lovely Professional University Student Welfare Wing.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fff7ed",
+  "theme_color": "#f3700d",
+  "icons": [
+    {
+      "src": "/assets/lpu-circle-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

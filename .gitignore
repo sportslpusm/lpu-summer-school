@@ -10,3 +10,12 @@ supabase/.temp/
 skills-lock.json
 
 .vercel
+
+.vercel
+.env*.local
+
+# Internal security/audit docs — never publish to the public repo
+AUDIT_REPORT.md
+KNOWN_ISSUES.md
+WEBSITE_REFERENCE.md
+supabase/functions/_deprecated_backup/

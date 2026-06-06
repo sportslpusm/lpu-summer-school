@@ -1,0 +1,22 @@
+# Only the public static site should be deployed.
+# Everything below is internal and must NOT be served publicly.
+
+# Internal docs (architecture, audit, security notes)
+*.md
+
+# Backend / infra / migrations / edge function source / backups
+supabase/
+
+# Tooling, planning, local config
+.agents/
+.code-review-graph/
+.playwright-mcp/
+.claude/
+skills-lock.json
+
+# Secrets / local env
+.env*
+
+# Local QA screenshots at repo root (keep assets/ images)
+*.png
+!assets/*.png
