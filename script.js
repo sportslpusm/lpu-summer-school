@@ -991,7 +991,14 @@ function renderTrackProgramFilters() {
   `;
   }).join("");
   trackProgramFilters.querySelectorAll("[data-track-program]").forEach((button) => {
-    button.addEventListener("click", () => setTrackProgram(button.dataset.trackProgram));
+    button.addEventListener("click", () => {
+      setTrackProgram(button.dataset.trackProgram);
+      // On phones the classes update below the fold, so scroll them into view.
+      if (window.matchMedia("(max-width: 760px)").matches) {
+        const grid = document.getElementById("trackGrid");
+        if (grid) window.scrollTo({ top: grid.getBoundingClientRect().top + window.scrollY - 96, behavior: "smooth" });
+      }
+    });
   });
 }
 

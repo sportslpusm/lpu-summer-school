@@ -401,6 +401,17 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 .track-program-chip:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); border-color: var(--orange-soft); }
 .track-program-chip.active { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(243,112,13,0.16); }
 .track-program-chip.active span { color: var(--orange-dark); }
+/* phones: swipeable tab row (clearly a selector) + tap scrolls to the classes */
+@media (max-width: 760px) {
+  .track-program-selector {
+    display: flex; gap: 9px; overflow-x: auto; scrollbar-width: none;
+    scroll-snap-type: x proximity; padding-bottom: 2px; margin-bottom: 16px;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+  }
+  .track-program-selector::-webkit-scrollbar { display: none; }
+  .track-program-chip { flex: 0 0 auto; width: 63vw; max-width: 250px; min-height: 0; scroll-snap-align: start; }
+}
 .chip-status {
   margin-top: 4px; padding: 2px 9px; border-radius: var(--radius-pill);
   font-size: 0.66rem; font-weight: 800; font-style: normal; letter-spacing: 0.03em; text-transform: uppercase;
