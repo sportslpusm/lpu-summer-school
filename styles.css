@@ -421,7 +421,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 .track-card > div { padding: 16px 18px 20px; display: flex; flex-direction: column; gap: 6px; }
 .track-card span { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--orange-dark); }
 .track-card h3 { font-size: 1.1rem; font-family: var(--font-display); font-weight: 600; color: var(--ink); }
-.track-card p { margin: 0; font-size: 0.9rem; color: var(--muted); line-height: 1.5; }
+.track-card p { margin: 0; font-size: 0.9rem; color: var(--muted); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* tracks-mode: full-day track sections */
 .track-grid.track-grid-sections { display: flex; flex-direction: column; gap: clamp(26px, 3vw, 44px); }
@@ -429,7 +429,17 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 .track-section-head { padding: clamp(20px, 2.4vw, 30px) clamp(20px, 2.4vw, 30px) 0; }
 .track-section-head h3 { font-size: clamp(1.3rem, 1rem + 1.2vw, 1.8rem); font-family: var(--font-display); color: var(--ink); }
 .track-section-head p { margin: 8px 0 0; color: var(--muted); max-width: 64ch; }
-.track-section-courses { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; padding: 20px clamp(20px, 2.4vw, 30px); }
+.track-section-courses { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 16px clamp(14px, 2.4vw, 30px) 18px; }
+@media (min-width: 680px) { .track-section-courses { grid-template-columns: repeat(auto-fill, minmax(218px, 1fr)); gap: 16px; padding: 20px clamp(20px, 2.4vw, 30px); } }
+@media (max-width: 520px) {
+  .track-card img { aspect-ratio: 16 / 11; }
+  .track-card > div { padding: 12px 13px 15px; gap: 4px; }
+  .track-card h3 { font-size: 0.98rem; }
+  .track-card span { font-size: 0.66rem; }
+  .track-card p { font-size: 0.82rem; -webkit-line-clamp: 2; }
+  .track-section { border-radius: var(--radius-sm); }
+  .track-section-head { padding: 18px 16px 0; }
+}
 .track-section-foot { margin: 0; padding: 14px clamp(20px, 2.4vw, 30px); border-top: 1px dashed var(--line-2); font-weight: 700; font-size: 0.9rem; color: var(--orange-dark); background: var(--orange-wash); }
 .track-empty { margin-top: 20px; padding: 28px; text-align: center; border: 1.5px dashed var(--line-2); border-radius: var(--radius); color: var(--muted); font-weight: 600; }
 

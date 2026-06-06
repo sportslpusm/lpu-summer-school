@@ -947,6 +947,36 @@ function fallbackCourseImage(program) {
   return program?.imageUrl || program?.backgroundImage || FALLBACK_HERO_IMAGES[0].src;
 }
 
+// Distinct, on-brand monogram tile for courses without their own photo, so
+// track/course cards don't all repeat the same program image. Presentation only.
+var COURSE_TILE_GRADIENTS = [
+  ["#ffe0c0", "#f3700d"], ["#ffd1a8", "#d85b00"], ["#ffe9d2", "#ff8f30"],
+  ["#f9dcb4", "#cf6a12"], ["#ffe6cc", "#ef7a16"], ["#f6d3a8", "#b85e10"]
+];
+function hashString(str) {
+  var h = 0, s = String(str || "");
+  for (var i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) >>> 0; }
+  return h;
+}
+function coursePlaceholderImage(course) {
+  var name = (course && course.name) ? String(course.name) : "LPU";
+  var pair = COURSE_TILE_GRADIENTS[hashString(name + "|" + ((course && course.category) || "")) % COURSE_TILE_GRADIENTS.length];
+  var m = name.trim().toUpperCase().match(/[A-Z0-9]/);
+  var initial = m ? m[0] : "L";
+  var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='320' height='200'>" +
+    "<defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>" +
+    "<stop offset='0' stop-color='" + pair[0] + "'/><stop offset='1' stop-color='" + pair[1] + "'/>" +
+    "</linearGradient></defs><rect width='320' height='200' fill='url(#g)'/>" +
+    "<circle cx='268' cy='40' r='66' fill='rgba(255,255,255,0.14)'/>" +
+    "<circle cx='40' cy='192' r='52' fill='rgba(255,255,255,0.10)'/>" +
+    "<text x='26' y='150' font-family='Georgia,serif' font-size='118' font-weight='700' fill='rgba(255,255,255,0.92)'>" + initial + "</text>" +
+    "</svg>";
+  return "data:image/svg+xml," + encodeURIComponent(svg);
+}
+function courseImageSrc(course) {
+  return (course && course.image_url) ? course.image_url : coursePlaceholderImage(course);
+}
+
 function renderHomepageTrackCards(program, trackGrid) {
   const tracks = programTrackList(program);
   if (trackEmpty) trackEmpty.hidden = tracks.length > 0;
@@ -957,7 +987,7 @@ function renderHomepageTrackCards(program, trackGrid) {
       const slot = publicSessions.find((s) => s.id === course.session_id);
       return `
         <article class="track-card">
-          <img src="${esc(course.image_url || fallbackCourseImage(program))}" alt="${esc(course.name)}" loading="lazy" decoding="async">
+          <img src="${esc(courseImageSrc(course))}" alt="${esc(course.name)}" loading="lazy" decoding="async">
           <div>
             <span>${esc(formatSlotTime(slot?.time_slot))} &middot; ${esc(courseEligibilityLabel(course))}</span>
             <h3>${esc(course.name)}</h3>
@@ -1011,7 +1041,7 @@ function renderHomepageTracks() {
   }
   trackGrid.innerHTML = visibleCourses.map((course, i) => `
     <article class="track-card" data-category="${esc(course.category)}" data-course-idx="${i}">
-      <img src="${esc(course.image_url || fallbackCourseImage(program))}" alt="${esc(course.name)}" loading="lazy" decoding="async">
+      <img src="${esc(courseImageSrc(course))}" alt="${esc(course.name)}" loading="lazy" decoding="async">
       <div>
         <span>${esc(courseEligibilityLabel(course))}</span>
         <h3>${esc(course.name)}</h3>
@@ -1112,7 +1142,7 @@ function initCourseBottomSheet(grid, courses, sessions) {
   let isOpen = false;
 
   function openSheet(course) {
-    sheetImg.src = course.image_url || fallbackCourseImage(getProgram(trackProgramSlug));
+    sheetImg.src = courseImageSrc(course);
     sheetImg.alt = course.name;
     sheetBadge.textContent = courseEligibilityLabel(course);
     sheetTitle.textContent = course.name;
