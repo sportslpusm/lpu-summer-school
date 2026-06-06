@@ -1051,12 +1051,13 @@ function renderHomepageTrackCards(program, trackGrid) {
     const cards = track.courses.map((course) => {
       const slot = publicSessions.find((s) => s.id === course.session_id);
       return `
-        <article class="track-card">
+        <article class="track-card" data-course-id="${esc(course.id)}" role="button" tabindex="0" aria-label="${esc(course.name)} — view details">
           <img src="${esc(courseImageSrc(course))}" alt="${esc(course.name)}" loading="lazy" decoding="async">
           <div>
             <span>${esc(formatSlotTime(slot?.time_slot))} &middot; ${esc(courseEligibilityLabel(course))}</span>
             <h3>${esc(course.name)}</h3>
             <p>${esc(course.description || "")}</p>
+            <span class="track-card-more">Read details</span>
           </div>
         </article>`;
     }).join("");
@@ -1104,18 +1105,17 @@ function renderHomepageTracks() {
     trackScrollHint.hidden = true;
     trackScrollHint.textContent = "";
   }
-  trackGrid.innerHTML = visibleCourses.map((course, i) => `
-    <article class="track-card" data-category="${esc(course.category)}" data-course-idx="${i}">
+  trackGrid.innerHTML = visibleCourses.map((course) => `
+    <article class="track-card" data-category="${esc(course.category)}" data-course-id="${esc(course.id)}" role="button" tabindex="0" aria-label="${esc(course.name)} — view details">
       <img src="${esc(courseImageSrc(course))}" alt="${esc(course.name)}" loading="lazy" decoding="async">
       <div>
         <span>${esc(courseEligibilityLabel(course))}</span>
         <h3>${esc(course.name)}</h3>
         <p>${esc(course.description || "")}</p>
+        <span class="track-card-more">Read details</span>
       </div>
     </article>
   `).join("");
-
-  initCourseBottomSheet(trackGrid, visibleCourses, publicSessions);
 }
 
 function renderHomepageSessions() {
@@ -1168,58 +1168,44 @@ function renderHomepageFees() {
     : `<tr><td>${esc(program.name)}</td><td>Fee tiers are not configured yet.</td><td>To be announced</td></tr>`;
 }
 
-function initCourseBottomSheet(grid, courses, sessions) {
-  const MOBILE_MAX = 620;
-  document.querySelector(".course-sheet-overlay")?.remove();
-  if (grid._courseSheetClickHandler) {
-    grid.removeEventListener("click", grid._courseSheetClickHandler);
-  }
-  // Build session lookup: session_id -> session name
-  const sessionMap = {};
-  sessions.forEach((s, i) => { sessionMap[s.id] = s.name + " (" + s.time_slot + ")"; });
-
-  // Create bottom sheet DOM
+// Course detail sheet — tap ANY class card (any program, any screen size) to read
+// its full description. Built once; delegated on #trackGrid; looks courses up by id.
+(function setupCourseDetailSheet() {
+  const grid = document.getElementById("trackGrid");
+  if (!grid) return;
   const overlay = document.createElement("div");
   overlay.className = "course-sheet-overlay";
-
-  const sheet = document.createElement("div");
-  sheet.className = "course-sheet";
-  sheet.innerHTML = `
-    <div class="course-sheet-handle"><span></span></div>
-    <button class="course-sheet-close" type="button" aria-label="Close">&times;</button>
-    <div class="course-sheet-body">
-      <img class="course-sheet-img" src="" alt="">
-      <div class="course-sheet-content">
-        <span class="course-sheet-badge"></span>
-        <h3 class="course-sheet-title"></h3>
-        <p class="course-sheet-session"></p>
-        <p class="course-sheet-desc"></p>
+  overlay.innerHTML = `
+    <div class="course-sheet" role="dialog" aria-modal="true" aria-label="Class details">
+      <div class="course-sheet-handle"><span></span></div>
+      <button class="course-sheet-close" type="button" aria-label="Close details">&times;</button>
+      <div class="course-sheet-body">
+        <img class="course-sheet-img" src="" alt="">
+        <div class="course-sheet-content">
+          <span class="course-sheet-badge"></span>
+          <h3 class="course-sheet-title"></h3>
+          <p class="course-sheet-session"></p>
+          <p class="course-sheet-desc"></p>
+        </div>
       </div>
     </div>`;
-  overlay.appendChild(sheet);
   document.body.appendChild(overlay);
-
-  const sheetImg = sheet.querySelector(".course-sheet-img");
-  const sheetBadge = sheet.querySelector(".course-sheet-badge");
-  const sheetTitle = sheet.querySelector(".course-sheet-title");
-  const sheetSession = sheet.querySelector(".course-sheet-session");
-  const sheetDesc = sheet.querySelector(".course-sheet-desc");
-  const closeBtn = sheet.querySelector(".course-sheet-close");
-
+  const sheet = overlay.querySelector(".course-sheet");
+  const el = (s) => overlay.querySelector(s);
   let isOpen = false;
 
   function openSheet(course) {
-    sheetImg.src = courseImageSrc(course);
-    sheetImg.alt = course.name;
-    sheetBadge.textContent = courseEligibilityLabel(course);
-    sheetTitle.textContent = course.name;
-    sheetSession.textContent = sessionMap[course.session_id] || "";
-    sheetDesc.textContent = course.description || "";
+    const slot = publicSessions.find((s) => s.id === course.session_id);
+    el(".course-sheet-img").src = courseImageSrc(course);
+    el(".course-sheet-img").alt = course.name || "";
+    el(".course-sheet-badge").textContent = [slot ? formatSlotTime(slot.time_slot) : "", courseEligibilityLabel(course)].filter(Boolean).join("  ·  ");
+    el(".course-sheet-title").textContent = course.name || "";
+    el(".course-sheet-session").textContent = slot ? `${slot.name}${slot.time_slot ? " · " + slot.time_slot : ""}` : "";
+    el(".course-sheet-desc").textContent = course.description || "Full details will be shared soon.";
     isOpen = true;
     overlay.classList.add("active");
     document.body.style.overflow = "hidden";
   }
-
   function closeSheet() {
     if (!isOpen) return;
     isOpen = false;
@@ -1227,32 +1213,21 @@ function initCourseBottomSheet(grid, courses, sessions) {
     document.body.style.overflow = "";
   }
 
-  // Tap handler — only on mobile
-  grid._courseSheetClickHandler = (e) => {
-    if (window.innerWidth > MOBILE_MAX) return;
-    const card = e.target.closest(".track-card");
+  const openFromEvent = (e) => {
+    const card = e.target.closest(".track-card[data-course-id]");
     if (!card) return;
-    e.preventDefault();
-    const idx = parseInt(card.dataset.courseIdx, 10);
-    if (!isNaN(idx) && courses[idx]) openSheet(courses[idx]);
+    const course = publicCourses.find((c) => String(c.id) === card.dataset.courseId);
+    if (course) { e.preventDefault(); openSheet(course); }
   };
-  grid.addEventListener("click", grid._courseSheetClickHandler);
-
-  closeBtn.addEventListener("click", closeSheet);
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) closeSheet();
-  });
-
-  // Swipe-down to close
+  grid.addEventListener("click", openFromEvent);
+  grid.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") openFromEvent(e); });
+  el(".course-sheet-close").addEventListener("click", closeSheet);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) closeSheet(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
   let touchStartY = 0;
-  sheet.addEventListener("touchstart", (e) => {
-    touchStartY = e.touches[0].clientY;
-  }, { passive: true });
-  sheet.addEventListener("touchend", (e) => {
-    const dy = e.changedTouches[0].clientY - touchStartY;
-    if (dy > 80) closeSheet();
-  }, { passive: true });
-}
+  sheet.addEventListener("touchstart", (e) => { touchStartY = e.touches[0].clientY; }, { passive: true });
+  sheet.addEventListener("touchend", (e) => { if (e.changedTouches[0].clientY - touchStartY > 80) closeSheet(); }, { passive: true });
+})();
 
 navToggle?.addEventListener("click", () => {
   const isOpen = nav.classList.toggle("open");
