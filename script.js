@@ -1127,12 +1127,14 @@ function renderHomepageSessions() {
     return;
   }
   sessionColumns.innerHTML = sessions.map((session) => {
+    // Tracks mode: a student picks ONE track and that track fills every slot. Don't list
+    // all tracks' classes per slot — that would look like a pick-one-per-slot menu.
+    if (tracksMode) {
+      return `<article class="session-card"><h3>${esc(session.name)} <span>${esc(session.time_slot)}</span></h3><ul><li>One class from your chosen track</li></ul></article>`;
+    }
     const courses = programCourses(trackProgramSlug).filter((course) => course.session_id === session.id);
     const items = courses.length
-      ? courses.map((course) => {
-          const trackName = tracksMode ? (TRACK_LABELS[course.category] || "") : "";
-          return `<li>${esc(course.name)}${trackName ? ` <small class="session-track-tag">${esc(trackName)}</small>` : ""}</li>`;
-        }).join("")
+      ? courses.map((course) => `<li>${esc(course.name)}</li>`).join("")
       : "<li>Courses coming soon</li>";
     return `<article class="session-card"><h3>${esc(session.name)} <span>${esc(session.time_slot)}</span></h3><ul>${items}</ul></article>`;
   }).join("");
