@@ -317,20 +317,6 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 .program-tab.active { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(243,112,13,0.16), var(--shadow); }
 .program-tab.active span { color: var(--orange-dark); }
 
-/* ===================== quickbar ===================== */
-.quickbar {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;
-  max-width: 1180px; margin: clamp(36px, 5vw, 64px) auto; padding: 0 var(--pad-x);
-}
-.quickbar-card {
-  display: flex; align-items: center; gap: 14px;
-  padding: 18px 20px; border-radius: var(--radius);
-  background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-sm);
-}
-.quickbar-card svg { width: 30px; height: 30px; flex: 0 0 auto; color: var(--orange); }
-.quickbar-card span { display: block; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
-.quickbar-card strong { display: block; font-size: 1.04rem; font-weight: 700; color: var(--ink); margin-top: 2px; }
-
 /* ===================== impact strip ===================== */
 .impact {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -627,11 +613,6 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 .countdown-cell strong { font-size: 1.1rem; }
 .countdown-cell span { font-size: 0.56rem; }
 .countdown-sep { margin-top: 7px; }
-
-/* #5 — compact quick-fact cards */
-.quickbar-card { padding: 14px 16px; }
-.quickbar-card svg { width: 26px; height: 26px; }
-.quickbar-card strong { font-size: 0.96rem; }
 
 /* #1 — desktop: stretch so the photo aligns top AND bottom with the copy */
 @media (min-width: 1000px) {
