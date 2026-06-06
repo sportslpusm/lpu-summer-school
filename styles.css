@@ -525,7 +525,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
   transition: transform 220ms var(--ease), background 220ms var(--ease);
 }
 .floating-contact:hover { transform: translateY(-3px) scale(1.05); background: var(--orange); }
-@media (max-width: 900px) { .floating-contact { bottom: 84px; } }
+@media (max-width: 900px) { .floating-contact { bottom: 18px; width: 52px; height: 52px; } }
 
 /* contact overlay */
 .contact-overlay { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 22px; background: rgba(26,20,13,0.55); backdrop-filter: blur(4px); }
@@ -611,7 +611,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 }
 .hero-cta-context {
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  overflow: hidden; height: 2.7em; margin-top: 8px;
+  overflow: hidden; line-height: 1.45; height: 2.9em; margin-top: 8px;
 }
 @media (max-width: 999px) { .hero-program-name { height: auto; min-height: 1.25em; } }
 
@@ -710,4 +710,11 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
   .countdown-cell strong { font-size: 1.02rem; }
   .countdown-cell span { font-size: 0.62rem; color: var(--muted); text-transform: none; }
   .countdown-sep { display: none; }
+}
+
+/* smaller photo meta overlay on phones */
+@media (max-width: 600px) {
+  .hero-meta { left: 9px; right: 9px; bottom: 9px; padding: 9px 10px; gap: 4px; border-radius: 11px; }
+  .hero-meta dt { font-size: 0.5rem; }
+  .hero-meta dd { font-size: 0.68rem; line-height: 1.15; }
 }
