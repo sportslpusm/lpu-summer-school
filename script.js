@@ -688,7 +688,9 @@ function updateHeroUrgency(program) {
         closed: "Registration is closed for this program.",
         soon: "Registration opens soon — dates to be announced."
       };
-      heroStatusMsg.textContent = closed ? (msgs[status.state] || "") : "";
+      heroStatusMsg.textContent = status.label === "Seats full"
+        ? "All seats are taken — registration is closed."
+        : (closed ? (msgs[status.state] || "") : "");
     }
   }
 
@@ -1707,8 +1709,18 @@ function programHasStarted(program) {
   return !Number.isNaN(start.getTime()) && new Date() >= start;
 }
 
+// A program is "full" when its announced capacity (seats_base) is reached by real
+// reserved registrations. A full program closes registration for everyone.
+function programIsFull(program) {
+  if (!program) return false;
+  const capacity = Number(program.urgency?.seatsBase || 0);
+  if (capacity <= 0) return false; // no capacity announced -> can't be "full"
+  const reserved = Number((program.id && programStatsById[program.id] && programStatsById[program.id].reserved) || 0);
+  return reserved >= capacity;
+}
+
 function registrationProgramIsOpen(program = selectedRegistrationProgram()) {
-  return Boolean(program?.registrationEnabled && programHasAnnouncedTiming(program) && programHasFeeConfig(program) && programHasSchedule(program) && !programDeadlinePassed(program) && !programHasStarted(program));
+  return Boolean(program?.registrationEnabled && programHasAnnouncedTiming(program) && programHasFeeConfig(program) && programHasSchedule(program) && !programDeadlinePassed(program) && !programHasStarted(program) && !programIsFull(program));
 }
 
 // Status pill text + state for any program surface (cards, register page).
@@ -1716,6 +1728,7 @@ function programStatusBadge(program) {
   if (!program) return { label: "Coming soon", state: "soon" };
   if (programHasStarted(program)) return { label: "Started", state: "started" };
   if (programDeadlinePassed(program)) return { label: "Registration closed", state: "closed" };
+  if (programIsFull(program)) return { label: "Seats full", state: "closed" };
   if (registrationProgramIsOpen(program)) return { label: "Registration open", state: "open" };
   if (program.registrationEnabled === false && programHasAnnouncedTiming(program) && programHasFeeConfig(program) && programHasSchedule(program)) {
     return { label: "Registration closed", state: "closed" };
