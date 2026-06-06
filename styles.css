@@ -581,3 +581,100 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 
 /* ===================== print / fallback ===================== */
 @media print { .utility-bar, .site-header, .floating-register, .floating-contact, .hero-gallery { display: none; } }
+
+/* =====================================================================
+   HERO REFINEMENTS — feedback pass
+   (alignment, stable height, compact cards, 2026 fix, motion,
+   gallery-driven photo, mobile top bar)
+   ===================================================================== */
+
+/* #1 — big photo now slideshows through gallery images; hide the strip
+   (kept in the DOM as the slideshow's data source) */
+.hero-gallery { display: none !important; }
+
+/* #3 — fix italic "2026" clipping under -webkit-background-clip:text,
+   and give it a slow shimmer */
+.hero-title { line-height: 1.0; }
+.hero-title-year {
+  display: inline-block;
+  padding: 0 0.16em 0.12em 0;
+  background: linear-gradient(100deg, var(--orange) 22%, #ffb877 50%, var(--orange) 78%);
+  background-size: 220% auto;
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+/* #6 — stable hero copy height so program auto-rotation never shifts the page */
+.hero-program-name { line-height: 1.25; height: 1.25em; overflow: hidden; }
+.hero-description {
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden; height: 4.7em;
+}
+.hero-cta-context {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; height: 2.7em; margin-top: 8px;
+}
+@media (max-width: 999px) { .hero-program-name { height: auto; min-height: 1.25em; } }
+
+/* #2 #5 — compact deadline/seats card */
+.hero-urgency { gap: 14px 22px; padding: 13px 18px; margin-top: 22px; }
+.urgency-deadline { font-size: 1.1rem; }
+.urgency-seats-count { font-size: 1.4rem; }
+.urgency-note {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; height: 2.8em; font-size: 0.74rem; max-width: 24ch;
+}
+.countdown-cell { min-width: 40px; padding: 6px 5px; }
+.countdown-cell strong { font-size: 1.1rem; }
+.countdown-cell span { font-size: 0.56rem; }
+.countdown-sep { margin-top: 7px; }
+
+/* #5 — compact quick-fact cards */
+.quickbar-card { padding: 14px 16px; }
+.quickbar-card svg { width: 26px; height: 26px; }
+.quickbar-card strong { font-size: 0.96rem; }
+
+/* #1 — desktop: stretch so the photo aligns top AND bottom with the copy */
+@media (min-width: 1000px) {
+  .hero-inner { align-items: stretch; }
+  .hero-visual { display: flex; flex-direction: column; }
+  .hero-photo { aspect-ratio: auto; flex: 1; min-height: 480px; }
+}
+
+/* #3 — staggered hero entrance + year shimmer */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-kicker, .hero-title, .hero-dynamic, .hero-actions, .hero-urgency, .hero-visual {
+    animation: heroRise 720ms var(--ease) both;
+  }
+  .hero-title { animation-delay: 70ms; }
+  .hero-visual { animation-delay: 140ms; }
+  .hero-dynamic { animation-delay: 170ms; }
+  .hero-actions { animation-delay: 250ms; }
+  .hero-urgency { animation-delay: 330ms; }
+  .hero-title-year {
+    animation: heroRise 720ms var(--ease) 70ms both, yearShimmer 7s linear 1.6s infinite;
+  }
+}
+@keyframes heroRise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+@keyframes yearShimmer { from { background-position: 0% center; } to { background-position: 220% center; } }
+
+/* #4 — mobile top bar: show the full email/phones, never cut */
+@media (max-width: 720px) {
+  .utility-bar { padding: 7px 12px; }
+  .utility-contact { white-space: normal; text-align: center; font-size: 0.72rem; line-height: 1.35; overflow: visible; text-overflow: clip; }
+}
+
+/* #2 — hero registration status (open / in progress / closed / coming soon) */
+.hero-status {
+  flex-basis: 100%; display: flex; align-items: center; gap: 8px;
+  min-height: 20px; margin-bottom: 2px;
+  font-size: 0.73rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--green);
+}
+.hero-status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
+.hero-status:empty { display: none; }
+.hero-status[data-state="open"] { color: var(--green); }
+.hero-status[data-state="started"] { color: var(--gold); }
+.hero-status[data-state="closed"] { color: #c0392b; }
+.hero-status[data-state="soon"] { color: var(--muted-2); }
+.is-reg-closed .countdown { opacity: 0.4; }
+.is-reg-closed .urgency-deadline { color: var(--muted); }

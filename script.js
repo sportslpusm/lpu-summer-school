@@ -674,11 +674,23 @@ function updateHeroUrgency(program) {
     heroProgramRoot.dataset.heroSeatsNote = urgency.note || "";
   }
 
+  const heroStatusEl = document.querySelector("[data-hero-status]");
+  if (heroStatusEl) {
+    const status = programStatusBadge(program);
+    heroStatusEl.textContent = status.label;
+    heroStatusEl.dataset.state = status.state;
+    if (heroProgramRoot) heroProgramRoot.classList.toggle("is-reg-closed", status.state !== "open");
+  }
+
   updateCountdown();
   updateSeatsLeft();
 }
 
 function updateHeroBackground(program, animate = true) {
+  // The hero photo is now driven by the gallery slideshow (startHeroPhotoSlideshow),
+  // cycling through the gallery images one by one, so switching programs no longer
+  // changes the photo (prevents the two from fighting). Kept as a no-op.
+  return;
   const nextSrc = program?.backgroundImage;
   if (!heroProgramRoot || !heroProgramBgImage || !nextSrc || heroProgramBgImage.src === nextSrc) return;
 
@@ -786,6 +798,40 @@ function resetHeroProgramAutoRotation() {
   clearInterval(heroProgramAutoTimer);
   startHeroProgramAutoRotation();
 }
+
+// Hero photo slideshow: cycle the big hero photo through the gallery images one
+// by one with a crossfade, independent of the program text rotation.
+var heroPhotoTimer = null;
+var heroPhotoIndex = 0;
+function startHeroPhotoSlideshow() {
+  if (!heroProgramBgImage) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var galleryImageSrcs = function () {
+    return Array.from(document.querySelectorAll("[data-hero-gallery] .hero-strip-card img"))
+      .map(function (img) { return img.getAttribute("src"); })
+      .filter(Boolean);
+  };
+  clearInterval(heroPhotoTimer);
+  heroPhotoTimer = setInterval(function () {
+    var list = galleryImageSrcs();
+    if (list.length < 2) return;
+    heroPhotoIndex = (heroPhotoIndex + 1) % list.length;
+    var next = list[heroPhotoIndex];
+    if (!next || heroProgramBgImage.getAttribute("src") === next) return;
+    var pre = new Image();
+    pre.onload = function () {
+      if (heroProgramRoot) heroProgramRoot.classList.add("is-bg-switching");
+      setTimeout(function () {
+        heroProgramBgImage.src = next;
+        requestAnimationFrame(function () {
+          if (heroProgramRoot) heroProgramRoot.classList.remove("is-bg-switching");
+        });
+      }, 240);
+    };
+    pre.src = next;
+  }, 4200);
+}
+startHeroPhotoSlideshow();
 
 if (heroProgramRoot && heroProgramTabs.length) {
   heroProgramTabs.forEach((tab, index) => {

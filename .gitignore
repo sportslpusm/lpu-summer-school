@@ -26,4 +26,5 @@ REBUILD_PLAN.md
 REBUILD_PROMPT.md
 REBUILD_HOME_CONTRACT.md
 SECURITY_INTERNAL.md
+nocache_server.py
 supabase/functions/_deprecated_backup/
