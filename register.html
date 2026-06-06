@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: blob:; connect-src 'self' https://bynpuhoysivxxlblxica.supabase.co; font-src 'self'; base-uri 'self'; form-action 'self';">
-    <meta name="description" content="Register for LPU Summer School 2026 and choose the program, sessions, accommodation, and payment proof flow that fits your child.">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https: data: blob:; connect-src 'self' https://bynpuhoysivxxlblxica.supabase.co; font-src 'self' https://fonts.gstatic.com; base-uri 'self'; form-action 'self';">
+    <meta name="description" content="Register for LPU Summer School 2026 in a few simple steps — choose your program, classes, stay, and pay securely.">
     <meta name="robots" content="index, follow">
     <meta name="theme-color" content="#f3700d">
     <title>Register | LPU Summer School 2026</title>
@@ -15,84 +15,95 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="LPU Summer School">
     <meta property="og:title" content="Register for LPU Summer School 2026">
-    <meta property="og:description" content="Complete LPU Summer School registration and upload payment proof securely.">
+    <meta property="og:description" content="Complete LPU Summer School registration in a few simple steps and upload payment proof securely.">
     <meta property="og:url" content="https://summerschool.unisportscouncil.co.in/register">
     <meta property="og:image" content="https://summerschool.unisportscouncil.co.in/assets/lpu-summer-school-og.png">
     <meta name="twitter:card" content="summary_large_image">
+    <link rel="preconnect" href="https://bynpuhoysivxxlblxica.supabase.co">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body class="register-page">
+    <a class="skip-link" href="#registerMain">Skip to registration</a>
+
     <div class="utility-bar">
-      <span>Lovely Professional University | Student Welfare Wing</span>
-      <a href="mailto:summerschool@lpu.co.in" data-cfg="utility-contact">summerschool@lpu.co.in</a>
+      <span class="utility-org">Lovely Professional University &middot; Student Welfare Wing</span>
+      <a class="utility-contact" href="mailto:summerschool@lpu.co.in" data-cfg="utility-contact">+91 860 723 4098 &middot; summerschool@lpu.co.in</a>
     </div>
 
     <header class="site-header" data-header>
       <a class="brand" href="/" aria-label="Back to LPU Summer School home">
         <img class="brand-logo" src="assets/dsosww-logo.png" width="514" height="136" alt="LPU Student Welfare Wing">
-        <img class="naac-logo" src="assets/lpu-naac-logo.png" width="2746" height="750" alt="NAAC Grade A++">
+        <img class="naac-logo" src="assets/lpu-naac-logo.png" width="2746" height="750" alt="NAAC Grade A++" loading="lazy">
       </a>
-      <button class="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false" data-nav-toggle>
-        <span></span>
-        <span></span>
-        <span></span>
+      <button class="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="primary-nav" data-nav-toggle>
+        <span></span><span></span><span></span>
       </button>
-      <nav class="site-nav" data-nav>
+      <nav class="site-nav" id="primary-nav" aria-label="Primary" data-nav>
         <a href="/#tracks">Tracks</a>
-        <a href="/#sessions">Sessions</a>
+        <a href="/#sessions">Schedule</a>
         <a href="/#fees">Fees</a>
         <a href="/#contact">Contact</a>
         <a class="nav-cta" href="/register">Register Now</a>
       </nav>
     </header>
 
-    <main>
-      <section class="registration-hero">
-        <div class="reg-hero-copy">
-          <p class="label">Official Registration</p>
-          <h1>Register for<br>Summer School 2026</h1>
-          <p class="reg-hero-sub">Select your sessions, fill in your details, and pay securely. One class per session.</p>
-        </div>
-        <div class="reg-hero-info">
-          <div class="reg-info-item">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <div><span>Program Dates</span><strong data-reg-summary="dates">Choose program</strong></div>
-          </div>
-          <div class="reg-info-item">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <div><span>Schedule</span><strong data-reg-summary="schedule">Varies by selected program</strong></div>
-          </div>
-          <div class="reg-info-item">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            <div><span>Venue</span><strong data-reg-summary="venue">Campus / Online as selected</strong></div>
-          </div>
-          <div class="reg-info-item reg-info-deadline">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <div><span>Last Date to Register</span><strong data-reg-summary="deadline">Program-wise</strong></div>
-          </div>
+    <main id="registerMain" class="register-main">
+      <!-- ======================= REGISTER HERO ======================= -->
+      <section class="register-hero">
+        <div class="register-hero-inner">
+          <p class="eyebrow">Official registration</p>
+          <h1>Register for Summer School 2026</h1>
+          <p class="register-hero-sub">It only takes a few minutes. We'll guide you one step at a time &mdash; fill it in, choose your classes, and pay securely.</p>
+          <dl class="register-hero-facts">
+            <div class="reg-fact">
+              <dt>Program dates</dt>
+              <dd data-reg-summary="dates">Choose a program</dd>
+            </div>
+            <div class="reg-fact">
+              <dt>Schedule</dt>
+              <dd data-reg-summary="schedule">Varies by program</dd>
+            </div>
+            <div class="reg-fact">
+              <dt>Venue</dt>
+              <dd data-reg-summary="venue">Campus / Online</dd>
+            </div>
+            <div class="reg-fact reg-fact-deadline">
+              <dt>Last date to register</dt>
+              <dd data-reg-summary="deadline">Program-wise</dd>
+            </div>
+          </dl>
         </div>
       </section>
 
+      <!-- ======================= WIZARD ======================= -->
       <section class="section registration-section">
-        <div class="form-progress-wrapper">
-          <div class="form-progress" aria-label="Registration steps">
-            <div class="progress-step active" data-step="1"><span>1</span> <em>Student</em></div>
-            <div class="progress-step" data-step="2"><span>2</span> <em>Guardian</em></div>
-            <div class="progress-step" data-step="3"><span>3</span> <em>Sessions</em></div>
-            <div class="progress-step" data-step="4"><span>4</span> <em>Stay/Food</em></div>
-            <div class="progress-step" data-step="5"><span>5</span> <em>Confirm</em></div>
-          </div>
+        <!-- Progress -->
+        <div class="form-progress" aria-label="Registration steps">
+          <div class="progress-step active" data-step="1"><span>1</span><em>Student</em></div>
+          <div class="progress-step" data-step="2"><span>2</span><em>Guardian</em></div>
+          <div class="progress-step" data-step="3"><span>3</span><em>Classes</em></div>
+          <div class="progress-step" data-step="4"><span>4</span><em>Stay &amp; food</em></div>
+          <div class="progress-step" data-step="5"><span>5</span><em>Confirm</em></div>
         </div>
-        <form class="registration-form full-form" data-registration-form>
-          <div class="form-block">
+
+        <form class="registration-form wizard" data-registration-form novalidate>
+          <!-- ---------- STEP 1: STUDENT ---------- -->
+          <div class="form-block is-active">
             <div class="form-heading">
               <span>01</span>
-              <h2>Student details</h2>
+              <div>
+                <h2>Who is attending?</h2>
+                <p class="form-block-intro">Tell us about the student joining the Summer School.</p>
+              </div>
             </div>
             <div class="form-grid">
               <label>
-                Student full name
-                <input name="studentName" type="text" autocomplete="name" maxlength="100" required>
+                Student's full name
+                <input name="studentName" type="text" autocomplete="name" maxlength="100" placeholder="e.g. Aarav Sharma" required>
+                <small class="field-hint">As it appears on school records.</small>
               </label>
               <label>
                 Current class / level
@@ -126,24 +137,29 @@
                 </select>
               </label>
               <label>
-                Student age
-                <input name="studentAge" type="number" inputmode="numeric" min="1" max="70" placeholder="Enter age" required>
+                Student's age
+                <input name="studentAge" type="number" inputmode="numeric" min="1" max="70" placeholder="Age in years" required>
+                <small class="field-hint">Some classes have an age range &mdash; we'll check this for you.</small>
               </label>
               <label>
                 School / institution name
-                <input name="schoolName" type="text" maxlength="150" required>
+                <input name="schoolName" type="text" maxlength="150" placeholder="e.g. Delhi Public School" required>
               </label>
               <label>
                 City
-                <input name="city" type="text" maxlength="100" required>
+                <input name="city" type="text" maxlength="100" placeholder="e.g. Jalandhar" required>
               </label>
             </div>
           </div>
 
+          <!-- ---------- STEP 2: GUARDIAN ---------- -->
           <div class="form-block">
             <div class="form-heading">
               <span>02</span>
-              <h2>Parent or guardian details</h2>
+              <div>
+                <h2>Parent or guardian</h2>
+                <p class="form-block-intro">We'll use these details to contact you about the registration.</p>
+              </div>
             </div>
             <div class="form-grid">
               <label>
@@ -163,29 +179,34 @@
               </label>
               <label>
                 Parent or guardian name
-                <input name="guardianName" type="text" autocomplete="name" maxlength="100" required>
+                <input name="guardianName" type="text" autocomplete="name" maxlength="100" placeholder="Full name" required>
               </label>
               <label>
                 Phone number
-                <input name="phone" type="tel" inputmode="tel" autocomplete="tel" pattern="\+?[0-9\s().-]{10,20}" maxlength="20" title="Enter a valid phone number with 10 to 15 digits" required>
+                <input name="phone" type="tel" inputmode="tel" autocomplete="tel" pattern="\+?[0-9\s().-]{10,20}" maxlength="20" placeholder="10-digit mobile number" title="Enter a valid phone number with 10 to 15 digits" required>
+                <small class="field-hint">We'll send updates to this number on WhatsApp / call.</small>
               </label>
               <label>
                 Email
-                <input name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" required>
+                <input name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="name@example.com" required>
               </label>
               <label>
                 Emergency contact
-                <input name="emergencyPhone" type="tel" inputmode="tel" pattern="\+?[0-9\s().-]{10,20}" maxlength="20" title="Enter a valid phone number with 10 to 15 digits" required>
+                <input name="emergencyPhone" type="tel" inputmode="tel" pattern="\+?[0-9\s().-]{10,20}" maxlength="20" placeholder="Another reachable number" title="Enter a valid phone number with 10 to 15 digits" required>
+                <small class="field-hint">A second number we can call in an emergency.</small>
               </label>
             </div>
           </div>
 
+          <!-- ---------- STEP 3: PROGRAM & CLASSES ---------- -->
           <div class="form-block">
             <div class="form-heading">
               <span>03</span>
-              <h2 data-selection-heading>Session and class selection</h2>
+              <div>
+                <h2 data-selection-heading>Choose program &amp; classes</h2>
+                <p class="form-block-intro" data-selection-help>Pick a program first. The classes, dates, and fee update automatically.</p>
+              </div>
             </div>
-            <p class="form-help" data-selection-help>Choose the program first. The sessions, classes, dates, and fee will update automatically.</p>
             <input type="hidden" name="programSlug" value="" data-program-slug>
             <label class="registration-program-select-wrap">
               Select program
@@ -194,84 +215,82 @@
               </select>
             </label>
             <div class="registration-programs" data-registration-programs aria-label="Choose program"></div>
-            <p class="form-help program-status" data-program-status>Select a program to see its schedule, fee, and registration status.</p>
+            <p class="program-status" data-program-status>Select a program to see its schedule, fee, and registration status.</p>
             <div class="session-selectors" data-session-selectors></div>
           </div>
 
+          <!-- ---------- STEP 4: STAY & FOOD (auto-hidden when not offered) ---------- -->
           <div class="form-block" data-hostel-block>
             <div class="form-heading">
               <span>04</span>
-              <h2>Accommodation & Meals <small>(optional)</small></h2>
+              <div>
+                <h2>Stay &amp; food <small>(optional)</small></h2>
+                <p class="form-block-intro">For outstation students. Hostel beds are charged per student, per day; mess food is per student, per day.</p>
+              </div>
             </div>
-            <p class="form-help">Available add-ons update by program. Hostel rates are per student bed, per day; mess food is charged per student, per day.</p>
-            <div class="hostel-radios" data-hostel-options>
-              <label class="hostel-radio">
-                <input type="radio" name="hostel" value="none">
-                <div class="hostel-radio-body">
-                  <strong>No accommodation or meals</strong>
-                  <span>I do not need hostel bed or mess food.</span>
-                </div>
-                <div class="hostel-radio-price"><em>Free</em></div>
-              </label>
-              <label class="hostel-radio">
-                <input type="radio" name="hostel" value="hostel_only">
-                <div class="hostel-radio-body">
-                  <strong>Non-AC hostel bed</strong>
-                  <span>Per student bed, charged per day</span>
-                </div>
-                <div class="hostel-radio-price"><em>Rs. 100/day</em><small>Per bed</small></div>
-              </label>
-              <label class="hostel-radio">
-                <input type="radio" name="hostel" value="hostel_food">
-                <div class="hostel-radio-body">
-                  <strong>AC hostel bed</strong>
-                  <span>Per student bed, charged per day</span>
-                </div>
-                <div class="hostel-radio-price"><em>Rs. 300/day</em><small>Per bed</small></div>
-              </label>
-            </div>
+            <div class="hostel-radios" data-hostel-options></div>
           </div>
 
+          <!-- ---------- STEP 5: CONFIRM ---------- -->
           <div class="form-block">
             <div class="form-heading">
               <span>05</span>
-              <h2>Additional information</h2>
+              <div>
+                <h2>Review &amp; confirm</h2>
+                <p class="form-block-intro">Add anything we should know, then confirm to proceed to payment.</p>
+              </div>
             </div>
             <div class="form-grid">
               <label class="full">
                 Medical note or special requirement
-                <textarea name="medicalNote" rows="4" maxlength="500" placeholder="Mention allergies, medication, pickup note, or write NA"></textarea>
-              </label>
-              <label class="consent-row full">
-                <input type="checkbox" name="consent" required>
-                <span>I confirm that the details are correct and I agree to be contacted by the LPU Summer School team.</span>
+                <textarea name="medicalNote" rows="4" maxlength="500" placeholder="Allergies, medication, pickup note &mdash; or write NA"></textarea>
               </label>
             </div>
-          </div>
 
-          <div class="submit-bar">
-            <div class="submit-bar-fees">
+            <div class="confirm-fees">
               <div class="fee-line">
-                <span>Base fee</span>
-                <strong data-fee-base>Rs. 0</strong>
+                <span>Program / class fee</span>
+                <strong data-fee-session>Rs. 0</strong>
               </div>
-              <div class="fee-line fee-line-secondary" data-fee-detail></div>
+              <div class="fee-line-secondary" data-fee-detail></div>
+              <p class="fee-note" data-fee-note></p>
               <div class="fee-line fee-line-total">
                 <span>Total payable</span>
                 <strong data-fee-total>Rs. 0</strong>
               </div>
             </div>
-            <button class="button primary" type="submit" disabled>Proceed to Payment</button>
-            <p class="form-status" role="status" data-form-status></p>
+
+            <label class="consent-row full">
+              <input type="checkbox" name="consent" required>
+              <span>I confirm the details above are correct and I agree to be contacted by the LPU Summer School team.</span>
+            </label>
           </div>
+
+          <!-- ---------- STICKY WIZARD ACTION BAR ---------- -->
+          <div class="wizard-bar">
+            <button class="btn btn-ghost wizard-back" type="button" data-wizard-back hidden>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg>
+              Back
+            </button>
+            <div class="wizard-total">
+              <span>Total payable</span>
+              <strong data-fee-total>Rs. 0</strong>
+            </div>
+            <button class="btn btn-primary wizard-next" type="button" data-wizard-next>
+              Continue
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+            </button>
+            <button class="btn btn-primary wizard-submit" type="submit" data-wizard-submit hidden disabled>Proceed to Payment</button>
+          </div>
+          <p class="form-status" role="status" data-form-status></p>
         </form>
 
-        <!-- Paytm Payment Modal (shown after form submit) -->
+        <!-- ======================= PAYMENT MODAL ======================= -->
         <div class="payment-overlay" data-payment-section hidden>
           <div class="payment-modal">
             <div class="payment-modal-header">
               <div>
-                <h2>Complete Payment</h2>
+                <h2>Complete payment</h2>
                 <span class="payment-ref">Ref: <code data-pay-ref></code></span>
               </div>
               <button type="button" class="payment-close" data-payment-close aria-label="Close payment">&times;</button>
@@ -279,76 +298,61 @@
 
             <div class="payment-modal-scroll">
               <div class="payment-sticky-notice" data-payment-notice>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                <span>After paying, upload a screenshot below to complete registration.</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span>After paying, upload a screenshot below to complete your registration.</span>
               </div>
 
               <div class="payment-amount-box">
-                <span>Total Payable</span>
+                <span>Total payable</span>
                 <strong data-pay-total>Rs. 0</strong>
-                <div class="payment-fee-split">
-                  <small data-pay-split></small>
-                </div>
+                <div class="payment-fee-split"><small data-pay-split></small></div>
               </div>
 
               <div class="payment-methods">
                 <h3>Pay only on the official LPU payment page</h3>
-                <p class="payment-hint">Open the Paytm page, enter the details below, complete payment there, then return here and upload the payment screenshot.</p>
+                <p class="payment-hint">Open the Paytm page, enter the details below exactly, complete the payment there, then return and upload the screenshot.</p>
 
                 <div class="paytm-detail-card">
                   <div class="paytm-detail-grid">
-                    <div class="paytm-detail">
-                      <span>Full Name</span>
-                      <strong data-paytm-name></strong>
-                    </div>
-                    <div class="paytm-detail">
-                      <span>Mobile no</span>
-                      <strong data-paytm-phone></strong>
-                    </div>
-                    <div class="paytm-detail">
-                      <span>e mail id</span>
-                      <strong data-paytm-email></strong>
-                    </div>
-                    <div class="paytm-detail">
-                      <span>Fee</span>
-                      <strong data-paytm-amount></strong>
-                    </div>
+                    <div class="paytm-detail"><span>Full name</span><strong data-paytm-name></strong></div>
+                    <div class="paytm-detail"><span>Mobile no</span><strong data-paytm-phone></strong></div>
+                    <div class="paytm-detail"><span>Email id</span><strong data-paytm-email></strong></div>
+                    <div class="paytm-detail"><span>Fee</span><strong data-paytm-amount></strong></div>
                   </div>
                 </div>
 
                 <ol class="paytm-steps">
-                  <li>Tap <strong>Copy Payment Details</strong>.</li>
-                  <li>Tap <strong>Open LPU Paytm Page</strong>.</li>
+                  <li>Tap <strong>Copy payment details</strong>.</li>
+                  <li>Tap <strong>Open LPU Paytm page</strong>.</li>
                   <li>Paste or type the same name, mobile, email, and fee on Paytm.</li>
-                  <li>After payment, come back here and upload the successful payment screenshot.</li>
+                  <li>After payment, come back here and upload the payment screenshot.</li>
                 </ol>
 
                 <div class="paytm-action-row">
-                  <button type="button" class="paytm-copy-btn" data-copy-paytm-details>Copy Payment Details</button>
-                  <a class="paytm-open-btn" data-paytm-link href="https://secure.paytmpayments.com/link/paymentForm/38633/LL_920680970" target="_blank" rel="noopener">Open LPU Paytm Page</a>
+                  <button type="button" class="btn btn-ghost paytm-copy-btn" data-copy-paytm-details>Copy payment details</button>
+                  <a class="btn btn-primary paytm-open-btn" data-paytm-link href="https://secure.paytmpayments.com/link/paymentForm/38633/LL_920680970" target="_blank" rel="noopener">Open LPU Paytm page</a>
                 </div>
 
                 <div class="payment-help-card">
-                  <strong>Need help making payment?</strong>
+                  <strong>Need help paying?</strong>
                   <span>Call +91 860 723 4098 or +91 940 447 1385.</span>
                 </div>
               </div>
 
               <div class="upload-section">
                 <div class="upload-header">
-                  <h3>Upload Payment Screenshot</h3>
+                  <h3>Upload payment screenshot</h3>
                   <p>Take a screenshot of your Paytm payment confirmation and upload it here.</p>
                 </div>
-                <!-- States: pick → processing → ready → uploading → done/error -->
                 <div class="upload-state" data-upload-state="pick">
                   <div class="upload-area" role="button" tabindex="0" data-upload-area>
-                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                     <strong>Tap to select screenshot</strong>
                     <span>JPG, PNG, WebP, or HEIC (max 10 MB)</span>
                   </div>
                   <div class="upload-processing" data-upload-processing>
                     <div class="upload-spinner"></div>
-                    <span>Processing image...</span>
+                    <span>Processing image&hellip;</span>
                   </div>
                   <div class="upload-ready" data-upload-ready>
                     <img data-preview-img alt="Screenshot preview">
@@ -356,93 +360,113 @@
                       <span class="upload-filename" data-upload-filename></span>
                       <span class="upload-success-badge">Ready to submit</span>
                     </div>
-                    <button type="button" class="upload-remove-btn" data-remove-upload>&times;</button>
+                    <button type="button" class="upload-remove-btn" data-remove-upload aria-label="Remove screenshot">&times;</button>
                   </div>
                 </div>
                 <p class="form-status" role="status" data-upload-status></p>
-                <button class="button primary upload-submit" type="button" data-submit-screenshot disabled>Submit Registration</button>
+                <button class="btn btn-primary upload-submit" type="button" data-submit-screenshot disabled>Submit registration</button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Confirmation Modal (shown after screenshot upload) -->
+        <!-- ======================= RECEIPT ======================= -->
         <section class="receipt-section" data-receipt hidden role="dialog" aria-modal="true" aria-labelledby="receiptTitle" tabindex="-1">
           <div class="receipt-card" role="document">
             <div class="receipt-header">
-              <h2 id="receiptTitle">Registration Submitted</h2>
+              <h2 id="receiptTitle">Registration submitted</h2>
               <p>LPU Summer School 2026</p>
             </div>
             <div class="receipt-body">
               <table class="receipt-table" data-receipt-table></table>
-              <div class="receipt-pending">Pending Verification</div>
-              <p class="receipt-note">Your payment screenshot is under review. You will receive a confirmation email once verified.</p>
-              <p class="receipt-contact">For queries: summerschool@lpu.co.in | +91 860 723 4098 | +91 940 447 1385</p>
+              <div class="receipt-pending">Pending verification</div>
+              <p class="receipt-note">Your payment screenshot is under review. You'll receive a confirmation email once it's verified.</p>
+              <p class="receipt-contact">For queries: summerschool@lpu.co.in &middot; +91 860 723 4098 &middot; +91 940 447 1385</p>
             </div>
             <div class="receipt-actions">
-              <button class="button primary" type="button" data-print-receipt>Print Summary</button>
-              <a class="button ghost" href="/">Back to Website</a>
+              <button class="btn btn-primary" type="button" data-print-receipt>Print summary</button>
+              <a class="btn btn-ghost" href="/">Back to website</a>
             </div>
           </div>
         </section>
       </section>
     </main>
 
+    <!-- ======================= FOOTER ======================= -->
     <footer class="site-footer" id="contact">
-      <div>
-        <img src="assets/dsosww-logo.png" alt="LPU Student Welfare Wing">
-        <h2 data-cfg="event-name">LPU Summer School 2026</h2>
-        <p data-cfg="full-address">Lovely Professional University, Jalandhar - Delhi G.T. Road, Phagwara, Punjab, India - 144411</p>
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="assets/sww-logo.png" width="718" height="191" alt="LPU Student Welfare Wing" loading="lazy" decoding="async">
+          <h2 data-cfg="event-name">LPU Summer School 2026</h2>
+          <p class="footer-tagline">Hands-on learning, sport, and creativity for young minds &mdash; on campus at India's top private university.</p>
+          <p class="footer-address" data-cfg="full-address">Lovely Professional University, Jalandhar - Delhi G.T. Road, Phagwara, Punjab, India - 144411</p>
+        </div>
+
+        <nav class="footer-links" aria-label="Footer">
+          <h3 class="footer-col-title">Explore</h3>
+          <ul>
+            <li><a href="/#tracks">Tracks &amp; courses</a></li>
+            <li><a href="/#sessions">Daily schedule</a></li>
+            <li><a href="/#fees">Fees &amp; stay</a></li>
+            <li><a href="/register">Register now</a></li>
+          </ul>
+        </nav>
+
+        <address class="footer-contact">
+          <h3 class="footer-col-title">For any queries, please contact</h3>
+          <div class="contact-card" data-cfg-pm="1">
+            <span>Ravinder Kumar, Program Manager</span>
+            <div class="contact-links">
+              <a href="tel:+918607234098">Call +91 86072 34098</a>
+              <a href="https://wa.me/918607234098?text=Hi%2C%20I%20have%20a%20query%20about%20LPU%20Summer%20School%202026" target="_blank" rel="noopener">WhatsApp</a>
+            </div>
+          </div>
+          <div class="contact-card" data-cfg-pm="2">
+            <span>Vivek Kumar, Program Manager</span>
+            <div class="contact-links">
+              <a href="tel:+918637573863">Call +91 86375 73863</a>
+              <a href="https://wa.me/918637573863?text=Hi%2C%20I%20have%20a%20query%20about%20LPU%20Summer%20School%202026" target="_blank" rel="noopener">WhatsApp</a>
+            </div>
+          </div>
+          <div class="contact-director" data-cfg-director>
+            <span>Dr. Sorabh Lakhanpal, Program Director</span>
+            <a href="mailto:sorabh.lakhanpal@lpu.co.in">sorabh.lakhanpal@lpu.co.in</a>
+          </div>
+          <p class="footer-email" data-cfg="footer-email">General enquiries: <a href="mailto:summerschool@lpu.co.in">summerschool@lpu.co.in</a></p>
+        </address>
       </div>
-      <address>
-        <strong>For Any Queries, Please Contact</strong>
-        <div class="contact-card" data-cfg-pm="1">
-          <span>Ravinder Kumar, Program Manager</span>
-          <div class="contact-links">
-            <a href="tel:+918607234098">📞 +91 86072 34098</a>
-            <a href="https://wa.me/918607234098?text=Hi%2C%20I%20have%20a%20query%20about%20LPU%20Summer%20School%202026" target="_blank" rel="noopener">💬 WhatsApp</a>
-          </div>
-        </div>
-        <div class="contact-card" data-cfg-pm="2">
-          <span>Vivek Kumar, Program Manager</span>
-          <div class="contact-links">
-            <a href="tel:+918637573863">📞 +91 86375 73863</a>
-            <a href="https://wa.me/918637573863?text=Hi%2C%20I%20have%20a%20query%20about%20LPU%20Summer%20School%202026" target="_blank" rel="noopener">💬 WhatsApp</a>
-          </div>
-        </div>
-        <div class="contact-director" data-cfg-director>
-          <span>Dr. Sorabh Lakhanpal, Program Director</span>
-          <a href="mailto:sorabh.lakhanpal@lpu.co.in">sorabh.lakhanpal@lpu.co.in</a>
-        </div>
-        <p class="footer-email" data-cfg="footer-email">General enquiries: <a href="mailto:summerschool@lpu.co.in">summerschool@lpu.co.in</a></p>
-      </address>
+
+      <div class="footer-bottom">
+        <p class="footer-copy">&copy; <span data-cfg="event-name">LPU Summer School 2026</span> &middot; Lovely Professional University</p>
+        <p class="footer-credit">An initiative of the Student Welfare Wing, LPU</p>
+      </div>
     </footer>
 
     <button class="floating-contact" type="button" aria-label="Contact us" data-contact-toggle>
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
     </button>
 
     <div class="contact-overlay" data-contact-overlay hidden>
       <div class="contact-panel">
         <div class="contact-panel-header">
           <strong>Contact Program Managers</strong>
-          <button type="button" data-contact-close>&times;</button>
+          <button type="button" aria-label="Close contact panel" data-contact-close>&times;</button>
         </div>
         <div class="contact-panel-body">
           <div class="manager-card" data-cfg-pm-overlay="1">
             <strong>Ravinder Kumar</strong>
             <span>Program Manager</span>
             <div class="manager-actions">
-              <a href="tel:+918607234098" class="action-btn call">📞 Call</a>
-              <a href="https://wa.me/918607234098?text=Hi%2C%20I%20have%20a%20query%20about%20LPU%20Summer%20School%202026" target="_blank" rel="noopener" class="action-btn whatsapp">💬 WhatsApp</a>
+              <a href="tel:+918607234098" class="action-btn call">Call</a>
+              <a href="https://wa.me/918607234098?text=Hi%2C%20I%20have%20a%20query%20about%20LPU%20Summer%20School%202026" target="_blank" rel="noopener" class="action-btn whatsapp">WhatsApp</a>
             </div>
           </div>
           <div class="manager-card" data-cfg-pm-overlay="2">
             <strong>Vivek Kumar</strong>
             <span>Program Manager</span>
             <div class="manager-actions">
-              <a href="tel:+918637573863" class="action-btn call">📞 Call</a>
-              <a href="https://wa.me/918637573863?text=Hi%2C%20I%20have%20a%20query%20about%20LPU%20Summer%20School%202026" target="_blank" rel="noopener" class="action-btn whatsapp">💬 WhatsApp</a>
+              <a href="tel:+918637573863" class="action-btn call">Call</a>
+              <a href="https://wa.me/918637573863?text=Hi%2C%20I%20have%20a%20query%20about%20LPU%20Summer%20School%202026" target="_blank" rel="noopener" class="action-btn whatsapp">WhatsApp</a>
             </div>
           </div>
         </div>

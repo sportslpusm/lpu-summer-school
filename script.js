@@ -2163,6 +2163,7 @@ function updateRegistrationState() {
   feeTotals.forEach((el) => { el.textContent = formatFee(total); });
 
   document.querySelectorAll("[data-fee-base]").forEach((el) => { el.textContent = formatFee(baseFee); });
+  document.querySelectorAll("[data-fee-session]").forEach((el) => { el.textContent = formatFee(sessionFee); });
   document.querySelectorAll("[data-fee-detail]").forEach((el) => {
     if (!baseFee) { el.innerHTML = ""; return; }
     const parts = [];
@@ -3583,4 +3584,121 @@ if (contactToggle && contactOverlay) {
     showProof();
     setInterval(showProof, (25 + Math.random() * 15) * 1000);
   }, (8 + Math.random() * 6) * 1000);
+})();
+
+// ── Registration wizard: show one .form-block at a time ──────────────
+// Additive controller. Relies on existing validateBlock(i)/validateField()/
+// updateSubmitState() and the index-based formBlocks order
+// (0 Student, 1 Guardian, 2 Program, 3 Hostel, 4 Confirm). The hostel block
+// auto-hides via the `hidden` attribute, so it is skipped in navigation.
+(function setupRegistrationWizard() {
+  const wizardForm = document.querySelector(".registration-form.wizard");
+  if (!wizardForm) return;
+  const blocks = [...wizardForm.querySelectorAll(".form-block")];
+  const steps = [...document.querySelectorAll(".progress-step")];
+  const backBtn = wizardForm.querySelector("[data-wizard-back]");
+  const nextBtn = wizardForm.querySelector("[data-wizard-next]");
+  const submitBtn = wizardForm.querySelector("[data-wizard-submit]");
+  if (!blocks.length || !nextBtn) return;
+  let current = 0;
+
+  const visible = () => blocks.map((_, i) => i).filter((i) => !blocks[i].hidden);
+
+  function clearStatus() {
+    if (statusMessage) { statusMessage.textContent = ""; statusMessage.classList.remove("error"); }
+  }
+
+  function syncChrome() {
+    const vis = visible();
+    const first = vis[0];
+    const last = vis[vis.length - 1];
+    const isLast = current === last;
+    blocks.forEach((b, i) => b.classList.toggle("is-active", i === current));
+    steps.forEach((s, i) => s.classList.toggle("active", i === current));
+    if (backBtn) backBtn.hidden = current === first;
+    if (nextBtn) nextBtn.hidden = isLast;
+    if (submitBtn) submitBtn.hidden = !isLast;
+    if (isLast && typeof updateSubmitState === "function") updateSubmitState();
+  }
+
+  function goTo(index, opts = {}) {
+    const vis = visible();
+    if (!vis.length) return;
+    if (index < vis[0]) index = vis[0];
+    if (index > vis[vis.length - 1]) index = vis[vis.length - 1];
+    if (blocks[index].hidden) index = vis.find((i) => i >= index) ?? vis[vis.length - 1];
+    current = index;
+    syncChrome();
+    if (opts.scroll !== false) {
+      const top = wizardForm.getBoundingClientRect().top + window.scrollY - 90;
+      window.scrollTo({ top, behavior: "smooth" });
+    }
+    const heading = blocks[current].querySelector("h2");
+    if (heading) { heading.setAttribute("tabindex", "-1"); heading.focus({ preventScroll: true }); }
+  }
+
+  // Validate the current step; show inline errors for text steps, a friendly
+  // status line for the dynamic steps. Returns true when the step may advance.
+  function validateCurrent() {
+    if (current === 0 || current === 1) {
+      let ok = true;
+      blocks[current].querySelectorAll("input, select, textarea").forEach((f) => {
+        if (typeof validateField === "function" && !validateField(f)) ok = false;
+      });
+      if (!ok && statusMessage) statusMessage.textContent = "Please fill in the highlighted fields.";
+      return ok;
+    }
+    const ok = typeof validateBlock === "function" ? validateBlock(current) : true;
+    if (!ok && statusMessage) {
+      statusMessage.textContent =
+        current === 2 ? "Please choose a program and your class selection above."
+        : current === 3 ? "Please choose a stay option and valid check-in / check-out dates."
+        : current === 4 ? "Please tick the confirmation box to continue."
+        : "Please complete this step before continuing.";
+    }
+    return ok;
+  }
+
+  nextBtn.addEventListener("click", () => {
+    if (!validateCurrent()) return;
+    clearStatus();
+    const vis = visible();
+    const pos = vis.indexOf(current);
+    if (pos < vis.length - 1) goTo(vis[pos + 1]);
+  });
+
+  if (backBtn) backBtn.addEventListener("click", () => {
+    clearStatus();
+    const vis = visible();
+    const pos = vis.indexOf(current);
+    if (pos > 0) goTo(vis[pos - 1]);
+  });
+
+  // Progress steps: allow jumping back to an earlier, already-reached step.
+  steps.forEach((step, i) => {
+    step.addEventListener("click", () => {
+      if (step.hidden || blocks[i]?.hidden) return;
+      if (i < current) { clearStatus(); goTo(i); }
+    });
+  });
+
+  // Enter key on a field should advance the step, not submit early.
+  wizardForm.addEventListener("submit", (e) => {
+    const vis = visible();
+    if (current !== vis[vis.length - 1]) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      nextBtn.click();
+    }
+  }, true);
+
+  // If the program choice toggles the hostel step on/off, keep the wizard sane.
+  if (hostelBlock) {
+    new MutationObserver(() => {
+      if (blocks[current]?.hidden) goTo(current, { scroll: false });
+      else syncChrome();
+    }).observe(hostelBlock, { attributes: true, attributeFilter: ["hidden"] });
+  }
+
+  goTo(0, { scroll: false });
 })();
