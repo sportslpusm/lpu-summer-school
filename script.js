@@ -359,7 +359,7 @@ const PHONE_MIN_DIGITS = 10;
 const PHONE_MAX_DIGITS = 15;
 const AGE_MIN = 1;
 const AGE_MAX = 70;
-const DEFAULT_MESS_MEAL_RATE = 80;
+const DEFAULT_MESS_MEAL_RATE = 85;
 const DEFAULT_MESS_MEALS_PER_DAY = 3;
 let globalMessMealRate = DEFAULT_MESS_MEAL_RATE;
 let globalMessMealsPerDay = DEFAULT_MESS_MEALS_PER_DAY;
@@ -1199,7 +1199,7 @@ function formatFee(amount) {
   return `Rs. ${amount.toLocaleString("en-IN")}`;
 }
 
-const HOSTEL_DAILY_RATES = { none: 0, hostel_only: 100, hostel_food: 300 };
+const HOSTEL_DAILY_RATES = { none: 0, hostel_only: 350, hostel_food: 450 };
 const HOSTEL_LABELS = {
   none: "No accommodation or meals",
   hostel_only: "Non-AC hostel bed",
@@ -1211,22 +1211,62 @@ const HOSTEL_LABELS = {
 };
 const HOSTEL_DAY_FALLBACKS = { campus: 14, "staff-camp": 21, immersion: 14 };
 
+function shiftDate(iso, deltaDays) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return iso;
+  d.setUTCDate(d.getUTCDate() + deltaDays);
+  return d.toISOString().slice(0, 10);
+}
+
+// Allowed stay window: one day before the program starts to one day after it ends.
+function hostelStayWindow(program = selectedRegistrationProgram()) {
+  const s = program?.startDate, e = program?.endDate;
+  if (!s || !e) return null;
+  return { min: shiftDate(s, -1), max: shiftDate(e, 1), defaultFrom: s, defaultTo: e };
+}
+
+function hostelStayDates(program = selectedRegistrationProgram()) {
+  const win = hostelStayWindow(program);
+  const fromEl = document.querySelector("[data-stay-from]");
+  const toEl = document.querySelector("[data-stay-to]");
+  return {
+    from: fromEl?.value || win?.defaultFrom || program?.startDate || "",
+    to: toEl?.value || win?.defaultTo || program?.endDate || ""
+  };
+}
+
+function hostelStayDayCount(from, to) {
+  if (!from || !to) return 0;
+  const s = new Date(`${from}T00:00:00Z`);
+  const e = new Date(`${to}T00:00:00Z`);
+  if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime()) || e < s) return 0;
+  return Math.round((e - s) / 86400000) + 1;
+}
+
+function hostelStayValid(program = selectedRegistrationProgram()) {
+  const opt = document.querySelector('input[name="hostel"]:checked')?.value;
+  if (!opt || opt === "none" || opt === "included") return true;
+  const win = hostelStayWindow(program);
+  if (!win) return true;
+  const { from, to } = hostelStayDates(program);
+  if (!from || !to || from < win.min || to > win.max || to < from) return false;
+  return true;
+}
+
 function hostelChargeDays(program = selectedRegistrationProgram()) {
+  const { from, to } = hostelStayDates(program);
+  const rangeDays = hostelStayDayCount(from, to);
+  if (rangeDays > 0) return rangeDays;
+
   const duration = String(program?.meta?.duration || program?.facts?.duration || "").toLowerCase();
   const weekMatch = duration.match(/(\d+)\s*week/);
   if (weekMatch) return Math.max(Number(weekMatch[1]) * 7, 1);
-
   const dayMatch = duration.match(/(\d+)\s*day/);
   if (dayMatch) return Math.max(Number(dayMatch[1]), 1);
-
   if (program?.startDate && program?.endDate) {
-    const start = new Date(`${program.startDate}T00:00:00+05:30`);
-    const end = new Date(`${program.endDate}T00:00:00+05:30`);
-    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
-      return Math.max(Math.round((end - start) / 86400000) + 1, 1);
-    }
+    const fallbackDays = hostelStayDayCount(program.startDate, program.endDate);
+    if (fallbackDays > 0) return fallbackDays;
   }
-
   return HOSTEL_DAY_FALLBACKS[program?.slug] || 1;
 }
 
@@ -1324,7 +1364,8 @@ function renderHostelOptions(program = selectedRegistrationProgram(), options = 
     : "";
   const defaultValue = choices.some((choice) => choice.value === checkedValue) ? checkedValue : "none";
   const days = hostelChargeDays(program);
-  hostelOptionsRoot.innerHTML = choices.map((choice) => `
+  const win = hostelStayWindow(program);
+  const optionsHtml = choices.map((choice) => `
     <label class="hostel-radio">
       <input type="radio" name="hostel" value="${esc(choice.value)}" ${choice.value === defaultValue ? "checked" : ""}>
       <div class="hostel-radio-body">
@@ -1333,17 +1374,68 @@ function renderHostelOptions(program = selectedRegistrationProgram(), options = 
       </div>
       <div class="hostel-radio-price">
         <em>${esc(choice.price)}</em>
-        ${choice.value === "none" ? "" : `<small>Per student, ${days} days</small>`}
+        ${choice.value === "none" ? "" : `<small data-hostel-day-label>Per student, ${days} days</small>`}
       </div>
     </label>
   `).join("");
+  const stayHtml = win ? `
+    <div class="stay-range" data-stay-range hidden>
+      <div class="stay-range-head">
+        <strong>Your stay dates</strong>
+        <span>Pick a continuous range &mdash; you can arrive a day before classes start. Charged per day of stay.</span>
+      </div>
+      <div class="stay-range-fields">
+        <label>Check-in
+          <input type="date" data-stay-from value="${esc(win.defaultFrom)}" min="${esc(win.min)}" max="${esc(win.max)}">
+        </label>
+        <label>Check-out
+          <input type="date" data-stay-to value="${esc(win.defaultTo)}" min="${esc(win.min)}" max="${esc(win.max)}">
+        </label>
+      </div>
+      <p class="stay-range-note" data-stay-note></p>
+    </div>` : "";
+  hostelOptionsRoot.innerHTML = optionsHtml + stayHtml;
   hostelOptionsRoot.querySelectorAll('input[name="hostel"]').forEach((radio) => {
     radio.addEventListener("change", () => {
+      updateStayRangeUI();
       updateRegistrationState();
       updateBlockStates();
       updateSubmitState();
     });
   });
+  hostelOptionsRoot.querySelectorAll("[data-stay-from], [data-stay-to]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const fromEl = hostelOptionsRoot.querySelector("[data-stay-from]");
+      const toEl = hostelOptionsRoot.querySelector("[data-stay-to]");
+      if (fromEl && toEl && fromEl.value) toEl.min = fromEl.value;
+      updateStayRangeUI();
+      updateRegistrationState();
+      updateBlockStates();
+      updateSubmitState();
+    });
+  });
+  updateStayRangeUI(program);
+}
+
+function updateStayRangeUI(program = selectedRegistrationProgram()) {
+  const block = document.querySelector("[data-stay-range]");
+  if (!block) return;
+  const opt = document.querySelector('input[name="hostel"]:checked')?.value;
+  const show = Boolean(opt && opt !== "none" && opt !== "included");
+  block.hidden = !show;
+  const note = block.querySelector("[data-stay-note]");
+  if (!show || !note) return;
+  const { from, to } = hostelStayDates(program);
+  const dayCount = hostelStayDayCount(from, to);
+  if (!hostelStayValid(program)) {
+    note.textContent = "Please choose a valid check-in and check-out within the allowed dates.";
+    note.classList.add("warning");
+  } else {
+    const perDay = hostelOptionDailyRate(opt, program);
+    note.textContent = `${dayCount} day${dayCount === 1 ? "" : "s"} × Rs. ${perDay.toLocaleString("en-IN")} = Rs. ${(dayCount * perDay).toLocaleString("en-IN")}`;
+    note.classList.remove("warning");
+  }
+  document.querySelectorAll("[data-hostel-day-label]").forEach((el) => { el.textContent = `Per student, ${dayCount} days`; });
 }
 
 function hostelLabelForOption(option) {
@@ -2059,7 +2151,8 @@ function validateBlock(blockIndex) {
   if (blockIndex === 3) {
     if (hostelBlock?.hidden || !programShowsHostelStep(selectedRegistrationProgram())) return true;
     const hostelChecked = block.querySelector('input[name="hostel"]:checked');
-    return !!hostelChecked;
+    if (!hostelChecked) return false;
+    return hostelStayValid(selectedRegistrationProgram());
   }
 
   if (blockIndex === 4) {
@@ -3104,6 +3197,8 @@ form?.addEventListener("submit", async (event) => {
     emergency_phone: emergencyPhone,
     course_ids: selectedCourseIds,
     hostel_option: hostelOption,
+    hostel_start_date: (hostelOption !== "none" && hostelOption !== "included") ? hostelStayDates(program).from : null,
+    hostel_end_date: (hostelOption !== "none" && hostelOption !== "included") ? hostelStayDates(program).to : null,
     medical_note: formData.get("medicalNote") || null
   };
 
