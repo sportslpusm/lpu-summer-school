@@ -684,7 +684,7 @@ function updateHeroUrgency(program) {
     const heroStatusMsg = document.querySelector("[data-hero-status-msg]");
     if (heroStatusMsg) {
       const msgs = {
-        started: "This program has already started.",
+        started: "This program has already started — registration is closed.",
         closed: "Registration is closed for this program.",
         soon: "Registration opens soon — dates to be announced."
       };
@@ -1714,7 +1714,7 @@ function registrationProgramIsOpen(program = selectedRegistrationProgram()) {
 // Status pill text + state for any program surface (cards, register page).
 function programStatusBadge(program) {
   if (!program) return { label: "Coming soon", state: "soon" };
-  if (programHasStarted(program)) return { label: "In progress", state: "started" };
+  if (programHasStarted(program)) return { label: "Started", state: "started" };
   if (programDeadlinePassed(program)) return { label: "Registration closed", state: "closed" };
   if (registrationProgramIsOpen(program)) return { label: "Registration open", state: "open" };
   if (program.registrationEnabled === false && programHasAnnouncedTiming(program) && programHasFeeConfig(program) && programHasSchedule(program)) {
