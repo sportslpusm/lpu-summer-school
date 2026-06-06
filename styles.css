@@ -532,7 +532,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
   border-top: 3px solid var(--orange);
 }
 .footer-grid { display: grid; grid-template-columns: 1fr; gap: clamp(34px, 4vw, 64px); }
-.site-footer img { width: 190px; filter: brightness(0) invert(1); opacity: 0.92; }
+.site-footer img { width: 188px; height: auto; }
 .footer-brand h2 { margin: 20px 0 12px; font-family: var(--font-display); font-size: 1.55rem; font-weight: 600; color: #fff; }
 .footer-tagline { margin: 0 0 16px; font-size: 0.95rem; line-height: 1.6; max-width: 38ch; color: rgba(255,255,255,0.7); }
 .footer-address { margin: 0; font-size: 0.86rem; line-height: 1.6; max-width: 34ch; color: rgba(255,255,255,0.5); }
