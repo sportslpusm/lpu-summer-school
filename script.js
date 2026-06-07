@@ -952,6 +952,7 @@ if (heroProgramRoot && heroProgramTabs.length) {
     renderHomepageProgramContent();
     renderRegistrationPrograms();
     updateRegistrationProgram(registrationProgramSlug, { preserveSelection: true });
+    restoreFormDraft();
     updateHeroProgram(heroProgramRoot?.dataset.activeProgram || "campus", false);
   } catch (e) {
     // Silently fall back if fetch fails
@@ -2235,6 +2236,7 @@ function updateRegistrationState() {
   });
 
   renderConfirmSummary();
+  saveFormDraft();
 }
 
 // Plain-language summary on the Confirm step so parents can double-check exactly
@@ -2265,6 +2267,83 @@ function renderConfirmSummary() {
   el.hidden = false;
   el.innerHTML = `<h3 class="confirm-summary-title">You're registering</h3>` +
     rows.map(([k, v]) => `<div class="confirm-summary-row"><span>${k}</span><strong>${v}</strong></div>`).join("");
+}
+
+// ── Auto-save form draft so a refresh mid-form doesn't lose typing ──────
+const REG_DRAFT_KEY = "lpu_reg_draft";
+const DRAFT_TEXT_FIELDS = ["studentName", "classLevel", "studentAge", "schoolName", "city", "guardianTitle", "guardianName", "phone", "email", "emergencyPhone", "medicalNote"];
+let regDraftRestored = false;
+let regDraftLocked = false; // stop saving once a registration has been created
+
+function saveFormDraft() {
+  if (!form || regDraftLocked) return;
+  try {
+    const fd = new FormData(form);
+    const draft = { programSlug: registrationProgramSlug || "", selectedTrack: selectedTrack || "", _t: Date.now() };
+    DRAFT_TEXT_FIELDS.forEach((k) => { const v = fd.get(k); if (v != null && String(v) !== "") draft[k] = v; });
+    const hostel = fd.get("hostel"); if (hostel) draft.hostel = hostel;
+    draft.sessions = fd.getAll("session");
+    [...form.querySelectorAll('[name$="Course"]')].forEach((sel) => { if (sel.value) draft[sel.name] = sel.value; });
+    const from = document.querySelector("[data-stay-from]")?.value; if (from) draft.stayFrom = from;
+    const to = document.querySelector("[data-stay-to]")?.value; if (to) draft.stayTo = to;
+    if (!draft.studentName && !draft.guardianName && !draft.programSlug) return; // nothing worth saving
+    localStorage.setItem(REG_DRAFT_KEY, JSON.stringify(draft));
+  } catch (_) {}
+}
+function clearFormDraft() { regDraftLocked = true; try { localStorage.removeItem(REG_DRAFT_KEY); } catch (_) {} }
+
+function restoreFormDraft() {
+  if (!form || regDraftRestored) return;
+  let draft;
+  try { draft = JSON.parse(localStorage.getItem(REG_DRAFT_KEY) || "null"); } catch (_) { draft = null; }
+  if (!draft) return;
+  if (draft._t && Date.now() - draft._t > 7 * 864e5) { clearFormDraft(); regDraftLocked = false; return; }
+  regDraftRestored = true;
+
+  DRAFT_TEXT_FIELDS.forEach((name) => {
+    const el = form.querySelector(`[name="${name}"]`);
+    if (el && draft[name] != null && draft[name] !== "") {
+      el.value = draft[name];
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  });
+
+  if (draft.programSlug && getProgram(draft.programSlug) && registrationProgramIsOpen(getProgram(draft.programSlug))) {
+    updateRegistrationProgram(draft.programSlug, { preserveSelection: false });
+    if (draft.selectedTrack) {
+      const tr = document.querySelector(`[data-track-select][value="${draft.selectedTrack}"]`);
+      if (tr) { tr.checked = true; tr.dispatchEvent(new Event("change", { bubbles: true })); }
+    } else if (Array.isArray(draft.sessions)) {
+      draft.sessions.forEach((key) => {
+        const cb = document.querySelector(`input[name="session"][value="${key}"]`);
+        if (cb && !cb.disabled) { cb.checked = true; cb.dispatchEvent(new Event("change", { bubbles: true })); }
+        const sel = document.querySelector(`[name="${key}Course"]`);
+        if (sel && draft[`${key}Course`]) { sel.value = draft[`${key}Course`]; sel.dispatchEvent(new Event("change", { bubbles: true })); }
+      });
+    }
+    if (draft.hostel) {
+      const hr = document.querySelector(`input[name="hostel"][value="${draft.hostel}"]`);
+      if (hr) { hr.checked = true; hr.dispatchEvent(new Event("change", { bubbles: true })); }
+    }
+    if (draft.stayFrom) { const f = document.querySelector("[data-stay-from]"); if (f) { f.value = draft.stayFrom; f.dispatchEvent(new Event("change", { bubbles: true })); } }
+    if (draft.stayTo) { const t = document.querySelector("[data-stay-to]"); if (t) { t.value = draft.stayTo; t.dispatchEvent(new Event("change", { bubbles: true })); } }
+  }
+
+  showDraftBanner();
+}
+
+function showDraftBanner() {
+  if (!form || document.querySelector("[data-draft-banner]")) return;
+  const banner = document.createElement("div");
+  banner.className = "draft-banner";
+  banner.setAttribute("data-draft-banner", "");
+  banner.innerHTML = `<span>&#10003; We filled in your earlier details. You can carry on, or <button type="button" data-draft-reset>start fresh</button>.</span>`;
+  form.parentElement.insertBefore(banner, form);
+  banner.querySelector("[data-draft-reset]").addEventListener("click", () => {
+    try { localStorage.removeItem(REG_DRAFT_KEY); } catch (_) {}
+    location.reload();
+  });
 }
 
 attachSessionInputListeners();
@@ -2575,6 +2654,7 @@ if (form) {
       }
       updateBlockStates();
       updateSubmitState();
+      saveFormDraft();
     });
   });
 
@@ -3177,6 +3257,7 @@ function showPaymentSection(data) {
   if (section.parentElement !== document.body) document.body.appendChild(section);
 
   pendingRegistration = data;
+  clearFormDraft(); // registration now exists; the form draft is no longer needed
 
   // Save pending state for page recovery
   try {
