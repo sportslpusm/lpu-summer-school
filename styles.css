@@ -1438,13 +1438,20 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 .howto-step p { margin: 0; font-size: 0.92rem; color: var(--muted); line-height: 1.55; max-width: 30ch; }
 .howto-step .howto-badge { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--orange-dark); }
 @media (max-width: 700px) {
-  .howto-steps { grid-template-columns: 1fr; gap: 22px; }
+  /* vertical timeline: dashed line links the step circles, text to the right */
+  .howto-steps { grid-template-columns: 1fr; gap: 0; max-width: 460px; margin: 0 auto; }
   .howto-steps::before { display: none; }
-  .howto-step { flex-direction: row; text-align: left; align-items: flex-start; gap: 16px; }
-  .howto-num { margin-bottom: 0; width: 56px; height: 56px; }
-  .howto-num svg { width: 26px; height: 26px; }
+  .howto-step { flex-direction: row; text-align: left; align-items: flex-start; gap: 18px; position: relative; padding-bottom: 30px; }
+  .howto-step:last-child { padding-bottom: 0; }
+  .howto-step:not(:last-child)::before {
+    content: ""; position: absolute; left: 25px; top: 60px; bottom: -4px; width: 2px; z-index: 0;
+    background: repeating-linear-gradient(180deg, var(--orange-soft) 0 6px, transparent 6px 12px);
+  }
+  .howto-num { margin-bottom: 0; width: 52px; height: 52px; }
+  .howto-num svg { width: 24px; height: 24px; }
   .howto-step p { max-width: none; }
-  .howto-step > div { display: flex; flex-direction: column; gap: 6px; }
+  .howto-step > div { display: flex; flex-direction: column; gap: 5px; padding-top: 2px; }
+  .howto-step .howto-badge { margin-bottom: 1px; }
 }
 
 /* back-to-top button */
