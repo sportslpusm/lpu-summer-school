@@ -896,7 +896,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 .registration-form input.invalid, .registration-form select.invalid, .registration-form textarea.invalid { border-color: #c0392b; background: #fdf3f1; }
 
 /* ---- program selection (step 3) ---- */
-.registration-program-select-wrap { margin-bottom: 18px; }
+.reg-cards-label { margin: 0 0 10px; font-weight: 700; font-size: 0.95rem; color: var(--ink); }
 .registration-programs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
 .registration-program-card {
   display: flex; flex-direction: column; gap: 4px; text-align: left; cursor: pointer;
@@ -905,6 +905,10 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 }
 .registration-program-card:hover { border-color: var(--orange-soft); transform: translateY(-2px); }
 .registration-program-card.active { border-color: var(--orange); background: var(--orange-wash); box-shadow: var(--ring); }
+/* Programs whose registration is not open: visible (with the reason badge) but not selectable. */
+.registration-program-card.is-disabled { cursor: not-allowed; background: var(--cream-2); border-style: dashed; }
+.registration-program-card.is-disabled > span, .registration-program-card.is-disabled > small { opacity: 0.55; }
+.registration-program-card.is-disabled:hover { border-color: var(--line-2); transform: none; }
 .registration-program-card > span { font-weight: 800; color: var(--ink); font-size: 1rem; }
 .registration-program-card > small { color: var(--muted); font-size: 0.82rem; }
 .registration-program-card em { font-style: normal; align-self: flex-start; margin-top: 4px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 9px; border-radius: var(--radius-pill); background: rgba(31,122,82,0.12); color: var(--green); }

@@ -1830,31 +1830,22 @@ function selectedProgramFee(selectedCount) {
 
 function renderRegistrationPrograms() {
   if (!programs.length) return;
-  if (registrationProgramSelect) {
-    registrationProgramSelect.innerHTML = `
-      <option value="">Choose a program</option>
-      ${programs.map((program) => `<option value="${esc(program.slug)}">${esc(program.name)} - ${esc(program.meta?.dates || "Date to be announced")}</option>`).join("")}
-    `;
-    registrationProgramSelect.value = registrationProgramSlug || "";
-    if (registrationProgramSelect.dataset.bound !== "true") {
-      registrationProgramSelect.dataset.bound = "true";
-      registrationProgramSelect.addEventListener("change", () => updateRegistrationProgram(registrationProgramSelect.value));
-    }
-  }
-
   if (!registrationProgramRoot) return;
   registrationProgramRoot.innerHTML = programs.map((program) => {
     const active = program.slug === registrationProgramSlug;
     const status = programStatusBadge(program);
+    // Only open programs can be picked on the registration page. Closed / started /
+    // full / coming-soon programs are shown but disabled (with the reason badge).
+    const open = registrationProgramIsOpen(program);
     return `
-      <button class="registration-program-card ${active ? "active" : ""}" type="button" data-registration-program="${esc(program.slug)}" aria-pressed="${active ? "true" : "false"}">
+      <button class="registration-program-card ${active ? "active" : ""}${open ? "" : " is-disabled"}" type="button" data-registration-program="${esc(program.slug)}" aria-pressed="${active ? "true" : "false"}"${open ? "" : ' disabled aria-disabled="true"'}>
         <span>${esc(program.name)}</span>
         <small>${esc(program.meta?.dates || "Date to be announced")}</small>
         <em data-reg-status="${esc(status.state)}">${esc(status.label)}</em>
       </button>
     `;
   }).join("");
-  registrationProgramRoot.querySelectorAll("[data-registration-program]").forEach((button) => {
+  registrationProgramRoot.querySelectorAll("[data-registration-program]:not([disabled])").forEach((button) => {
     button.addEventListener("click", () => updateRegistrationProgram(button.dataset.registrationProgram));
   });
 }
