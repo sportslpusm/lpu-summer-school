@@ -334,7 +334,17 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
   background: var(--surface); border: 1.5px solid var(--line); scroll-snap-align: start;
   transition: transform 220ms var(--ease), box-shadow 220ms var(--ease), border-color 220ms var(--ease);
 }
-.program-tab img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 9px; }
+.program-tab img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 9px; background-color: var(--line); }
+/* Skeleton shimmer until the real (admin-uploaded) image loads — no hardcoded image
+   is fetched on page parse, so the old photo never flashes before the new one. */
+.program-tab img:not(.is-loaded) {
+  background-image: linear-gradient(100deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.65) 50%, rgba(255,255,255,0) 70%);
+  background-size: 220% 100%; background-repeat: no-repeat;
+  animation: tab-img-shimmer 1.25s ease-in-out infinite;
+}
+.program-tab img.is-loaded { background: none; }
+@keyframes tab-img-shimmer { from { background-position: 220% 0; } to { background-position: -120% 0; } }
+@media (prefers-reduced-motion: reduce) { .program-tab img:not(.is-loaded) { animation: none; } }
 .program-tab span { font-weight: 800; font-size: 0.98rem; letter-spacing: -0.01em; color: var(--ink); line-height: 1.2; }
 .program-tab small { font-size: 0.78rem; font-weight: 600; color: var(--muted); }
 .program-tab:hover { transform: translateY(-3px); box-shadow: var(--shadow); }

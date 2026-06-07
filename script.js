@@ -331,15 +331,23 @@ function renderHeroProgramTabs() {
     const date = tab.querySelector("small");
     if (title) title.textContent = program.name;
     if (date) date.textContent = program.meta?.dates || program.urgency?.deadlineLabel || "";
-    // Apply the admin-managed Card image (programs.image_url) once the DB program is
-    // loaded, so replacing the photo in admin reflects on the homepage explore tabs.
-    // The hardcoded <img> in index.html stays as the pre-load fallback.
+    // Image is driven entirely by the DB (programs.image_url). The <img> has no src in
+    // the HTML — only a data-fallback — so the browser never loads an old image on parse.
+    // This runs only after the programs fetch resolves, so the very first image the tab
+    // loads is the correct one: the admin-uploaded photo, or the fallback if none exists.
     const dbProgram = programBySlug[slug];
     const img = tab.querySelector("img");
-    const imageUrl = dbProgram && dbProgram.imageUrl;
-    if (img && imageUrl && img.getAttribute("src") !== imageUrl) {
-      img.src = imageUrl;
-      img.alt = program.name || "";
+    if (img) {
+      const desired = (dbProgram && dbProgram.imageUrl) || img.getAttribute("data-fallback") || "";
+      if (desired && img.getAttribute("src") !== desired) {
+        img.classList.remove("is-loaded");
+        const markLoaded = () => img.classList.add("is-loaded");
+        img.addEventListener("load", markLoaded, { once: true });
+        img.addEventListener("error", markLoaded, { once: true });
+        img.src = desired;
+        img.alt = program.name || "";
+        if (img.complete && img.naturalWidth > 0) markLoaded();
+      }
     }
   });
 }
