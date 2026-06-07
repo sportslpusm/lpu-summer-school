@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://bynpuhoysivxxlblxica.supabase.co; font-src 'self'; base-uri 'self'; form-action 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: blob:; connect-src 'self' https://bynpuhoysivxxlblxica.supabase.co; font-src 'self'; base-uri 'self'; form-action 'self';">
     <meta name="robots" content="noindex, nofollow, noarchive">
     <meta name="theme-color" content="#f3700d">
     <title>Admin | LPU Summer School</title>
@@ -11,354 +11,227 @@
     <link rel="apple-touch-icon" href="/assets/lpu-circle-logo.png">
     <link rel="stylesheet" href="admin.css">
   </head>
-  <body>
-    <!-- Login Screen -->
-    <div class="login-screen" id="loginScreen">
-      <div class="login-card">
-        <h1>Admin Login</h1>
-        <p>LPU Summer School Dashboard</p>
-        <form id="loginForm">
-          <label>Email <input type="email" id="loginEmail" required></label>
-          <label>Password <input type="password" id="loginPassword" required></label>
-          <button type="submit" class="btn primary">Sign In</button>
-          <button type="button" class="btn-link" id="forgotPassBtn">Forgot Password?</button>
-          <p class="login-error" id="loginError"></p>
-        </form>
-      </div>
+  <body class="admin">
+    <!-- ============================ LOGIN ============================ -->
+    <div class="login-view" data-login-view>
+      <form class="login-card" data-login-form>
+        <img class="login-logo" src="assets/lpu-circle-logo.png" width="56" height="56" alt="">
+        <h1>Admin sign in</h1>
+        <p class="login-sub">LPU Summer School dashboard</p>
+        <label>Email
+          <input type="email" name="email" autocomplete="username" required>
+        </label>
+        <label>Password
+          <input type="password" name="password" autocomplete="current-password" required>
+        </label>
+        <button class="btn btn-primary btn-block" type="submit" data-login-submit>Sign in</button>
+        <button class="btn-link" type="button" data-forgot-pass>Forgot password?</button>
+        <p class="login-error" role="alert" data-login-error></p>
+      </form>
+      <p class="login-foot">Authorised staff only. All actions are logged.</p>
     </div>
 
-    <!-- Dashboard -->
-    <div class="dashboard" id="dashboard" hidden>
-      <header class="admin-header">
-        <div class="admin-brand">
-          <strong>LPU Summer School</strong>
-          <span>Admin Dashboard</span>
+    <!-- ============================ APP ============================ -->
+    <div class="app" data-app hidden>
+      <!-- Sidebar -->
+      <aside class="sidebar" data-sidebar>
+        <div class="sidebar-brand">
+          <img src="assets/lpu-circle-logo.png" width="34" height="34" alt="">
+          <div><strong>Summer School</strong><span>Admin</span></div>
         </div>
-        <div class="admin-user">
-          <span id="adminEmail"></span>
-          <button class="btn ghost small" id="changePassBtn">Change Password</button>
-          <button class="btn ghost small" id="logoutBtn">Logout</button>
+        <nav class="sidebar-nav" aria-label="Sections">
+          <button class="nav-item active" data-view="dashboard"><span class="nav-ic" aria-hidden="true">▦</span>Dashboard</button>
+          <button class="nav-item" data-view="registrations"><span class="nav-ic" aria-hidden="true">▣</span>Registrations<em class="nav-badge" data-nav-pending hidden>0</em></button>
+          <p class="nav-section">Setup</p>
+          <button class="nav-item" data-view="programs"><span class="nav-ic" aria-hidden="true">◈</span>Programs</button>
+          <button class="nav-item" data-view="sessions"><span class="nav-ic" aria-hidden="true">◷</span>Sessions</button>
+          <button class="nav-item" data-view="courses"><span class="nav-ic" aria-hidden="true">❏</span>Courses</button>
+          <button class="nav-item" data-view="fees"><span class="nav-ic" aria-hidden="true">₹</span>Fees</button>
+          <p class="nav-section">Site</p>
+          <button class="nav-item" data-view="gallery"><span class="nav-ic" aria-hidden="true">▤</span>Gallery</button>
+          <button class="nav-item" data-view="settings"><span class="nav-ic" aria-hidden="true">⚙</span>Settings</button>
+          <button class="nav-item" data-view="yearly"><span class="nav-ic" aria-hidden="true">↻</span>New season</button>
+        </nav>
+        <div class="sidebar-foot">
+          <div class="sidebar-user">
+            <span class="sidebar-avatar" data-admin-initial>A</span>
+            <span class="sidebar-email" data-admin-email>admin</span>
+          </div>
+          <div class="sidebar-foot-actions">
+            <button class="btn-link" type="button" data-change-pass>Change password</button>
+            <button class="btn-link danger" type="button" data-logout>Log out</button>
+          </div>
         </div>
-      </header>
+      </aside>
 
-      <nav class="admin-tabs" aria-label="Admin sections">
-        <button class="tab active" data-tab="dashboard">Home</button>
-        <button class="tab" data-tab="registrations">Registrations</button>
-        <button class="tab" data-tab="programs">Programs</button>
-        <button class="tab" data-tab="courses">Courses</button>
-        <button class="tab" data-tab="sessions">Sessions</button>
-        <button class="tab" data-tab="fees">Fees</button>
-        <button class="tab" data-tab="gallery">Gallery</button>
-        <button class="tab" data-tab="settings">Settings</button>
-      </nav>
+      <!-- Workspace -->
+      <div class="workspace">
+        <header class="topbar">
+          <button class="icon-btn sidebar-toggle" type="button" aria-label="Toggle menu" data-sidebar-toggle>☰</button>
+          <h1 class="topbar-title" data-page-title>Dashboard</h1>
+          <div class="topbar-actions">
+            <button class="btn btn-ghost btn-sm" type="button" data-refresh>↻ Refresh</button>
+          </div>
+        </header>
 
-      <main class="admin-main">
-        <!-- Dashboard Home -->
-        <section class="tab-panel active" id="panel-dashboard">
-          <div class="panel-header">
-            <div>
-              <p class="panel-kicker">Today at a glance</p>
-              <h2>Admin Home</h2>
+        <main class="workspace-main" data-workspace>
+          <!-- Dashboard -->
+          <section class="view active" data-panel="dashboard">
+            <div class="stat-grid" data-stat-grid></div>
+            <div class="dash-columns">
+              <section class="card">
+                <div class="card-head">
+                  <h2>Needs attention</h2>
+                  <button class="btn btn-ghost btn-sm" type="button" data-goto="registrations" data-preset-pending>Review payments</button>
+                </div>
+                <div class="stack" data-attention></div>
+              </section>
+              <section class="card">
+                <div class="card-head">
+                  <h2>Program setup</h2>
+                  <button class="btn btn-ghost btn-sm" type="button" data-goto="programs">Manage</button>
+                </div>
+                <div class="stack" data-program-health></div>
+              </section>
             </div>
-            <button class="btn ghost small" id="refreshAdminBtn">Refresh Data</button>
-          </div>
-          <div class="dashboard-cards" id="dashboardCards">
-            <article class="dashboard-card">
-              <span>Total Registrations</span>
-              <strong data-stat="totalRegistrations">0</strong>
-              <small>All submitted records</small>
-            </article>
-            <article class="dashboard-card warning">
-              <span>Pending Payments</span>
-              <strong data-stat="pendingPayments">0</strong>
-              <small>Need screenshot review</small>
-            </article>
-            <article class="dashboard-card success">
-              <span>Verified Payments</span>
-              <strong data-stat="verifiedPayments">0</strong>
-              <small>Payment marked verified</small>
-            </article>
-            <article class="dashboard-card">
-              <span>Registrations Today</span>
-              <strong data-stat="registrationsToday">0</strong>
-              <small>Based on local date</small>
-            </article>
-          </div>
-          <div class="dashboard-grid">
-            <section class="dashboard-panel">
-              <div class="dashboard-panel-head">
-                <h3>Needs Attention</h3>
-                <button class="btn ghost small" data-switch-tab="registrations" data-payment-filter="verification_pending">Review Payments</button>
-              </div>
-              <div id="attentionList" class="attention-list"></div>
-            </section>
-            <section class="dashboard-panel">
-              <div class="dashboard-panel-head">
-                <h3>Program Setup</h3>
-                <button class="btn ghost small" data-switch-tab="programs">Manage Programs</button>
-              </div>
-              <div id="programSetupList" class="attention-list"></div>
-            </section>
-          </div>
-        </section>
+          </section>
 
-        <!-- Registrations Tab -->
-        <section class="tab-panel" id="panel-registrations">
-          <div class="panel-header">
-            <h2>Registrations</h2>
-            <div class="panel-actions">
-              <button class="btn ghost small" id="exportCsvBtn">Export CSV</button>
+          <!-- Registrations -->
+          <section class="view" data-panel="registrations">
+            <div class="toolbar">
+              <input class="input search" type="search" placeholder="Search student, guardian, school, phone, ref…" data-reg-search>
+              <select class="input" data-reg-status><option value="all">All status</option><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="cancelled">Cancelled</option><option value="rejected">Rejected</option></select>
+              <select class="input" data-reg-payment><option value="all">All payment</option><option value="verification_pending">Needs verification</option><option value="paid">Verified</option><option value="unpaid">Unpaid</option><option value="failed">Rejected / failed</option></select>
+              <select class="input" data-reg-program><option value="all">All programs</option></select>
+              <span class="toolbar-count" data-reg-count></span>
+              <button class="btn btn-ghost btn-sm" type="button" data-export-csv>Export CSV</button>
             </div>
-          </div>
-          <div class="admin-toolbar">
-            <input class="admin-search" type="search" id="regSearch" aria-label="Search registrations" placeholder="Search student, guardian, school, phone...">
-            <select class="admin-filter" id="regStatusFilter" aria-label="Filter registration status">
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="rejected">Rejected</option>
-            </select>
-            <select class="admin-filter" id="regPaymentFilter" aria-label="Filter payment status">
-              <option value="all">All Payment</option>
-              <option value="verification_pending">Needs Verification</option>
-              <option value="paid">Verified</option>
-              <option value="unpaid">Unpaid</option>
-              <option value="failed">Rejected / Failed</option>
-            </select>
-            <select class="admin-filter" id="regProgramFilter" aria-label="Filter registration program">
-              <option value="all">All Programs</option>
-            </select>
-            <span class="toolbar-count" id="regCount"></span>
-          </div>
-          <div class="table-wrap">
-            <table id="regTable">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Student</th>
-                  <th>Program</th>
-                  <th>Age / Class</th>
-                  <th>School</th>
-                  <th>Guardian</th>
-                  <th>Phone</th>
-                  <th>Sessions</th>
-                  <th>Fee</th>
-                  <th>Payment</th>
-                  <th>Proof</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="regBody"></tbody>
-            </table>
-          </div>
-          <p class="empty-state" id="regEmpty" hidden>No registrations found.</p>
-          <div class="pagination" id="regPagination" hidden></div>
-        </section>
+            <div class="table-wrap">
+              <table class="data-table" data-reg-table>
+                <thead><tr>
+                  <th>Date</th><th>Student</th><th>Program</th><th>Age / class</th><th>Guardian</th><th>Phone</th><th>Fee</th><th>Payment</th><th>Status</th><th></th>
+                </tr></thead>
+                <tbody data-reg-body></tbody>
+              </table>
+            </div>
+            <p class="empty" data-reg-empty hidden>No registrations match your filters.</p>
+            <div class="pagination" data-reg-pagination hidden></div>
+          </section>
 
-        <!-- Programs Tab -->
-        <section class="tab-panel" id="panel-programs">
-          <div class="panel-header">
-            <h2>Programs</h2>
-            <button class="btn primary small" id="addProgramBtn">+ Add Program</button>
-          </div>
-          <div class="admin-toolbar">
-            <input class="admin-search" type="search" id="programSearch" aria-label="Search programs" placeholder="Search program name...">
-            <select class="admin-filter" id="programReadinessFilter" aria-label="Filter program readiness">
-              <option value="all">All Readiness</option>
-              <option value="ready">Ready</option>
-              <option value="needs_setup">Needs Setup</option>
-              <option value="draft">Draft</option>
-            </select>
-            <select class="admin-filter" id="programActiveFilter" aria-label="Filter active programs">
-              <option value="all">All Visibility</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-            <span class="toolbar-count" id="programCount"></span>
-          </div>
-          <div class="table-wrap">
-            <table id="programTable">
-              <thead>
-                <tr>
-                  <th>Program</th>
-                  <th>Dates</th>
-                  <th>Mode</th>
-                  <th>Fee</th>
-                  <th>Readiness</th>
-                  <th>Seats</th>
-                  <th>Active</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="programBody"></tbody>
-            </table>
-          </div>
-          <p class="empty-state" id="programEmpty" hidden>No programs found. Try clearing search or filters.</p>
-        </section>
+          <!-- Programs -->
+          <section class="view" data-panel="programs">
+            <div class="toolbar">
+              <input class="input search" type="search" placeholder="Search program…" data-program-search>
+              <select class="input" data-program-active><option value="all">All visibility</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
+              <span class="toolbar-count" data-program-count></span>
+              <button class="btn btn-primary btn-sm" type="button" data-add-program>+ Add program</button>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" data-program-table>
+                <thead><tr><th>Program</th><th>Dates</th><th>Mode</th><th>Fee</th><th>Readiness</th><th>Active</th><th></th></tr></thead>
+                <tbody data-program-body></tbody>
+              </table>
+            </div>
+            <p class="empty" data-program-empty hidden>No programs found.</p>
+          </section>
 
-        <!-- Courses Tab -->
-        <section class="tab-panel" id="panel-courses">
-          <div class="panel-header">
-            <h2>Courses</h2>
-            <button class="btn primary small" id="addCourseBtn">+ Add Course</button>
-          </div>
-          <div class="admin-toolbar">
-            <input class="admin-search" type="search" id="courseSearch" aria-label="Search courses" placeholder="Search course name...">
-            <select class="admin-filter" id="courseProgramFilter" aria-label="Filter course program">
-              <option value="all">All Programs</option>
-            </select>
-            <select class="admin-filter" id="courseSessionFilter" aria-label="Filter course session">
-              <option value="all">All Sessions</option>
-            </select>
-            <select class="admin-filter" id="courseCategoryFilter" aria-label="Filter course category">
-              <option value="all">All Categories</option>
-              <option value="tech">Tech</option>
-              <option value="creative">Creative</option>
-              <option value="career">Career</option>
-              <option value="sports">Sports</option>
-              <option value="general">General</option>
-              <option value="ai-robots">Track: AI, Robots & Future Tech</option>
-              <option value="creative-arts">Track: Creative Arts</option>
-              <option value="agri-food">Track: Agri-Food & Healthy Living</option>
-              <option value="entrepreneurship">Track: Entrepreneurship / Shark Tank</option>
-              <option value="eng-tech">Track: Eng & Tech</option>
-            </select>
-            <span class="toolbar-count" id="courseCount"></span>
-          </div>
-          <div class="table-wrap">
-            <table id="courseTable">
-              <colgroup><col><col><col><col><col><col><col></colgroup>
-              <thead>
-                <tr>
-                  <th>Course Name</th>
-                  <th>Program</th>
-                  <th>Session</th>
-                  <th>Category</th>
-                  <th>Minimum Age</th>
-                  <th>Active</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="courseBody"></tbody>
-            </table>
-          </div>
-          <p class="empty-state" id="courseEmpty" hidden>No courses found. Try clearing search or filters.</p>
-        </section>
+          <!-- Sessions -->
+          <section class="view" data-panel="sessions">
+            <div class="toolbar">
+              <input class="input search" type="search" placeholder="Search session…" data-session-search>
+              <select class="input" data-session-program><option value="all">All programs</option></select>
+              <span class="toolbar-count" data-session-count></span>
+              <button class="btn btn-primary btn-sm" type="button" data-add-session>+ Add session</button>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" data-session-table>
+                <thead><tr><th>Name</th><th>Program</th><th>Time slot</th><th>Order</th><th>Active</th><th></th></tr></thead>
+                <tbody data-session-body></tbody>
+              </table>
+            </div>
+            <p class="empty" data-session-empty hidden>No sessions found.</p>
+          </section>
 
-        <!-- Sessions Tab -->
-        <section class="tab-panel" id="panel-sessions">
-          <div class="panel-header">
-            <h2>Sessions</h2>
-            <button class="btn primary small" id="addSessionBtn">+ Add Session</button>
-          </div>
-          <div class="admin-toolbar">
-            <input class="admin-search" type="search" id="sessionSearch" aria-label="Search sessions" placeholder="Search session name...">
-            <select class="admin-filter" id="sessionProgramFilter" aria-label="Filter session program">
-              <option value="all">All Programs</option>
-            </select>
-            <span class="toolbar-count" id="sessionCount"></span>
-          </div>
-          <div class="table-wrap">
-            <table id="sessionTable">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Program</th>
-                  <th>Time Slot</th>
-                  <th>Order</th>
-                  <th>Active</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="sessionBody"></tbody>
-            </table>
-          </div>
-          <p class="empty-state" id="sessionEmpty" hidden>No sessions found. Try clearing search or filters.</p>
-        </section>
+          <!-- Courses -->
+          <section class="view" data-panel="courses">
+            <div class="toolbar">
+              <input class="input search" type="search" placeholder="Search course…" data-course-search>
+              <select class="input" data-course-program><option value="all">All programs</option></select>
+              <select class="input" data-course-session><option value="all">All sessions</option></select>
+              <span class="toolbar-count" data-course-count></span>
+              <button class="btn btn-primary btn-sm" type="button" data-add-course>+ Add course</button>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" data-course-table>
+                <thead><tr><th>Course</th><th>Program</th><th>Session</th><th>Category</th><th>Min age</th><th>Active</th><th></th></tr></thead>
+                <tbody data-course-body></tbody>
+              </table>
+            </div>
+            <p class="empty" data-course-empty hidden>No courses found.</p>
+          </section>
 
-        <!-- Fees Tab -->
-        <section class="tab-panel" id="panel-fees">
-          <div class="panel-header">
-            <h2>Fee Tiers</h2>
-            <button class="btn primary small" id="addFeeBtn">+ Add Tier</button>
-          </div>
-          <div class="admin-toolbar">
-            <input class="admin-search" type="search" id="feeSearch" aria-label="Search fee tiers" placeholder="Search program or label...">
-            <select class="admin-filter" id="feeProgramFilter" aria-label="Filter fee program">
-              <option value="all">All Programs</option>
-            </select>
-            <span class="toolbar-count" id="feeCount"></span>
-          </div>
-          <div class="table-wrap">
-            <table id="feeTable">
-              <thead>
-                <tr>
-                  <th>Program</th>
-                  <th>Selected Sessions</th>
-                  <th>Fee (Rs.)</th>
-                  <th>Label</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="feeBody"></tbody>
-            </table>
-          </div>
-          <p class="empty-state" id="feeEmpty" hidden>No fee tiers found. Try clearing search or filters.</p>
-        </section>
+          <!-- Fees -->
+          <section class="view" data-panel="fees">
+            <div class="toolbar">
+              <input class="input search" type="search" placeholder="Search fee tier…" data-fee-search>
+              <select class="input" data-fee-program><option value="all">All programs</option></select>
+              <span class="toolbar-count" data-fee-count></span>
+              <button class="btn btn-primary btn-sm" type="button" data-add-fee>+ Add tier</button>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" data-fee-table>
+                <thead><tr><th>Program</th><th>Sessions</th><th>Fee (Rs.)</th><th>Label</th><th></th></tr></thead>
+                <tbody data-fee-body></tbody>
+              </table>
+            </div>
+            <p class="empty" data-fee-empty hidden>No fee tiers found.</p>
+          </section>
 
-        <!-- Gallery Tab -->
-        <section class="tab-panel" id="panel-gallery">
-          <div class="panel-header">
-            <h2>Gallery Images</h2>
-            <button class="btn primary small" id="addImageBtn">+ Add Image</button>
-          </div>
-          <div class="admin-toolbar">
-            <input class="admin-search" type="search" id="gallerySearch" aria-label="Search gallery images" placeholder="Search image alt text or URL...">
-            <select class="admin-filter" id="galleryStatusFilter" aria-label="Filter gallery image status">
-              <option value="all">All Images</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-            <span class="toolbar-count" id="galleryCount"></span>
-          </div>
-          <div class="gallery-grid" id="galleryGrid"></div>
-          <p class="empty-state" id="galleryEmpty" hidden>No gallery images found. Try clearing search or filters.</p>
-        </section>
+          <!-- Gallery -->
+          <section class="view" data-panel="gallery">
+            <div class="toolbar">
+              <input class="input search" type="search" placeholder="Search image…" data-gallery-search>
+              <span class="toolbar-count" data-gallery-count></span>
+              <button class="btn btn-primary btn-sm" type="button" data-add-image>+ Add image</button>
+            </div>
+            <div class="gallery-grid" data-gallery-grid></div>
+            <p class="empty" data-gallery-empty hidden>No gallery images yet.</p>
+          </section>
 
-        <!-- Settings Tab -->
-        <section class="tab-panel" id="panel-settings">
-          <div class="panel-header">
-            <h2>Site Settings</h2>
-            <button class="btn primary small" id="saveSettingsBtn">Save All</button>
-          </div>
-          <div class="admin-toolbar">
-            <input class="admin-search" type="search" id="settingsSearch" aria-label="Search settings" placeholder="Search setting name or description...">
-            <span class="toolbar-count" id="settingsCount"></span>
-          </div>
-          <div class="settings-grid" id="settingsGrid"></div>
-          <p class="empty-state" id="settingsEmpty" hidden>No settings found. Try clearing search.</p>
-        </section>
-      </main>
+          <!-- Settings -->
+          <section class="view" data-panel="settings">
+            <div class="toolbar">
+              <input class="input search" type="search" placeholder="Search setting…" data-settings-search>
+              <span class="toolbar-count" data-settings-count></span>
+              <button class="btn btn-primary btn-sm" type="button" data-save-settings>Save changes</button>
+            </div>
+            <div class="settings-grid" data-settings-grid></div>
+          </section>
+
+          <!-- New season / yearly tools -->
+          <section class="view" data-panel="yearly">
+            <div class="stack" data-yearly></div>
+          </section>
+        </main>
+      </div>
     </div>
 
     <!-- Modal -->
-    <div class="modal-overlay" id="modalOverlay" hidden>
-      <div class="modal" id="modal">
-        <div class="modal-header">
-          <h3 id="modalTitle">Modal</h3>
-          <button class="modal-close" id="modalClose" aria-label="Close modal">&times;</button>
+    <div class="modal-overlay" data-modal-overlay hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-head">
+          <h3 id="modalTitle" data-modal-title>Modal</h3>
+          <button class="icon-btn" type="button" aria-label="Close" data-modal-close>&times;</button>
         </div>
-        <div class="modal-body" id="modalBody"></div>
-        <div class="modal-footer">
-          <button class="btn ghost" id="modalCancel">Cancel</button>
-          <button class="btn primary" id="modalSave">Save</button>
+        <div class="modal-body" data-modal-body></div>
+        <div class="modal-foot" data-modal-foot>
+          <button class="btn btn-ghost" type="button" data-modal-cancel>Cancel</button>
+          <button class="btn btn-primary" type="button" data-modal-save>Save</button>
         </div>
       </div>
     </div>
 
-    <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+    <div class="toast-region" data-toasts aria-live="polite" aria-atomic="true"></div>
 
     <script src="admin.js"></script>
   </body>

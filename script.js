@@ -674,11 +674,35 @@ function updateHeroUrgency(program) {
     heroProgramRoot.dataset.heroSeatsNote = urgency.note || "";
   }
 
+  const heroStatusEl = document.querySelector("[data-hero-status]");
+  if (heroStatusEl) {
+    const status = programStatusBadge(program);
+    heroStatusEl.textContent = status.label;
+    heroStatusEl.dataset.state = status.state;
+    const closed = status.state !== "open";
+    if (heroProgramRoot) heroProgramRoot.classList.toggle("is-reg-closed", closed);
+    const heroStatusMsg = document.querySelector("[data-hero-status-msg]");
+    if (heroStatusMsg) {
+      const msgs = {
+        started: "This program has already started — registration is closed.",
+        closed: "Registration is closed for this program.",
+        soon: "Registration opens soon — dates to be announced."
+      };
+      heroStatusMsg.textContent = status.label === "Seats full"
+        ? "All seats are taken — registration is closed."
+        : (closed ? (msgs[status.state] || "") : "");
+    }
+  }
+
   updateCountdown();
   updateSeatsLeft();
 }
 
 function updateHeroBackground(program, animate = true) {
+  // The hero photo is now driven by the gallery slideshow (startHeroPhotoSlideshow),
+  // cycling through the gallery images one by one, so switching programs no longer
+  // changes the photo (prevents the two from fighting). Kept as a no-op.
+  return;
   const nextSrc = program?.backgroundImage;
   if (!heroProgramRoot || !heroProgramBgImage || !nextSrc || heroProgramBgImage.src === nextSrc) return;
 
@@ -786,6 +810,40 @@ function resetHeroProgramAutoRotation() {
   clearInterval(heroProgramAutoTimer);
   startHeroProgramAutoRotation();
 }
+
+// Hero photo slideshow: cycle the big hero photo through the gallery images one
+// by one with a crossfade, independent of the program text rotation.
+var heroPhotoTimer = null;
+var heroPhotoIndex = 0;
+function startHeroPhotoSlideshow() {
+  if (!heroProgramBgImage) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var galleryImageSrcs = function () {
+    return Array.from(document.querySelectorAll("[data-hero-gallery] .hero-strip-card img"))
+      .map(function (img) { return img.getAttribute("src"); })
+      .filter(Boolean);
+  };
+  clearInterval(heroPhotoTimer);
+  heroPhotoTimer = setInterval(function () {
+    var list = galleryImageSrcs();
+    if (list.length < 2) return;
+    heroPhotoIndex = (heroPhotoIndex + 1) % list.length;
+    var next = list[heroPhotoIndex];
+    if (!next || heroProgramBgImage.getAttribute("src") === next) return;
+    var pre = new Image();
+    pre.onload = function () {
+      if (heroProgramRoot) heroProgramRoot.classList.add("is-bg-switching");
+      setTimeout(function () {
+        heroProgramBgImage.src = next;
+        requestAnimationFrame(function () {
+          if (heroProgramRoot) heroProgramRoot.classList.remove("is-bg-switching");
+        });
+      }, 240);
+    };
+    pre.src = next;
+  }, 4200);
+}
+startHeroPhotoSlideshow();
 
 if (heroProgramRoot && heroProgramTabs.length) {
   heroProgramTabs.forEach((tab, index) => {
@@ -933,7 +991,14 @@ function renderTrackProgramFilters() {
   `;
   }).join("");
   trackProgramFilters.querySelectorAll("[data-track-program]").forEach((button) => {
-    button.addEventListener("click", () => setTrackProgram(button.dataset.trackProgram));
+    button.addEventListener("click", () => {
+      setTrackProgram(button.dataset.trackProgram);
+      // On phones the classes update below the fold, so scroll them into view.
+      if (window.matchMedia("(max-width: 760px)").matches) {
+        const grid = document.getElementById("trackGrid");
+        if (grid) window.scrollTo({ top: grid.getBoundingClientRect().top + window.scrollY - 96, behavior: "smooth" });
+      }
+    });
   });
 }
 
@@ -947,6 +1012,36 @@ function fallbackCourseImage(program) {
   return program?.imageUrl || program?.backgroundImage || FALLBACK_HERO_IMAGES[0].src;
 }
 
+// Distinct, on-brand monogram tile for courses without their own photo, so
+// track/course cards don't all repeat the same program image. Presentation only.
+var COURSE_TILE_GRADIENTS = [
+  ["#ffe0c0", "#f3700d"], ["#ffd1a8", "#d85b00"], ["#ffe9d2", "#ff8f30"],
+  ["#f9dcb4", "#cf6a12"], ["#ffe6cc", "#ef7a16"], ["#f6d3a8", "#b85e10"]
+];
+function hashString(str) {
+  var h = 0, s = String(str || "");
+  for (var i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) >>> 0; }
+  return h;
+}
+function coursePlaceholderImage(course) {
+  var name = (course && course.name) ? String(course.name) : "LPU";
+  var pair = COURSE_TILE_GRADIENTS[hashString(name + "|" + ((course && course.category) || "")) % COURSE_TILE_GRADIENTS.length];
+  var m = name.trim().toUpperCase().match(/[A-Z0-9]/);
+  var initial = m ? m[0] : "L";
+  var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='320' height='200'>" +
+    "<defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>" +
+    "<stop offset='0' stop-color='" + pair[0] + "'/><stop offset='1' stop-color='" + pair[1] + "'/>" +
+    "</linearGradient></defs><rect width='320' height='200' fill='url(#g)'/>" +
+    "<circle cx='268' cy='40' r='66' fill='rgba(255,255,255,0.14)'/>" +
+    "<circle cx='40' cy='192' r='52' fill='rgba(255,255,255,0.10)'/>" +
+    "<text x='26' y='150' font-family='Georgia,serif' font-size='118' font-weight='700' fill='rgba(255,255,255,0.92)'>" + initial + "</text>" +
+    "</svg>";
+  return "data:image/svg+xml," + encodeURIComponent(svg);
+}
+function courseImageSrc(course) {
+  return (course && course.image_url) ? course.image_url : coursePlaceholderImage(course);
+}
+
 function renderHomepageTrackCards(program, trackGrid) {
   const tracks = programTrackList(program);
   if (trackEmpty) trackEmpty.hidden = tracks.length > 0;
@@ -956,12 +1051,13 @@ function renderHomepageTrackCards(program, trackGrid) {
     const cards = track.courses.map((course) => {
       const slot = publicSessions.find((s) => s.id === course.session_id);
       return `
-        <article class="track-card">
-          <img src="${esc(course.image_url || fallbackCourseImage(program))}" alt="${esc(course.name)}" loading="lazy" decoding="async">
+        <article class="track-card" data-course-id="${esc(course.id)}" role="button" tabindex="0" aria-label="${esc(course.name)} — view details">
+          <img src="${esc(courseImageSrc(course))}" alt="${esc(course.name)}" loading="lazy" decoding="async">
           <div>
             <span>${esc(formatSlotTime(slot?.time_slot))} &middot; ${esc(courseEligibilityLabel(course))}</span>
             <h3>${esc(course.name)}</h3>
             <p>${esc(course.description || "")}</p>
+            <span class="track-card-more">Read details</span>
           </div>
         </article>`;
     }).join("");
@@ -1009,18 +1105,17 @@ function renderHomepageTracks() {
     trackScrollHint.hidden = true;
     trackScrollHint.textContent = "";
   }
-  trackGrid.innerHTML = visibleCourses.map((course, i) => `
-    <article class="track-card" data-category="${esc(course.category)}" data-course-idx="${i}">
-      <img src="${esc(course.image_url || fallbackCourseImage(program))}" alt="${esc(course.name)}" loading="lazy" decoding="async">
+  trackGrid.innerHTML = visibleCourses.map((course) => `
+    <article class="track-card" data-category="${esc(course.category)}" data-course-id="${esc(course.id)}" role="button" tabindex="0" aria-label="${esc(course.name)} — view details">
+      <img src="${esc(courseImageSrc(course))}" alt="${esc(course.name)}" loading="lazy" decoding="async">
       <div>
         <span>${esc(courseEligibilityLabel(course))}</span>
         <h3>${esc(course.name)}</h3>
         <p>${esc(course.description || "")}</p>
+        <span class="track-card-more">Read details</span>
       </div>
     </article>
   `).join("");
-
-  initCourseBottomSheet(trackGrid, visibleCourses, publicSessions);
 }
 
 function renderHomepageSessions() {
@@ -1039,12 +1134,14 @@ function renderHomepageSessions() {
     return;
   }
   sessionColumns.innerHTML = sessions.map((session) => {
+    // Tracks mode: a student picks ONE track and that track fills every slot. Don't list
+    // all tracks' classes per slot — that would look like a pick-one-per-slot menu.
+    if (tracksMode) {
+      return `<article class="session-card"><h3>${esc(session.name)} <span>${esc(session.time_slot)}</span></h3><ul><li>One class from your chosen track</li></ul></article>`;
+    }
     const courses = programCourses(trackProgramSlug).filter((course) => course.session_id === session.id);
     const items = courses.length
-      ? courses.map((course) => {
-          const trackName = tracksMode ? (TRACK_LABELS[course.category] || "") : "";
-          return `<li>${esc(course.name)}${trackName ? ` <small class="session-track-tag">${esc(trackName)}</small>` : ""}</li>`;
-        }).join("")
+      ? courses.map((course) => `<li>${esc(course.name)}</li>`).join("")
       : "<li>Courses coming soon</li>";
     return `<article class="session-card"><h3>${esc(session.name)} <span>${esc(session.time_slot)}</span></h3><ul>${items}</ul></article>`;
   }).join("");
@@ -1055,6 +1152,10 @@ function renderHomepageFees() {
   if (!feeTableBody) return;
   const program = getProgram(trackProgramSlug);
   const fees = publicFees.filter((fee) => fee.program_id === program?.id && fee.session_count > 0).sort((a, b) => a.session_count - b.session_count);
+
+  // Accommodation block depends only on the program (not the fee mode), so render
+  // it first — the fee table has several early returns below.
+  renderHomepageAccommodation(program);
 
   if (program?.feeStatus !== "ready" || program?.feeMode === "to_be_announced") {
     feeTableBody.innerHTML = `<tr><td>${esc(program.name)}</td><td>Fee details are being finalized.</td><td>To be announced</td></tr>`;
@@ -1071,58 +1172,83 @@ function renderHomepageFees() {
     : `<tr><td>${esc(program.name)}</td><td>Fee tiers are not configured yet.</td><td>To be announced</td></tr>`;
 }
 
-function initCourseBottomSheet(grid, courses, sessions) {
-  const MOBILE_MAX = 620;
-  document.querySelector(".course-sheet-overlay")?.remove();
-  if (grid._courseSheetClickHandler) {
-    grid.removeEventListener("click", grid._courseSheetClickHandler);
-  }
-  // Build session lookup: session_id -> session name
-  const sessionMap = {};
-  sessions.forEach((s, i) => { sessionMap[s.id] = s.name + " (" + s.time_slot + ")"; });
+// The on-campus stay block differs per program, so render it from the program's
+// accommodation rules: "optional" -> hostel options, "included" -> bundled note,
+// "none" -> hidden. Keeps the fees card honest as the user switches programs.
+function renderHomepageAccommodation(program) {
+  const block = document.getElementById("feeAccommodation");
+  if (!block) return;
+  const mode = programAccommodationMode(program);
 
-  // Create bottom sheet DOM
+  if (mode === "included") {
+    block.hidden = false;
+    block.className = "hostel-info hostel-info-included";
+    const text = program?.includedServices || "Stay, food, and campus activities are included in this program.";
+    block.innerHTML = `<h3>Stay &amp; meals included</h3><p>${esc(text)}</p>`;
+    return;
+  }
+
+  if (mode === "optional" && (program?.allowHostel || program?.allowMess)) {
+    block.hidden = false;
+    block.className = "hostel-info";
+    const nonAc = hostelDailyRate("hostel_only");
+    const ac = hostelDailyRate("hostel_food");
+    const messNote = program?.allowMess
+      ? `<p class="hostel-mess-note">Mess meals can be added per day during registration.</p>`
+      : "";
+    block.innerHTML = `
+      <h3>Optional: on-campus stay</h3>
+      <p>Hostel beds for outstation students. Rates are per student bed, per day.</p>
+      <div class="hostel-options">
+        <div class="hostel-option"><strong>Rs. ${nonAc.toLocaleString("en-IN")}/day</strong><span>Non-AC hostel bed per student</span></div>
+        <div class="hostel-option"><strong>Rs. ${ac.toLocaleString("en-IN")}/day</strong><span>AC hostel bed per student</span></div>
+      </div>${messNote}`;
+    return;
+  }
+
+  // mode === "none": this program has no on-campus stay option.
+  block.hidden = true;
+  block.innerHTML = "";
+}
+
+// Course detail sheet — tap ANY class card (any program, any screen size) to read
+// its full description. Built once; delegated on #trackGrid; looks courses up by id.
+(function setupCourseDetailSheet() {
+  const grid = document.getElementById("trackGrid");
+  if (!grid) return;
   const overlay = document.createElement("div");
   overlay.className = "course-sheet-overlay";
-
-  const sheet = document.createElement("div");
-  sheet.className = "course-sheet";
-  sheet.innerHTML = `
-    <div class="course-sheet-handle"><span></span></div>
-    <button class="course-sheet-close" type="button" aria-label="Close">&times;</button>
-    <div class="course-sheet-body">
-      <img class="course-sheet-img" src="" alt="">
-      <div class="course-sheet-content">
-        <span class="course-sheet-badge"></span>
-        <h3 class="course-sheet-title"></h3>
-        <p class="course-sheet-session"></p>
-        <p class="course-sheet-desc"></p>
+  overlay.innerHTML = `
+    <div class="course-sheet" role="dialog" aria-modal="true" aria-label="Class details">
+      <div class="course-sheet-handle"><span></span></div>
+      <button class="course-sheet-close" type="button" aria-label="Close details">&times;</button>
+      <div class="course-sheet-body">
+        <img class="course-sheet-img" src="" alt="">
+        <div class="course-sheet-content">
+          <span class="course-sheet-badge"></span>
+          <h3 class="course-sheet-title"></h3>
+          <p class="course-sheet-session"></p>
+          <p class="course-sheet-desc"></p>
+        </div>
       </div>
     </div>`;
-  overlay.appendChild(sheet);
   document.body.appendChild(overlay);
-
-  const sheetImg = sheet.querySelector(".course-sheet-img");
-  const sheetBadge = sheet.querySelector(".course-sheet-badge");
-  const sheetTitle = sheet.querySelector(".course-sheet-title");
-  const sheetSession = sheet.querySelector(".course-sheet-session");
-  const sheetDesc = sheet.querySelector(".course-sheet-desc");
-  const closeBtn = sheet.querySelector(".course-sheet-close");
-
+  const sheet = overlay.querySelector(".course-sheet");
+  const el = (s) => overlay.querySelector(s);
   let isOpen = false;
 
   function openSheet(course) {
-    sheetImg.src = course.image_url || fallbackCourseImage(getProgram(trackProgramSlug));
-    sheetImg.alt = course.name;
-    sheetBadge.textContent = courseEligibilityLabel(course);
-    sheetTitle.textContent = course.name;
-    sheetSession.textContent = sessionMap[course.session_id] || "";
-    sheetDesc.textContent = course.description || "";
+    const slot = publicSessions.find((s) => s.id === course.session_id);
+    el(".course-sheet-img").src = courseImageSrc(course);
+    el(".course-sheet-img").alt = course.name || "";
+    el(".course-sheet-badge").textContent = [slot ? formatSlotTime(slot.time_slot) : "", courseEligibilityLabel(course)].filter(Boolean).join("  ·  ");
+    el(".course-sheet-title").textContent = course.name || "";
+    el(".course-sheet-session").textContent = slot ? `${slot.name}${slot.time_slot ? " · " + slot.time_slot : ""}` : "";
+    el(".course-sheet-desc").textContent = course.description || "Full details will be shared soon.";
     isOpen = true;
     overlay.classList.add("active");
     document.body.style.overflow = "hidden";
   }
-
   function closeSheet() {
     if (!isOpen) return;
     isOpen = false;
@@ -1130,32 +1256,21 @@ function initCourseBottomSheet(grid, courses, sessions) {
     document.body.style.overflow = "";
   }
 
-  // Tap handler — only on mobile
-  grid._courseSheetClickHandler = (e) => {
-    if (window.innerWidth > MOBILE_MAX) return;
-    const card = e.target.closest(".track-card");
+  const openFromEvent = (e) => {
+    const card = e.target.closest(".track-card[data-course-id]");
     if (!card) return;
-    e.preventDefault();
-    const idx = parseInt(card.dataset.courseIdx, 10);
-    if (!isNaN(idx) && courses[idx]) openSheet(courses[idx]);
+    const course = publicCourses.find((c) => String(c.id) === card.dataset.courseId);
+    if (course) { e.preventDefault(); openSheet(course); }
   };
-  grid.addEventListener("click", grid._courseSheetClickHandler);
-
-  closeBtn.addEventListener("click", closeSheet);
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) closeSheet();
-  });
-
-  // Swipe-down to close
+  grid.addEventListener("click", openFromEvent);
+  grid.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") openFromEvent(e); });
+  el(".course-sheet-close").addEventListener("click", closeSheet);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) closeSheet(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
   let touchStartY = 0;
-  sheet.addEventListener("touchstart", (e) => {
-    touchStartY = e.touches[0].clientY;
-  }, { passive: true });
-  sheet.addEventListener("touchend", (e) => {
-    const dy = e.changedTouches[0].clientY - touchStartY;
-    if (dy > 80) closeSheet();
-  }, { passive: true });
-}
+  sheet.addEventListener("touchstart", (e) => { touchStartY = e.touches[0].clientY; }, { passive: true });
+  sheet.addEventListener("touchend", (e) => { if (e.changedTouches[0].clientY - touchStartY > 80) closeSheet(); }, { passive: true });
+})();
 
 navToggle?.addEventListener("click", () => {
   const isOpen = nav.classList.toggle("open");
@@ -1621,15 +1736,26 @@ function programHasStarted(program) {
   return !Number.isNaN(start.getTime()) && new Date() >= start;
 }
 
+// A program is "full" when its announced capacity (seats_base) is reached by real
+// reserved registrations. A full program closes registration for everyone.
+function programIsFull(program) {
+  if (!program) return false;
+  const capacity = Number(program.urgency?.seatsBase || 0);
+  if (capacity <= 0) return false; // no capacity announced -> can't be "full"
+  const reserved = Number((program.id && programStatsById[program.id] && programStatsById[program.id].reserved) || 0);
+  return reserved >= capacity;
+}
+
 function registrationProgramIsOpen(program = selectedRegistrationProgram()) {
-  return Boolean(program?.registrationEnabled && programHasAnnouncedTiming(program) && programHasFeeConfig(program) && programHasSchedule(program) && !programDeadlinePassed(program) && !programHasStarted(program));
+  return Boolean(program?.registrationEnabled && programHasAnnouncedTiming(program) && programHasFeeConfig(program) && programHasSchedule(program) && !programDeadlinePassed(program) && !programHasStarted(program) && !programIsFull(program));
 }
 
 // Status pill text + state for any program surface (cards, register page).
 function programStatusBadge(program) {
   if (!program) return { label: "Coming soon", state: "soon" };
-  if (programHasStarted(program)) return { label: "In progress", state: "started" };
+  if (programHasStarted(program)) return { label: "Started", state: "started" };
   if (programDeadlinePassed(program)) return { label: "Registration closed", state: "closed" };
+  if (programIsFull(program)) return { label: "Seats full", state: "closed" };
   if (registrationProgramIsOpen(program)) return { label: "Registration open", state: "open" };
   if (program.registrationEnabled === false && programHasAnnouncedTiming(program) && programHasFeeConfig(program) && programHasSchedule(program)) {
     return { label: "Registration closed", state: "closed" };
@@ -2037,6 +2163,7 @@ function updateRegistrationState() {
   feeTotals.forEach((el) => { el.textContent = formatFee(total); });
 
   document.querySelectorAll("[data-fee-base]").forEach((el) => { el.textContent = formatFee(baseFee); });
+  document.querySelectorAll("[data-fee-session]").forEach((el) => { el.textContent = formatFee(sessionFee); });
   document.querySelectorAll("[data-fee-detail]").forEach((el) => {
     if (!baseFee) { el.innerHTML = ""; return; }
     const parts = [];
@@ -3457,4 +3584,121 @@ if (contactToggle && contactOverlay) {
     showProof();
     setInterval(showProof, (25 + Math.random() * 15) * 1000);
   }, (8 + Math.random() * 6) * 1000);
+})();
+
+// ── Registration wizard: show one .form-block at a time ──────────────
+// Additive controller. Relies on existing validateBlock(i)/validateField()/
+// updateSubmitState() and the index-based formBlocks order
+// (0 Student, 1 Guardian, 2 Program, 3 Hostel, 4 Confirm). The hostel block
+// auto-hides via the `hidden` attribute, so it is skipped in navigation.
+(function setupRegistrationWizard() {
+  const wizardForm = document.querySelector(".registration-form.wizard");
+  if (!wizardForm) return;
+  const blocks = [...wizardForm.querySelectorAll(".form-block")];
+  const steps = [...document.querySelectorAll(".progress-step")];
+  const backBtn = wizardForm.querySelector("[data-wizard-back]");
+  const nextBtn = wizardForm.querySelector("[data-wizard-next]");
+  const submitBtn = wizardForm.querySelector("[data-wizard-submit]");
+  if (!blocks.length || !nextBtn) return;
+  let current = 0;
+
+  const visible = () => blocks.map((_, i) => i).filter((i) => !blocks[i].hidden);
+
+  function clearStatus() {
+    if (statusMessage) { statusMessage.textContent = ""; statusMessage.classList.remove("error"); }
+  }
+
+  function syncChrome() {
+    const vis = visible();
+    const first = vis[0];
+    const last = vis[vis.length - 1];
+    const isLast = current === last;
+    blocks.forEach((b, i) => b.classList.toggle("is-active", i === current));
+    steps.forEach((s, i) => s.classList.toggle("active", i === current));
+    if (backBtn) backBtn.hidden = current === first;
+    if (nextBtn) nextBtn.hidden = isLast;
+    if (submitBtn) submitBtn.hidden = !isLast;
+    if (isLast && typeof updateSubmitState === "function") updateSubmitState();
+  }
+
+  function goTo(index, opts = {}) {
+    const vis = visible();
+    if (!vis.length) return;
+    if (index < vis[0]) index = vis[0];
+    if (index > vis[vis.length - 1]) index = vis[vis.length - 1];
+    if (blocks[index].hidden) index = vis.find((i) => i >= index) ?? vis[vis.length - 1];
+    current = index;
+    syncChrome();
+    if (opts.scroll !== false) {
+      const top = wizardForm.getBoundingClientRect().top + window.scrollY - 90;
+      window.scrollTo({ top, behavior: "smooth" });
+    }
+    const heading = blocks[current].querySelector("h2");
+    if (heading) { heading.setAttribute("tabindex", "-1"); heading.focus({ preventScroll: true }); }
+  }
+
+  // Validate the current step; show inline errors for text steps, a friendly
+  // status line for the dynamic steps. Returns true when the step may advance.
+  function validateCurrent() {
+    if (current === 0 || current === 1) {
+      let ok = true;
+      blocks[current].querySelectorAll("input, select, textarea").forEach((f) => {
+        if (typeof validateField === "function" && !validateField(f)) ok = false;
+      });
+      if (!ok && statusMessage) statusMessage.textContent = "Please fill in the highlighted fields.";
+      return ok;
+    }
+    const ok = typeof validateBlock === "function" ? validateBlock(current) : true;
+    if (!ok && statusMessage) {
+      statusMessage.textContent =
+        current === 2 ? "Please choose a program and your class selection above."
+        : current === 3 ? "Please choose a stay option and valid check-in / check-out dates."
+        : current === 4 ? "Please tick the confirmation box to continue."
+        : "Please complete this step before continuing.";
+    }
+    return ok;
+  }
+
+  nextBtn.addEventListener("click", () => {
+    if (!validateCurrent()) return;
+    clearStatus();
+    const vis = visible();
+    const pos = vis.indexOf(current);
+    if (pos < vis.length - 1) goTo(vis[pos + 1]);
+  });
+
+  if (backBtn) backBtn.addEventListener("click", () => {
+    clearStatus();
+    const vis = visible();
+    const pos = vis.indexOf(current);
+    if (pos > 0) goTo(vis[pos - 1]);
+  });
+
+  // Progress steps: allow jumping back to an earlier, already-reached step.
+  steps.forEach((step, i) => {
+    step.addEventListener("click", () => {
+      if (step.hidden || blocks[i]?.hidden) return;
+      if (i < current) { clearStatus(); goTo(i); }
+    });
+  });
+
+  // Enter key on a field should advance the step, not submit early.
+  wizardForm.addEventListener("submit", (e) => {
+    const vis = visible();
+    if (current !== vis[vis.length - 1]) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      nextBtn.click();
+    }
+  }, true);
+
+  // If the program choice toggles the hostel step on/off, keep the wizard sane.
+  if (hostelBlock) {
+    new MutationObserver(() => {
+      if (blocks[current]?.hidden) goTo(current, { scroll: false });
+      else syncChrome();
+    }).observe(hostelBlock, { attributes: true, attributeFilter: ["hidden"] });
+  }
+
+  goTo(0, { scroll: false });
 })();

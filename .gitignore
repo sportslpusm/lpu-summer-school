@@ -3,6 +3,10 @@ node_modules/
 .code-review-graph/
 *.png
 !assets/*.png
+*.jpg
+*.jpeg
+!assets/*.jpg
+!assets/*.jpeg
 .claude/
 .vercel/
 supabase/.temp/
@@ -20,5 +24,7 @@ KNOWN_ISSUES.md
 WEBSITE_REFERENCE.md
 REBUILD_PLAN.md
 REBUILD_PROMPT.md
+REBUILD_HOME_CONTRACT.md
 SECURITY_INTERNAL.md
+nocache_server.py
 supabase/functions/_deprecated_backup/

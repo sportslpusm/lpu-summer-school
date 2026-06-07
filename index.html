@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Wv9AslBrc7d9tS+5TVujUtB92myxtZArKCW/k3FSOX4='; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://bynpuhoysivxxlblxica.supabase.co; font-src 'self'; base-uri 'self'; form-action 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Wv9AslBrc7d9tS+5TVujUtB92myxtZArKCW/k3FSOX4='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https: data:; connect-src 'self' https://bynpuhoysivxxlblxica.supabase.co; font-src 'self' https://fonts.gstatic.com; base-uri 'self'; form-action 'self';">
     <meta name="description" content="LPU Summer School 2026 offers campus, online, staff kid camp, skill workshop, and immersion programs for students and young learners.">
     <meta name="robots" content="index, follow">
     <meta name="theme-color" content="#f3700d">
@@ -27,200 +27,191 @@
     <meta name="twitter:title" content="LPU Summer School 2026">
     <meta name="twitter:description" content="Campus, online, staff kid camp, skill workshop, and immersion programs for students and young learners.">
     <meta name="twitter:image" content="https://summerschool.unisportscouncil.co.in/assets/lpu-summer-school-og.png">
-    <link rel="preconnect" href="https://static.wixstatic.com">
     <link rel="preconnect" href="https://bynpuhoysivxxlblxica.supabase.co">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://static.wixstatic.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="styles.css">
     <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[{"@type":"EducationalOrganization","@id":"https://summerschool.unisportscouncil.co.in/#organization","name":"Lovely Professional University Student Welfare Wing","url":"https://summerschool.unisportscouncil.co.in/","logo":"https://summerschool.unisportscouncil.co.in/assets/lpu-circle-logo.png","email":"summerschool@lpu.co.in","telephone":"+91 86072 34098","address":{"@type":"PostalAddress","streetAddress":"Jalandhar - Delhi G.T. Road","addressLocality":"Phagwara","addressRegion":"Punjab","postalCode":"144411","addressCountry":"IN"}},{"@type":"WebSite","@id":"https://summerschool.unisportscouncil.co.in/#website","name":"LPU Summer School 2026","url":"https://summerschool.unisportscouncil.co.in/","publisher":{"@id":"https://summerschool.unisportscouncil.co.in/#organization"}},{"@type":"EducationEvent","@id":"https://summerschool.unisportscouncil.co.in/#event","name":"LPU Summer School 2026","description":"Campus, online, staff kid camp, skill workshop, and immersion programs for students and young learners at Lovely Professional University.","url":"https://summerschool.unisportscouncil.co.in/","startDate":"2026-06-15","endDate":"2026-06-27","eventStatus":"https://schema.org/EventScheduled","eventAttendanceMode":"https://schema.org/MixedEventAttendanceMode","organizer":{"@id":"https://summerschool.unisportscouncil.co.in/#organization"},"location":{"@type":"Place","name":"Lovely Professional University","address":{"@type":"PostalAddress","streetAddress":"Jalandhar - Delhi G.T. Road","addressLocality":"Phagwara","addressRegion":"Punjab","postalCode":"144411","addressCountry":"IN"}}}]}
     </script>
   </head>
   <body>
+    <a class="skip-link" href="#home">Skip to content</a>
+
     <div class="utility-bar">
-      <span>Lovely Professional University | Student Welfare Wing</span>
-      <a href="mailto:summerschool@lpu.co.in" data-cfg="utility-contact">+91 860 723 4098 | +91 863 757 3863 | summerschool@lpu.co.in</a>
+      <span class="utility-org">Lovely Professional University &middot; Student Welfare Wing</span>
+      <a class="utility-contact" href="mailto:summerschool@lpu.co.in" data-cfg="utility-contact">+91 860 723 4098 &middot; +91 863 757 3863 &middot; summerschool@lpu.co.in</a>
     </div>
 
     <header class="site-header" data-header>
       <a class="brand" href="/" aria-label="LPU Summer School home">
         <img class="brand-logo" src="assets/dsosww-logo.png" width="514" height="136" alt="LPU Student Welfare Wing">
-        <img class="naac-logo" src="assets/lpu-naac-logo.png" width="2746" height="750" alt="NAAC Grade A++">
+        <img class="naac-logo" src="assets/lpu-naac-logo.png" width="2746" height="750" alt="NAAC Grade A++" loading="lazy">
       </a>
-      <button class="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false" data-nav-toggle>
-        <span></span>
-        <span></span>
-        <span></span>
+      <button class="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="primary-nav" data-nav-toggle>
+        <span></span><span></span><span></span>
       </button>
-      <nav class="site-nav" data-nav>
+      <nav class="site-nav" id="primary-nav" aria-label="Primary" data-nav>
         <a href="#tracks">Tracks</a>
-        <a href="#sessions">Sessions</a>
+        <a href="#sessions">Schedule</a>
         <a href="#fees">Fees</a>
         <a href="#contact">Contact</a>
         <a class="nav-cta" href="/register">Register Now</a>
       </nav>
     </header>
 
-    <main>
+    <main id="main">
+      <!-- ============================ HERO ============================ -->
       <section class="hero" id="home" data-program-hero>
-        <div class="hero-bg-media" aria-hidden="true">
-          <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779163726439-f0drdpdqahd.png" alt="" decoding="async" fetchpriority="high" data-hero-bg-image>
+        <div class="hero-grain" aria-hidden="true"></div>
+        <div class="hero-inner">
+          <div class="hero-copy">
+            <span class="hero-kicker"><span class="hero-kicker-dot" aria-hidden="true"></span>Learn &middot; Build &middot; Showcase</span>
+            <h1 class="hero-title">LPU Summer<br>School <span class="hero-title-year">2026</span></h1>
+
+            <div class="hero-dynamic" data-hero-content aria-live="polite">
+              <p class="hero-program-name" data-hero-program-name>2 Week Campus Program</p>
+              <p class="hero-description" data-hero-description>A focused two-week LPU campus journey where students choose a track, learn with mentors, build real outcomes, and present their best work in a grand showcase.</p>
+              <p class="hero-cta-context" data-hero-cta-context>For students ready to learn by doing inside a vibrant university campus.</p>
+            </div>
+
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="/register">
+                Register Now
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+              </a>
+              <a class="btn btn-ghost" href="#tracks">Explore Tracks</a>
+            </div>
+
+            <div class="hero-urgency" aria-label="Registration deadline and seats">
+              <span class="hero-status" data-hero-status></span>
+              <p class="urgency-msg" data-hero-status-msg></p>
+              <div class="urgency-block">
+                <span class="urgency-label">Last date to register</span>
+                <strong class="urgency-deadline" data-cfg="deadline-label" data-hero-deadline-label>14 June 2026</strong>
+              </div>
+              <div class="countdown" data-countdown data-hero-countdown data-deadline="2026-06-14T23:59:59+05:30" aria-label="Time left to register">
+                <div class="countdown-cell"><strong data-days>--</strong><span>Days</span></div>
+                <div class="countdown-sep" aria-hidden="true">:</div>
+                <div class="countdown-cell"><strong data-hours>--</strong><span>Hrs</span></div>
+                <div class="countdown-sep" aria-hidden="true">:</div>
+                <div class="countdown-cell"><strong data-minutes>--</strong><span>Min</span></div>
+                <div class="countdown-sep" aria-hidden="true">:</div>
+                <div class="countdown-cell"><strong data-seconds>--</strong><span>Sec</span></div>
+              </div>
+              <div class="urgency-block urgency-seats">
+                <span class="urgency-label" data-hero-seats-label>Seats left</span>
+                <strong class="urgency-seats-count" data-seats-left>15</strong>
+                <p class="urgency-note" data-seats-note>Final seats moving fast. Register today.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-visual">
+            <figure class="hero-photo">
+              <div class="hero-bg-media" aria-hidden="true">
+                <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779163726439-f0drdpdqahd.png" alt="" decoding="async" fetchpriority="high" data-hero-bg-image>
+              </div>
+            </figure>
+            <dl class="hero-meta" aria-label="Selected program details">
+              <div><dt>Dates</dt><dd data-hero-meta="dates">15&ndash;27 June 2026</dd></div>
+              <div><dt>Mode</dt><dd data-hero-meta="mode">On Campus</dd></div>
+              <div><dt>Duration</dt><dd data-hero-meta="duration">2 weeks</dd></div>
+              <div><dt>Venue</dt><dd data-hero-meta="location">LPU Campus, Phagwara</dd></div>
+            </dl>
+
+            <div class="hero-gallery" aria-label="LPU Summer School highlights" data-hero-gallery>
+              <div class="hero-media-track">
+                <figure class="hero-strip-card"><img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779191793080-mgw718dwqh9.png" alt="Students building robotics projects" loading="lazy" decoding="async"></figure>
+                <figure class="hero-strip-card"><img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779089835922-qm6ldbzss5.png" alt="Students learning together on campus" loading="lazy" decoding="async"></figure>
+                <figure class="hero-strip-card"><img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779190305970-8wmlssoh4pn.png" alt="Students in a creative design workshop" loading="lazy" decoding="async"></figure>
+                <figure class="hero-strip-card"><img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188603214-x7q34c5kfq.png" alt="Students exploring global learning" loading="lazy" decoding="async"></figure>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="hero-copy-block">
-          <span class="hero-kicker">Learn. Build. Showcase.</span>
-          <h1>LPU Summer School 2026</h1>
-          <div class="hero-dynamic-copy" data-hero-content aria-live="polite">
-            <p class="hero-program-name" data-hero-program-name>2 Week Campus Program</p>
-            <p class="hero-copy" data-hero-description>A focused two-week LPU campus journey where students choose sessions, learn with mentors, build visible outcomes, and present their best work in a grand showcase.</p>
-            <p class="hero-cta-context" data-hero-cta-context>For students ready to learn by doing inside a vibrant university campus.</p>
-          </div>
 
-          <div class="hero-actions">
-            <a class="button primary" href="/register">Register Now</a>
-            <a class="button ghost" href="#tracks">Explore Tracks</a>
-          </div>
-
-          <p class="hero-programs-label">Courses You Can Pick</p>
+        <!-- hero program selector -->
+        <div class="program-rail">
+          <p class="program-rail-label">Pick a program to explore</p>
           <div class="program-selector" role="tablist" aria-label="Choose a summer school program">
             <button class="program-tab active" type="button" role="tab" aria-selected="true" data-program-option="campus">
-              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779163726439-f0drdpdqahd.png" alt="">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779163726439-f0drdpdqahd.png" alt="" loading="lazy">
               <span>2 Week Campus Program</span>
-              <small>15 to 27 June 2026</small>
+              <small>15&ndash;27 June 2026</small>
             </button>
             <button class="program-tab" type="button" role="tab" aria-selected="false" data-program-option="online">
-              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188840605-uiunxfem2bh.png" alt="">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188840605-uiunxfem2bh.png" alt="" loading="lazy">
               <span>Online Course</span>
               <small>Self-paced</small>
             </button>
             <button class="program-tab" type="button" role="tab" aria-selected="false" data-program-option="staff-camp">
-              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779089835922-qm6ldbzss5.png" alt="">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779089835922-qm6ldbzss5.png" alt="" loading="lazy">
               <span>LPU Staff Kid Summer Camp</span>
-              <small>6 to 27 June 2026</small>
+              <small>6&ndash;27 June 2026</small>
             </button>
             <button class="program-tab" type="button" role="tab" aria-selected="false" data-program-option="skills">
-              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779191793080-mgw718dwqh9.png" alt="">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779191793080-mgw718dwqh9.png" alt="" loading="lazy">
               <span>Tailor-Made Skills Workshop</span>
-              <small>Date to be decided</small>
+              <small>Dates soon</small>
             </button>
             <button class="program-tab" type="button" role="tab" aria-selected="false" data-program-option="immersion">
-              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188603214-x7q34c5kfq.png" alt="">
+              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188603214-x7q34c5kfq.png" alt="" loading="lazy">
               <span>LPU Immersion Program</span>
-              <small>15 to 27 June 2026</small>
+              <small>15&ndash;27 June 2026</small>
             </button>
           </div>
-
-          <div class="hero-bottom-deck">
-            <dl class="hero-meta-row" aria-label="Selected program details">
-              <div><dt>Dates</dt><dd data-hero-meta="dates">15&ndash;27 June 2026</dd></div>
-              <div><dt>Mode</dt><dd data-hero-meta="mode">On Campus</dd></div>
-              <div><dt>Duration</dt><dd data-hero-meta="duration">2 weeks</dd></div>
-              <div><dt>Location</dt><dd data-hero-meta="location">LPU Campus, Phagwara</dd></div>
-            </dl>
-          </div>
-
-          <div class="hero-urgency" aria-label="Registration urgency">
-            <div class="hero-deadline">
-              <span>Last Registration Date</span>
-              <strong data-cfg="deadline-label" data-hero-deadline-label>14 June 2026</strong>
-            </div>
-            <span class="hero-urgency-divider" aria-hidden="true"></span>
-            <div class="countdown hero-countdown" data-countdown data-hero-countdown data-deadline="2026-06-14T23:59:59+05:30">
-              <div><strong data-days>--</strong><span>Days</span></div>
-              <div><strong data-hours>--</strong><span>Hrs</span></div>
-              <div><strong data-minutes>--</strong><span>Mins</span></div>
-              <div><strong data-seconds>--</strong><span>Secs</span></div>
-            </div>
-            <span class="hero-urgency-divider" aria-hidden="true"></span>
-            <div class="hero-seats">
-              <span data-hero-seats-label>Seats Left</span>
-              <strong data-seats-left>15</strong>
-              <p data-seats-note>Final seats moving fast. Register today.</p>
-            </div>
-          </div>
-
-        </div>
-        <div class="hero-inline-media" aria-label="LPU Summer School highlights" data-hero-gallery>
-          <div class="hero-media-track">
-            <figure class="hero-strip-card">
-              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779191793080-mgw718dwqh9.png" alt="Students building robotics projects" decoding="async">
-            </figure>
-            <figure class="hero-strip-card">
-              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779089835922-qm6ldbzss5.png" alt="Students learning together on campus" decoding="async">
-            </figure>
-            <figure class="hero-strip-card">
-              <img src="https://static.wixstatic.com/media/ccbabc_49e677a164c84c6295873d8bc2ea33f9~mv2.png" alt="Dance showcase at LPU Summer School" loading="lazy" decoding="async">
-            </figure>
-            <figure class="hero-strip-card">
-              <img src="https://static.wixstatic.com/media/ccbabc_49e677a164c84c6295873d8bc2ea33f9~mv2.png" alt="LPU Summer School stage showcase" loading="lazy" decoding="async">
-            </figure>
-            <figure class="hero-strip-card">
-              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779190305970-8wmlssoh4pn.png" alt="Students in a creative design workshop" loading="lazy" decoding="async">
-            </figure>
-            <figure class="hero-strip-card">
-              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188603214-x7q34c5kfq.png" alt="Students exploring global learning" loading="lazy" decoding="async">
-            </figure>
-            <figure class="hero-strip-card">
-              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779191793080-mgw718dwqh9.png" alt="Students building robotics projects at LPU" loading="lazy" decoding="async">
-            </figure>
-            <figure class="hero-strip-card">
-              <img src="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779089835922-qm6ldbzss5.png" alt="Students collaborating on campus" loading="lazy" decoding="async">
-            </figure>
-          </div>
         </div>
       </section>
 
-      <section class="program-dates reveal" aria-label="Program schedule" data-program-dates>
-        <div class="date-card">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <div>
-            <span>Program Dates</span>
-            <strong data-cfg="program-dates">16 June — 28 June 2026</strong>
-          </div>
-        </div>
-        <div class="date-card">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <div>
-            <span>Daily Timings</span>
-            <strong>9:00 AM — 5:00 PM</strong>
-          </div>
-        </div>
-        <div class="date-card">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          <div>
-            <span>Venue</span>
-            <strong>LPU Campus, Phagwara, Punjab</strong>
-          </div>
-        </div>
+      <!-- ======================= IMPACT STRIP ======================= -->
+      <section class="impact reveal" aria-label="Program strengths">
+        <article>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
+          <strong>India's Top Private University</strong><span>Learn inside a full university ecosystem.</span>
+        </article>
+        <article>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <strong>Real Mentors</strong><span>Faculty-led sessions with practical outcomes.</span>
+        </article>
+        <article>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 9.9 8.9 4 11l5.9 2.1L12 19l2.1-5.9L20 11l-5.9-2.1Z"/></svg>
+          <strong>Academics &middot; Creative &middot; Sports</strong><span>Students choose their own path.</span>
+        </article>
+        <article>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="6"/><path d="M15.5 12.9 17 22l-5-3-5 3 1.5-9.1"/></svg>
+          <strong>Grand Showcase</strong><span>A final presentation for parents and guests.</span>
+        </article>
       </section>
 
-      <section class="impact-strip reveal" aria-label="Program strengths">
-        <article><strong>India's Top Private University</strong><span>Learn inside a full university ecosystem.</span></article>
-        <article><strong>Real Mentors</strong><span>Faculty-led sessions with practical outcomes.</span></article>
-        <article><strong>Academic + Creative + Sports</strong><span>Students can choose their own path.</span></article>
-        <article><strong>Grand Showcase</strong><span>Final presentation for parents and guests.</span></article>
-      </section>
-
+      <!-- ========================== STORY =========================== -->
       <section class="section story reveal">
-        <div class="section-heading">
+        <header class="section-head">
           <p class="eyebrow">Why this summer school</p>
           <h2>Built for students who want to try, make, perform, and grow.</h2>
-        </div>
+        </header>
         <div class="story-grid">
-          <article><span>01</span><h3>Hands-on from day one</h3><p>No passive lectures. Students learn through workshops, labs, rehearsals, sport practice, creative tasks, and guided making.</p></article>
-          <article><span>02</span><h3>Choose by session</h3><p>Each session has its own course list. A student can select only one class from each session during registration.</p></article>
-          <article><span>03</span><h3>Recognized outcomes</h3><p>Every participant receives a certificate, while top performers get special recognition and rewards.</p></article>
+          <article class="story-card"><span class="story-num">01</span><h3>Hands-on from day one</h3><p>No passive lectures. Students learn through workshops, labs, rehearsals, sport practice, creative tasks, and guided making.</p></article>
+          <article class="story-card"><span class="story-num">02</span><h3>Choose your path</h3><p>Each program has its own track or session list, so every student follows a journey that fits what they love.</p></article>
+          <article class="story-card"><span class="story-num">03</span><h3>Recognized outcomes</h3><p>Every participant earns a certificate, while top performers receive special recognition and rewards.</p></article>
         </div>
       </section>
 
+      <!-- ========================== TRACKS ========================== -->
       <section class="section tracks reveal" id="tracks">
-        <div class="section-heading split">
+        <header class="section-head split">
           <div>
             <p class="eyebrow">What your child will create and learn</p>
             <h2>Program tracks</h2>
           </div>
-        </div>
+          <p class="section-lead">Pick a program to see its classes and full-day schedule.</p>
+        </header>
         <div class="track-program-selector" data-track-programs aria-label="Choose program for tracks"></div>
         <div class="track-filter-row">
-          <span class="track-filter-label">Filter by:</span>
-          <div class="filter-group" aria-label="Filter program tracks">
+          <span class="track-filter-label">Filter by</span>
+          <div class="filter-group" role="group" aria-label="Filter program tracks">
             <button class="filter active" type="button" data-filter="all">All</button>
             <button class="filter" type="button" data-filter="tech">Tech</button>
             <button class="filter" type="button" data-filter="creative">Creative</button>
@@ -229,95 +220,135 @@
           </div>
         </div>
         <p class="track-scroll-hint" data-track-scroll-hint hidden></p>
-        <div class="track-grid" id="trackGrid">
-          <!-- Populated dynamically from database -->
-        </div>
+        <div class="track-grid" id="trackGrid"><!-- populated by script.js --></div>
         <p class="track-empty" id="trackEmpty" hidden></p>
       </section>
 
+      <!-- ========================= SESSIONS ========================= -->
       <section class="section sessions reveal" id="sessions">
-        <div class="section-heading center">
+        <header class="section-head center">
           <p class="eyebrow" data-sessions-eyebrow>Program format</p>
           <h2 data-sessions-heading>One class per session.</h2>
-          <p data-sessions-sub>Students can register for one, two, or all three sessions. Each session has its own allowed class list.</p>
-        </div>
-        <div class="session-columns" id="sessionColumns">
-          <!-- Populated dynamically from database -->
-        </div>
+          <p class="section-lead" data-sessions-sub>Students can register for one, two, or all three sessions. Each session has its own allowed class list.</p>
+        </header>
+        <div class="session-columns" id="sessionColumns"><!-- populated by script.js --></div>
       </section>
 
+      <!-- =========================== FEES =========================== -->
       <section class="section fees reveal" id="fees">
         <div class="fee-shell">
-          <div>
+          <div class="fee-intro">
             <p class="eyebrow">Fee options</p>
-            <h2>Choose your summer, your way.</h2>
-            <p>The registration page automatically calculates the fee based on selected sessions.</p>
-            <a class="button primary" href="/register">Open Registration Page</a>
+            <h2>Clear pricing, no surprises.</h2>
+            <p class="section-lead">The registration page calculates your exact total automatically &mdash; the price you see is the price you pay.</p>
+            <a class="btn btn-primary" href="/register">Open Registration
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+            </a>
           </div>
-          <table class="fee-table">
-            <thead><tr><th>Sessions</th><th>Description</th><th>Fee</th></tr></thead>
-            <tbody id="feeTableBody">
-              <!-- Populated dynamically from database -->
-            </tbody>
-          </table>
-          <div class="hostel-info">
-            <h3>Optional: Hostel Bed</h3>
-            <p>On-campus stay available for outstation students. Rates are per student bed, per day.</p>
-            <div class="hostel-options">
-              <div class="hostel-option" data-hostel-option="hostel_only"><strong>Rs. 100/day</strong><span>Non-AC hostel bed per student</span></div>
-              <div class="hostel-option" data-hostel-option="hostel_food"><strong>Rs. 300/day</strong><span>AC hostel bed per student</span></div>
-            </div>
+          <div class="fee-card">
+            <table class="fee-table">
+              <thead><tr><th scope="col">Sessions</th><th scope="col">Description</th><th scope="col">Fee</th></tr></thead>
+              <tbody id="feeTableBody"><!-- populated by script.js --></tbody>
+            </table>
+            <!-- Accommodation block is rendered per selected program by script.js
+                 (optional = hostel options, included = bundled message, none = hidden). -->
+            <div class="hostel-info" id="feeAccommodation" hidden></div>
           </div>
         </div>
       </section>
 
-      <section class="recognition reveal">
-        <div><p class="eyebrow">Recognition and rewards</p><h2>Certificate, goodies, rewards, and a showcase moment.</h2></div>
-        <div class="reward-list"><span>Certificate of Completion</span><span>Exclusive goodies</span><span>Rewards for top performers</span><span>Grand showcase for parents</span></div>
+      <!-- ======================= RECOGNITION ======================== -->
+      <section class="section recognition reveal">
+        <header class="section-head">
+          <p class="eyebrow">Recognition and rewards</p>
+          <h2>A certificate, goodies, rewards, and a showcase moment.</h2>
+        </header>
+        <ul class="reward-list">
+          <li class="reward-card">
+            <span class="reward-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89 7 22l5-3 5 3-1.21-8.12"/></svg></span>
+            <strong>Certificate of completion</strong>
+            <span class="reward-text">An official LPU certificate to mark every student's achievement.</span>
+          </li>
+          <li class="reward-card">
+            <span class="reward-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8"/><path d="M16.5 8a2.5 2.5 0 0 0 0-5C13 3 12 8 12 8"/></svg></span>
+            <strong>Exclusive goodies</strong>
+            <span class="reward-text">A summer-school kit and branded merchandise to take home.</span>
+          </li>
+          <li class="reward-card">
+            <span class="reward-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></span>
+            <strong>Rewards for top performers</strong>
+            <span class="reward-text">Standout students earn special prizes and recognition.</span>
+          </li>
+          <li class="reward-card">
+            <span class="reward-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg></span>
+            <strong>Grand showcase for parents</strong>
+            <span class="reward-text">A final-day stage where families watch the work come alive.</span>
+          </li>
+        </ul>
       </section>
     </main>
 
+    <!-- =========================== FOOTER ========================== -->
     <footer class="site-footer" id="contact">
-      <div>
-        <img src="assets/dsosww-logo.png" width="514" height="136" alt="LPU Student Welfare Wing" loading="lazy" decoding="async">
-        <h2 data-cfg="event-name">LPU Summer School 2026</h2>
-        <p data-cfg="full-address">Lovely Professional University, Jalandhar - Delhi G.T. Road, Phagwara, Punjab, India - 144411</p>
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="assets/sww-logo.png" width="718" height="191" alt="LPU Student Welfare Wing" loading="lazy" decoding="async">
+          <h2 data-cfg="event-name">LPU Summer School 2026</h2>
+          <p class="footer-tagline">Hands-on learning, sport, and creativity for young minds &mdash; on campus at India's top private university.</p>
+          <p class="footer-address" data-cfg="full-address">Lovely Professional University, Jalandhar - Delhi G.T. Road, Phagwara, Punjab, India - 144411</p>
+        </div>
+
+        <nav class="footer-links" aria-label="Footer">
+          <h3 class="footer-col-title">Explore</h3>
+          <ul>
+            <li><a href="#tracks">Tracks &amp; courses</a></li>
+            <li><a href="#sessions">Daily schedule</a></li>
+            <li><a href="#fees">Fees &amp; stay</a></li>
+            <li><a href="/register">Register now</a></li>
+          </ul>
+        </nav>
+
+        <address class="footer-contact">
+          <h3 class="footer-col-title">For any queries, please contact</h3>
+          <div class="contact-card" data-cfg-pm="1">
+            <span>Ravinder Kumar, Program Manager</span>
+            <div class="contact-links">
+              <a href="tel:+918607234098">Call +91 86072 34098</a>
+              <a href="https://wa.me/918607234098?text=Hi%2C%20I%20have%20a%20query%20about%20LPU%20Summer%20School%202026" target="_blank" rel="noopener">WhatsApp</a>
+            </div>
+          </div>
+          <div class="contact-card" data-cfg-pm="2">
+            <span>Vivek Kumar, Program Manager</span>
+            <div class="contact-links">
+              <a href="tel:+918637573863">Call +91 86375 73863</a>
+              <a href="https://wa.me/918637573863?text=Hi%2C%20I%20have%20a%20query%20about%20LPU%20Summer%20School%202026" target="_blank" rel="noopener">WhatsApp</a>
+            </div>
+          </div>
+          <div class="contact-director" data-cfg-director>
+            <span>Dr. Sorabh Lakhanpal, Program Director</span>
+            <a href="mailto:sorabh.lakhanpal@lpu.co.in">sorabh.lakhanpal@lpu.co.in</a>
+          </div>
+          <p class="footer-email" data-cfg="footer-email">General enquiries: <a href="mailto:summerschool@lpu.co.in">summerschool@lpu.co.in</a></p>
+        </address>
       </div>
-      <address>
-        <strong>For Any Queries, Please Contact</strong>
-        <div class="contact-card" data-cfg-pm="1">
-          <span>Ravinder Kumar, Program Manager</span>
-          <div class="contact-links">
-            <a href="tel:+918607234098">Call +91 86072 34098</a>
-            <a href="https://wa.me/918607234098?text=Hi%2C%20I%20have%20a%20query%20about%20LPU%20Summer%20School%202026" target="_blank" rel="noopener">WhatsApp</a>
-          </div>
-        </div>
-        <div class="contact-card" data-cfg-pm="2">
-          <span>Vivek Kumar, Program Manager</span>
-          <div class="contact-links">
-            <a href="tel:+918637573863">Call +91 86375 73863</a>
-            <a href="https://wa.me/918637573863?text=Hi%2C%20I%20have%20a%20query%20about%20LPU%20Summer%20School%202026" target="_blank" rel="noopener">WhatsApp</a>
-          </div>
-        </div>
-        <div class="contact-director" data-cfg-director>
-          <span>Dr. Sorabh Lakhanpal, Program Director</span>
-          <a href="mailto:sorabh.lakhanpal@lpu.co.in">sorabh.lakhanpal@lpu.co.in</a>
-        </div>
-        <p class="footer-email" data-cfg="footer-email">General enquiries: <a href="mailto:summerschool@lpu.co.in">summerschool@lpu.co.in</a></p>
-      </address>
+
+      <div class="footer-bottom">
+        <p class="footer-copy">&copy; <span data-cfg="event-name">LPU Summer School 2026</span> &middot; Lovely Professional University</p>
+        <p class="footer-credit">An initiative of the Student Welfare Wing, LPU</p>
+      </div>
     </footer>
 
     <a class="floating-register" href="/register" data-floating-register>Register Now</a>
 
     <button class="floating-contact" type="button" aria-label="Contact us" data-contact-toggle>
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
     </button>
 
     <div class="contact-overlay" data-contact-overlay hidden>
       <div class="contact-panel">
         <div class="contact-panel-header">
           <strong>Contact Program Managers</strong>
-          <button type="button" data-contact-close>&times;</button>
+          <button type="button" aria-label="Close contact panel" data-contact-close>&times;</button>
         </div>
         <div class="contact-panel-body">
           <div class="manager-card" data-cfg-pm-overlay="1">
@@ -339,6 +370,7 @@
         </div>
       </div>
     </div>
+
     <script src="script.js"></script>
   </body>
 </html>
