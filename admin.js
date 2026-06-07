@@ -50,6 +50,88 @@ function toast(msg, type = "") {
   setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 250); }, 3200);
 }
 
+/* ---------- client-side image compression (canvas, no deps) ---------- */
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => resolve({ img, url });
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Could not read this image")); };
+    img.src = url;
+  });
+}
+async function compressImage(file, { maxDim = 1600, quality = 0.82 } = {}) {
+  if (!file || !file.type.startsWith("image/")) return file;
+  let loaded;
+  try { loaded = await loadImage(file); } catch { return file; } // e.g. HEIC browsers can't decode → upload as-is
+  const { img, url } = loaded;
+  const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+  const w = Math.max(1, Math.round(img.width * scale));
+  const h = Math.max(1, Math.round(img.height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) { URL.revokeObjectURL(url); return file; }
+  ctx.drawImage(img, 0, 0, w, h);
+  URL.revokeObjectURL(url);
+  const blob = await new Promise((res) => canvas.toBlob(res, "image/jpeg", quality));
+  if (!blob || blob.size >= file.size) return file; // didn't help → keep original
+  return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
+}
+const fmtKB = (bytes) => bytes >= 1048576 ? (bytes / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(bytes / 1024)) + " KB";
+
+/* ---------- upload-only image field (compress → show → upload) ---------- */
+let imageUploadsInFlight = 0;
+function imageField(label, name, url = "") {
+  return `<div class="field image-field" data-image-field>
+    <label>${esc(label)}</label>
+    <input type="hidden" name="${name}" value="${esc(url || "")}">
+    <div class="image-up">
+      <div class="image-up-preview" data-image-preview>${url ? `<img src="${esc(url)}" alt="">` : `<span>No image yet</span>`}</div>
+      <div class="image-up-side">
+        <button type="button" class="btn btn-ghost btn-sm" data-image-pick>${url ? "Replace image" : "Upload image"}</button>
+        <input type="file" accept="image/*" data-image-input hidden>
+        <p class="image-up-status" data-image-status></p>
+      </div>
+    </div>
+  </div>`;
+}
+function setImageBusy(delta) {
+  imageUploadsInFlight = Math.max(0, imageUploadsInFlight + delta);
+  const saveBtn = $("[data-modal-save]");
+  if (saveBtn) saveBtn.disabled = imageUploadsInFlight > 0;
+}
+function wireImageFields(scope) {
+  scope.querySelectorAll("[data-image-field]").forEach((fieldEl) => {
+    const pick = fieldEl.querySelector("[data-image-pick]");
+    const input = fieldEl.querySelector("[data-image-input]");
+    const hidden = fieldEl.querySelector('input[type="hidden"]');
+    const preview = fieldEl.querySelector("[data-image-preview]");
+    const status = fieldEl.querySelector("[data-image-status]");
+    pick.addEventListener("click", () => { if (!imageUploadsInFlight) input.click(); });
+    input.addEventListener("change", async () => {
+      const file = input.files[0];
+      if (!file) return;
+      setImageBusy(1);
+      status.textContent = "Compressing photo…";
+      try {
+        const compressed = await compressImage(file);
+        const local = URL.createObjectURL(compressed);
+        preview.innerHTML = `<img src="${local}" alt="">`;
+        status.textContent = `Uploading… (${fmtKB(file.size)} → ${fmtKB(compressed.size)})`;
+        const uploadedUrl = await api.uploadImage(compressed);
+        hidden.value = uploadedUrl;
+        pick.textContent = "Replace image";
+        status.innerHTML = `<span class="image-ok">Ready ✓ ${fmtKB(file.size)} → ${fmtKB(compressed.size)}</span>`;
+      } catch (e) {
+        status.innerHTML = `<span class="image-err">${esc(e.message || "Upload failed")}</span>`;
+      } finally {
+        setImageBusy(-1);
+      }
+    });
+  });
+}
+
 /* =====================================================================
    API layer
    ===================================================================== */
@@ -582,7 +664,7 @@ function programForm(p = {}) {
     `<div class="field-row">${field("Allow hostel", "allow_hostel", p.allow_hostel, { type: "checkbox" })}${field("Allow mess food", "allow_mess", p.allow_mess, { type: "checkbox" })}</div>`,
     field("Included services (when included)", "included_services", p.included_services, { type: "textarea", rows: 2 }),
     field("Registration deadline", "registration_deadline", (p.registration_deadline || "").slice(0, 16), { type: "datetime-local" }),
-    field("Card image URL", "image_url", p.image_url),
+    imageField("Card image", "image_url", p.image_url),
     `<div class="field-row">${field("Registration open", "registration_enabled", p.registration_enabled, { type: "checkbox" })}${field("Active (visible on site)", "is_active", p.is_active, { type: "checkbox" })}</div>`,
   ].join("");
 }
@@ -682,7 +764,7 @@ function editCourse(id) {
       `<div class="field-row">${field("Category", "category", c.category, { type: "select", options: catOpts })}${field("Minimum age", "min_age", c.min_age, { type: "number", hint: "blank = any age" })}</div>`,
       field("Description", "description", c.description, { type: "textarea" }),
       `<div class="field-row">${field("Class range", "class_range", c.class_range)}${field("Sort order", "sort_order", c.sort_order, { type: "number" })}</div>`,
-      field("Image URL", "image_url", c.image_url),
+      imageField("Course image", "image_url", c.image_url),
       field("Active", "is_active", c.is_active, { type: "checkbox" }),
     ].join(""),
     onSave: () => { const body = readForm(COURSE_FIELDS); if (!body.name || !body.program_id) { toast("Name and program required.", "error"); return; } saveRow("courses", id, body, "Course"); },
@@ -748,22 +830,17 @@ function editGalleryImage() {
   openModal({
     title: "Add gallery image",
     bodyHTML: [
-      `<div class="field"><label>Upload image</label><input type="file" accept="image/*" data-gallery-file><span class="field-hint">Or paste an image URL below.</span></div>`,
-      field("Image URL", "image_url", "", { hint: "filled automatically after upload" }),
-      field("Alt text", "alt_text", ""),
+      imageField("Image", "image_url", ""),
+      field("Alt text", "alt_text", "", { hint: "short description for accessibility" }),
       field("Sort order", "sort_order", state.gallery.length, { type: "number" }),
       field("Active", "is_active", true, { type: "checkbox" }),
     ].join(""),
     saveLabel: "Add image",
-    onSave: async () => {
-      const fileEl = $("[data-gallery-file]");
-      let url = $('[data-modal-body] [name="image_url"]').value.trim();
-      try {
-        if (fileEl.files[0]) { toast("Uploading…"); url = await api.uploadImage(fileEl.files[0]); }
-        if (!url) { toast("Choose a file or paste a URL.", "error"); return; }
-        const body = { image_url: url, alt_text: $('[data-modal-body] [name="alt_text"]').value.trim(), sort_order: Number($('[data-modal-body] [name="sort_order"]').value || 0), is_active: $('[data-modal-body] [name="is_active"]').checked };
-        await saveRow("gallery_images", null, body, "Image");
-      } catch (e) { toast("Upload failed: " + e.message, "error"); }
+    onSave: () => {
+      const url = $('[data-modal-body] [name="image_url"]').value.trim();
+      if (!url) { toast("Please upload an image first.", "error"); return; }
+      const body = { image_url: url, alt_text: $('[data-modal-body] [name="alt_text"]').value.trim(), sort_order: Number($('[data-modal-body] [name="sort_order"]').value || 0), is_active: $('[data-modal-body] [name="is_active"]').checked };
+      saveRow("gallery_images", null, body, "Image");
     },
   });
 }
@@ -891,6 +968,8 @@ function openModal({ title, bodyHTML, footerHTML, onSave, saveLabel = "Save" }) 
     modalSaveHandler = onSave || null;
   }
   $("[data-modal-overlay]").hidden = false;
+  imageUploadsInFlight = 0;
+  wireImageFields($("[data-modal-body]"));
   // wire cancel buttons fresh each open
   $$("[data-modal-cancel]").forEach((b) => b.addEventListener("click", closeModal));
   const saveBtn = $("[data-modal-save]"); if (saveBtn && modalSaveHandler) saveBtn.addEventListener("click", () => modalSaveHandler());

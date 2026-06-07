@@ -223,6 +223,16 @@ select.input, .field select { appearance: none; background-image: url("data:imag
 .modal-screenshot { margin-top: 6px; }
 .modal-screenshot img { width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--line); }
 
+/* ---- image upload field (upload-only, compresses) ---- */
+.image-up { display: flex; gap: 14px; align-items: flex-start; }
+.image-up-preview { flex: 0 0 96px; width: 96px; height: 96px; border-radius: var(--radius-sm); border: 1px dashed var(--line-2); background: var(--surface-2); display: grid; place-items: center; overflow: hidden; }
+.image-up-preview img { width: 100%; height: 100%; object-fit: cover; }
+.image-up-preview span { font-size: .74rem; color: var(--muted-2); text-align: center; padding: 6px; }
+.image-up-side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.image-up-status { margin: 0; font-size: .78rem; color: var(--muted); min-height: 1em; }
+.image-up-status .image-ok { color: var(--green); font-weight: 700; }
+.image-up-status .image-err { color: var(--red); font-weight: 700; }
+
 /* ---- pagination ---- */
 .pagination { display: flex; gap: 6px; justify-content: center; align-items: center; margin-top: 16px; }
 .pagination button { min-width: 36px; height: 36px; border: 1px solid var(--line-2); background: var(--surface); border-radius: 9px; cursor: pointer; font-weight: 600; }
