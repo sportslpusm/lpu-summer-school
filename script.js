@@ -335,6 +335,7 @@ function renderHeroProgramTabs() {
 
 let heroProgramTimer = null;
 let heroProgramAutoTimer = null;
+let heroNameTypeTimer = null;
 let programs = [];
 let programBySlug = {};
 let publicSessions = [];
@@ -729,6 +730,37 @@ function updateHeroBackground(program, animate = true) {
   preload.src = nextSrc;
 }
 
+// Typewriter for the hero program name: backspace the current name, then type
+// the next one with a blinking caret — a clear cue that a different program is
+// showing. Falls back to an instant set when not animating / reduced motion.
+function typeHeroName(name, animate) {
+  if (!heroProgramName) return;
+  clearTimeout(heroNameTypeTimer);
+  const target = String(name || "");
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!animate || reduce) {
+    heroProgramName.classList.remove("typing");
+    heroProgramName.textContent = target;
+    return;
+  }
+  heroProgramName.classList.add("typing");
+  const current = heroProgramName.textContent || "";
+  const typeIn = (i) => {
+    heroProgramName.textContent = target.slice(0, i);
+    if (i < target.length) {
+      heroNameTypeTimer = setTimeout(() => typeIn(i + 1), 40);
+    } else {
+      heroNameTypeTimer = setTimeout(() => heroProgramName.classList.remove("typing"), 900);
+    }
+  };
+  const backspace = (i) => {
+    heroProgramName.textContent = current.slice(0, i);
+    if (i > 0) heroNameTypeTimer = setTimeout(() => backspace(i - 1), 24);
+    else heroNameTypeTimer = setTimeout(() => typeIn(1), 120);
+  };
+  backspace(current.length);
+}
+
 function updateHeroProgram(programKey, animate = true, options = {}) {
   const program = getProgram(programKey);
   if (!heroProgramRoot || !program) return;
@@ -736,7 +768,7 @@ function updateHeroProgram(programKey, animate = true, options = {}) {
 
   const render = () => {
     heroProgramRoot.dataset.activeProgram = programKey;
-    if (heroProgramName) heroProgramName.textContent = program.name;
+    typeHeroName(program.name, animate);
     if (heroProgramDescription) heroProgramDescription.textContent = program.description;
     if (heroProgramContext) heroProgramContext.textContent = program.context;
     updateHeroBackground(program, animate);

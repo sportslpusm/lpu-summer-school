@@ -234,12 +234,24 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
   font-style: italic; color: var(--orange);
   background: linear-gradient(120deg, var(--orange), #ff9b3e); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
 }
-.hero-dynamic { margin-top: clamp(16px, 2vw, 22px); max-width: 60ch; transition: opacity 200ms var(--ease), transform 200ms var(--ease); }
-.hero-dynamic.is-switching { opacity: 0; transform: translateY(8px); }
+.hero-dynamic { margin-top: clamp(16px, 2vw, 22px); max-width: 60ch; }
+/* Only the description + context cross-fade on switch; the name is left free to
+   run its typewriter effect so the backspace is visible. */
+.hero-description, .hero-cta-context { transition: opacity 220ms var(--ease), transform 220ms var(--ease); }
+.hero-dynamic.is-switching .hero-description,
+.hero-dynamic.is-switching .hero-cta-context { opacity: 0; transform: translateY(8px); }
 .hero-program-name {
   margin: 0 0 6px; font-family: var(--font-body); font-weight: 800;
   font-size: 0.92rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--orange-dark);
 }
+/* blinking typewriter caret, shown only while the name is typing */
+.hero-program-name::after {
+  content: ""; display: inline-block; width: 2px; height: 0.95em; margin-left: 3px;
+  vertical-align: -0.12em; background: var(--orange-dark); opacity: 0;
+}
+.hero-program-name.typing::after { opacity: 1; animation: caretBlink 0.7s steps(1, end) infinite; }
+@keyframes caretBlink { 50% { opacity: 0; } }
+@media (max-width: 999px) { .hero-program-name::after { display: none; } }
 .hero-description { margin: 0; font-size: var(--text-lead); color: var(--ink-soft); line-height: 1.5; }
 .hero-cta-context { margin: 10px 0 0; font-size: 0.98rem; color: var(--muted); }
 
