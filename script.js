@@ -327,7 +327,7 @@ function renderHeroProgramTabs() {
     const slug = tab.dataset.programOption;
     const program = getProgram(slug);
     if (!program) return;
-    const title = tab.querySelector("span");
+    const title = tab.querySelector("span:not(.tab-media)");
     const date = tab.querySelector("small");
     if (title) title.textContent = program.name;
     if (date) date.textContent = program.meta?.dates || program.urgency?.deadlineLabel || "";
@@ -959,6 +959,7 @@ if (heroProgramRoot && heroProgramTabs.length) {
     publicCourses = coursesData;
     publicFees = feesData;
     setPrograms(programsData);
+    if (typeof refreshStatCounts === "function") refreshStatCounts();
 
     const cfg = {};
     if (settingsRes.ok) {
@@ -1124,6 +1125,7 @@ function renderHomepageTrackCards(program, trackGrid) {
       </section>
     `;
   }).join("");
+  trackGrid.querySelectorAll(".track-card").forEach((c, i) => c.style.setProperty("--i", i % 12));
 }
 
 function renderHomepageTracks() {
@@ -1168,6 +1170,7 @@ function renderHomepageTracks() {
       </div>
     </article>
   `).join("");
+  trackGrid.querySelectorAll(".track-card").forEach((c, i) => c.style.setProperty("--i", i % 12));
 }
 
 function renderHomepageSessions() {
@@ -3580,7 +3583,10 @@ form?.addEventListener("submit", async (event) => {
   }
 });
 
-// Scroll reveal
+// Scroll reveal (+ staggered child reveal for .reveal-group containers)
+document.querySelectorAll(".reveal-group").forEach((group) => {
+  Array.from(group.children).forEach((child, i) => child.style.setProperty("--i", i));
+});
 if ("IntersectionObserver" in window) {
   const revealObserver = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
@@ -3591,7 +3597,7 @@ if ("IntersectionObserver" in window) {
     });
   }, { threshold: 0.08, rootMargin: "0px 0px -30px 0px" });
 
-  document.querySelectorAll(".reveal").forEach((el) => revealObserver.observe(el));
+  document.querySelectorAll(".reveal, .reveal-group").forEach((el) => revealObserver.observe(el));
 }
 
 // Close mobile nav on outside click
@@ -3831,4 +3837,83 @@ if (contactToggle && contactOverlay) {
   }
 
   goTo(0, { scroll: false });
+})();
+
+/* =====================================================================
+   UI ENHANCEMENT PASS — runtime (scroll progress, stat count-up,
+   magnetic primary buttons). All guarded for reduced-motion / support.
+   ===================================================================== */
+(function uiEnhancements() {
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* #6a — scroll progress bar */
+  var progressBar = document.querySelector("[data-scroll-progress]");
+  if (progressBar) {
+    var ticking = false;
+    var setProgress = function () {
+      var doc = document.documentElement;
+      var max = (doc.scrollHeight - doc.clientHeight) || 1;
+      var p = Math.min(1, Math.max(0, window.scrollY / max));
+      progressBar.style.transform = "scaleX(" + p + ")";
+      ticking = false;
+    };
+    window.addEventListener("scroll", function () {
+      if (!ticking) { ticking = true; requestAnimationFrame(setProgress); }
+    }, { passive: true });
+    window.addEventListener("resize", setProgress, { passive: true });
+    setProgress();
+  }
+
+  /* #1 — stat count-up */
+  function animateCount(el) {
+    var target = Number(el.dataset.countTo) || 0;
+    var suffix = el.dataset.countSuffix || "";
+    if (reduceMotion) { el.textContent = target + suffix; el.dataset.counted = "1"; return; }
+    var start = Number(String(el.textContent).replace(/[^0-9.]/g, "")) || 0;
+    var duration = 1300, t0 = null;
+    function frame(ts) {
+      if (t0 === null) t0 = ts;
+      var k = Math.min(1, (ts - t0) / duration);
+      var eased = 1 - Math.pow(1 - k, 3); // easeOutCubic
+      el.textContent = Math.round(start + (target - start) * eased) + suffix;
+      if (k < 1) requestAnimationFrame(frame);
+    }
+    el.dataset.counted = "1";
+    requestAnimationFrame(frame);
+  }
+  // Update the live "courses" stat once data has loaded (re-rolls if already shown).
+  window.refreshStatCounts = function () {
+    var live = document.querySelector('[data-count-live="courses"]');
+    if (live && typeof publicCourses !== "undefined" && publicCourses && publicCourses.length) {
+      live.dataset.countTo = String(publicCourses.length);
+      if (live.dataset.counted) animateCount(live);
+    }
+  };
+  var statEls = Array.prototype.slice.call(document.querySelectorAll("[data-count-to]"));
+  if (statEls.length && "IntersectionObserver" in window) {
+    var statObs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting && !entry.target.dataset.counted) {
+          animateCount(entry.target);
+          statObs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.5 });
+    statEls.forEach(function (el) { statObs.observe(el); });
+  } else {
+    statEls.forEach(function (el) { el.textContent = (Number(el.dataset.countTo) || 0) + (el.dataset.countSuffix || ""); });
+  }
+
+  /* #9 — magnetic primary buttons (fine pointer + motion-OK only) */
+  if (!reduceMotion && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+    document.querySelectorAll(".btn-primary").forEach(function (btn) {
+      btn.addEventListener("pointermove", function (e) {
+        var r = btn.getBoundingClientRect();
+        var mx = e.clientX - r.left - r.width / 2;
+        var my = e.clientY - r.top - r.height / 2;
+        btn.style.transform = "translate(" + (mx * 0.14) + "px," + (my * 0.26) + "px)";
+      });
+      btn.addEventListener("pointerleave", function () { btn.style.transform = ""; });
+    });
+  }
 })();

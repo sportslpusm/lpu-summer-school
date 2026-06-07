@@ -39,6 +39,7 @@
   </head>
   <body>
     <a class="skip-link" href="#home">Skip to content</a>
+    <div class="scroll-progress" data-scroll-progress aria-hidden="true"></div>
 
     <div class="utility-bar">
       <span class="utility-org">Lovely Professional University &middot; Student Welfare Wing</span>
@@ -65,6 +66,7 @@
     <main id="main">
       <!-- ============================ HERO ============================ -->
       <section class="hero" id="home" data-program-hero>
+        <div class="hero-aurora" aria-hidden="true"></div>
         <div class="hero-grain" aria-hidden="true"></div>
         <div class="hero-inner">
           <div class="hero-copy">
@@ -138,27 +140,27 @@
           <p class="program-rail-label">Pick a program to explore</p>
           <div class="program-selector" role="tablist" aria-label="Choose a summer school program">
             <button class="program-tab active" type="button" role="tab" aria-selected="true" data-program-option="campus">
-              <img alt="" data-fallback="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779163726439-f0drdpdqahd.png" decoding="async">
+              <span class="tab-media"><img alt="" data-fallback="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779163726439-f0drdpdqahd.png" decoding="async"></span>
               <span>2 Week Campus Program</span>
               <small>15&ndash;27 June 2026</small>
             </button>
             <button class="program-tab" type="button" role="tab" aria-selected="false" data-program-option="online">
-              <img alt="" data-fallback="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188840605-uiunxfem2bh.png" decoding="async">
+              <span class="tab-media"><img alt="" data-fallback="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188840605-uiunxfem2bh.png" decoding="async"></span>
               <span>Online Course</span>
               <small>Self-paced</small>
             </button>
             <button class="program-tab" type="button" role="tab" aria-selected="false" data-program-option="staff-camp">
-              <img alt="" data-fallback="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779089835922-qm6ldbzss5.png" decoding="async">
+              <span class="tab-media"><img alt="" data-fallback="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779089835922-qm6ldbzss5.png" decoding="async"></span>
               <span>LPU Staff Kid Summer Camp</span>
               <small>6&ndash;27 June 2026</small>
             </button>
             <button class="program-tab" type="button" role="tab" aria-selected="false" data-program-option="skills">
-              <img alt="" data-fallback="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779191793080-mgw718dwqh9.png" decoding="async">
+              <span class="tab-media"><img alt="" data-fallback="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779191793080-mgw718dwqh9.png" decoding="async"></span>
               <span>Tailor-Made Skills Workshop</span>
               <small>Dates soon</small>
             </button>
             <button class="program-tab" type="button" role="tab" aria-selected="false" data-program-option="immersion">
-              <img alt="" data-fallback="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188603214-x7q34c5kfq.png" decoding="async">
+              <span class="tab-media"><img alt="" data-fallback="https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779188603214-x7q34c5kfq.png" decoding="async"></span>
               <span>LPU Immersion Program</span>
               <small>15&ndash;27 June 2026</small>
             </button>
@@ -167,7 +169,7 @@
       </section>
 
       <!-- ======================= IMPACT STRIP ======================= -->
-      <section class="impact reveal" aria-label="Program strengths">
+      <section class="impact reveal reveal-group" aria-label="Program strengths">
         <article>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
           <strong>India's Top Private University</strong><span>Learn inside a full university ecosystem.</span>
@@ -186,13 +188,23 @@
         </article>
       </section>
 
+      <!-- ======================= STATS BAND ========================= -->
+      <section class="stats-band reveal" aria-label="LPU Summer School by the numbers">
+        <div class="stats-inner">
+          <div class="stat"><strong data-count-to="5">0</strong><span>Programs to choose</span></div>
+          <div class="stat"><strong data-count-to="60" data-count-live="courses" data-count-suffix="+">0</strong><span>Courses &amp; classes</span></div>
+          <div class="stat"><strong data-count-to="13" data-count-suffix=" days">0</strong><span>On campus</span></div>
+          <div class="stat"><strong data-count-to="100" data-count-suffix="%">0</strong><span>Hands-on learning</span></div>
+        </div>
+      </section>
+
       <!-- ========================== STORY =========================== -->
       <section class="section story reveal">
         <header class="section-head">
           <p class="eyebrow">Why this summer school</p>
           <h2>Built for students who want to try, make, perform, and grow.</h2>
         </header>
-        <div class="story-grid">
+        <div class="story-grid reveal-group">
           <article class="story-card"><span class="story-num">01</span><h3>Hands-on from day one</h3><p>No passive lectures. Students learn through workshops, labs, rehearsals, sport practice, creative tasks, and guided making.</p></article>
           <article class="story-card"><span class="story-num">02</span><h3>Choose your path</h3><p>Each program has its own track or session list, so every student follows a journey that fits what they love.</p></article>
           <article class="story-card"><span class="story-num">03</span><h3>Recognized outcomes</h3><p>Every participant earns a certificate, while top performers receive special recognition and rewards.</p></article>
@@ -220,7 +232,10 @@
           </div>
         </div>
         <p class="track-scroll-hint" data-track-scroll-hint hidden></p>
-        <div class="track-grid" id="trackGrid"><!-- populated by script.js --></div>
+        <div class="track-grid" id="trackGrid" data-track-grid>
+          <div class="skel skel-card"></div><div class="skel skel-card"></div><div class="skel skel-card"></div>
+          <div class="skel skel-card"></div><div class="skel skel-card"></div><div class="skel skel-card"></div>
+        </div>
         <p class="track-empty" id="trackEmpty" hidden></p>
       </section>
 
@@ -263,7 +278,7 @@
           <p class="eyebrow">Recognition and rewards</p>
           <h2>A certificate, a project to keep, rewards, and a showcase moment.</h2>
         </header>
-        <ul class="reward-list">
+        <ul class="reward-list reveal-group">
           <li class="reward-card">
             <span class="reward-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89 7 22l5-3 5 3-1.21-8.12"/></svg></span>
             <strong>Certificate of completion</strong>
@@ -285,6 +300,29 @@
             <span class="reward-text">A final-day stage where families watch the work come alive.</span>
           </li>
         </ul>
+      </section>
+
+      <!-- ====================== COUNTDOWN CTA BAND ====================== -->
+      <section class="cta-band reveal" aria-label="Register before the deadline">
+        <div class="cta-band-inner">
+          <div class="cta-band-text">
+            <p class="cta-band-eyebrow">Seats are limited</p>
+            <h2>Registration closes soon</h2>
+          </div>
+          <div class="countdown" data-countdown data-deadline="2026-06-14T23:59:59+05:30" aria-label="Time left to register">
+            <div class="countdown-cell"><strong data-days>--</strong><span>Days</span></div>
+            <div class="countdown-sep" aria-hidden="true">:</div>
+            <div class="countdown-cell"><strong data-hours>--</strong><span>Hrs</span></div>
+            <div class="countdown-sep" aria-hidden="true">:</div>
+            <div class="countdown-cell"><strong data-minutes>--</strong><span>Min</span></div>
+            <div class="countdown-sep" aria-hidden="true">:</div>
+            <div class="countdown-cell"><strong data-seconds>--</strong><span>Sec</span></div>
+          </div>
+          <a class="btn btn-primary" href="/register">
+            Register Now
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+          </a>
+        </div>
       </section>
     </main>
 
