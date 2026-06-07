@@ -82,8 +82,9 @@ const fmtKB = (bytes) => bytes >= 1048576 ? (bytes / 1048576).toFixed(1) + " MB"
 
 /* ---------- upload-only image field (compress → show → upload) ---------- */
 let imageUploadsInFlight = 0;
-function imageField(label, name, url = "") {
-  return `<div class="field image-field" data-image-field>
+function imageField(label, name, url = "", opts = {}) {
+  const auto = opts.table && opts.id ? ` data-autosave-table="${esc(opts.table)}" data-autosave-id="${esc(opts.id)}"` : "";
+  return `<div class="field image-field" data-image-field${auto}>
     <label>${esc(label)}</label>
     <input type="hidden" name="${name}" value="${esc(url || "")}">
     <div class="image-up">
@@ -122,7 +123,15 @@ function wireImageFields(scope) {
         const uploadedUrl = await api.uploadImage(compressed);
         hidden.value = uploadedUrl;
         pick.textContent = "Replace image";
-        status.innerHTML = `<span class="image-ok">Ready ✓ ${fmtKB(file.size)} → ${fmtKB(compressed.size)}</span>`;
+        const autoTable = fieldEl.dataset.autosaveTable;
+        const autoId = fieldEl.dataset.autosaveId;
+        if (autoTable && autoId) {
+          status.textContent = "Saving to website…";
+          await api.rest(`${autoTable}?id=eq.${autoId}`, { method: "PATCH", body: { [hidden.name]: uploadedUrl } });
+          status.innerHTML = `<span class="image-ok">Saved ✓ — now live on the website</span>`;
+        } else {
+          status.innerHTML = `<span class="image-ok">Ready ✓ ${fmtKB(file.size)} → ${fmtKB(compressed.size)}</span>`;
+        }
       } catch (e) {
         status.innerHTML = `<span class="image-err">${esc(e.message || "Upload failed")}</span>`;
       } finally {
@@ -743,7 +752,7 @@ function programForm(p = {}) {
     `<div class="field-row">${field("Allow hostel", "allow_hostel", p.allow_hostel, { type: "checkbox" })}${field("Allow mess food", "allow_mess", p.allow_mess, { type: "checkbox" })}</div>`,
     field("Included services (when included)", "included_services", p.included_services, { type: "textarea", rows: 2 }),
     field("Registration deadline", "registration_deadline", (p.registration_deadline || "").slice(0, 16), { type: "datetime-local" }),
-    imageField("Card image", "image_url", p.image_url),
+    imageField("Card image", "image_url", p.image_url, { table: "programs", id: p.id }),
     `<div class="field-row">${field("Registration open", "registration_enabled", p.registration_enabled, { type: "checkbox" })}${field("Active (visible on site)", "is_active", p.is_active, { type: "checkbox" })}</div>`,
   ].join("");
 }
@@ -843,7 +852,7 @@ function editCourse(id) {
       `<div class="field-row">${field("Category", "category", c.category, { type: "select", options: catOpts })}${field("Minimum age", "min_age", c.min_age, { type: "number", hint: "blank = any age" })}</div>`,
       field("Description", "description", c.description, { type: "textarea" }),
       `<div class="field-row">${field("Class range", "class_range", c.class_range)}${field("Sort order", "sort_order", c.sort_order, { type: "number" })}</div>`,
-      imageField("Course image", "image_url", c.image_url),
+      imageField("Course image", "image_url", c.image_url, { table: "courses", id: c.id }),
       field("Active", "is_active", c.is_active, { type: "checkbox" }),
     ].join(""),
     onSave: () => { const body = readForm(COURSE_FIELDS); if (!body.name || !body.program_id) { toast("Name and program required.", "error"); return; } saveRow("courses", id, body, "Course"); },
