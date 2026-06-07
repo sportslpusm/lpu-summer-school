@@ -245,6 +245,15 @@ const api = {
       return data?.signedURL ? `${SUPABASE_URL}/storage/v1${data.signedURL}` : "";
     } catch { return ""; }
   },
+  async sendEdgeEmail(payload) {
+    await this.ensureFresh();
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+      method: "POST", headers: this.authHeaders(), body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Email could not be sent");
+    return data;
+  },
   async uploadImage(file) {
     await this.ensureFresh();
     const safe = file.name.replace(/[^a-zA-Z0-9.]/g, "-").toLowerCase();
@@ -537,6 +546,15 @@ async function verifyRegistration(r) {
     Object.assign(r, { status: "confirmed", payment_status: "paid", verified_by: api.email });
     closeModal(); toast("Payment verified — registration confirmed.", "success");
     updateNavBadge(); renderActive();
+    // Best-effort confirmation email to the registrant (never blocks the verify).
+    if (r.email && r.payment_reference) {
+      try {
+        await api.sendEdgeEmail({ type: "payment_verified", registration_id: r.id, payment_reference: r.payment_reference });
+        toast(`Confirmation email sent to ${r.email}.`, "success");
+      } catch {
+        toast("Verified ✓ — but the confirmation email did not send.", "error");
+      }
+    }
   } catch (e) { toast("Verify failed: " + e.message, "error"); }
 }
 

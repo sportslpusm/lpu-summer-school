@@ -198,6 +198,30 @@ function registrationReceivedEmail(reg: Record<string, unknown>): string {
   `;
 }
 
+function paymentConfirmedEmail(reg: Record<string, unknown>): string {
+  const courses = registrationCourses(reg);
+  return `
+    <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;padding:20px;color:#101828">
+      <div style="background:#1f9d5b;color:#fff;padding:20px;border-radius:12px 12px 0 0;text-align:center">
+        <h1 style="margin:0;font-size:22px">Payment Verified — Seat Confirmed</h1>
+        <p style="margin:6px 0 0">LPU Summer School 2026</p>
+      </div>
+      <div style="border:1px solid #e4e7ec;border-top:0;border-radius:0 0 12px 12px;padding:24px;background:#fff">
+        <p>Dear <strong>${escapeHtml(reg.guardian_name || "Parent/Guardian")}</strong>,</p>
+        <p>Good news! We have verified your payment and <strong>${escapeHtml(reg.student_name || "the student")}</strong>'s seat at LPU Summer School 2026 is now <strong>confirmed</strong>. No further action is needed.</p>
+        <table style="width:100%;border-collapse:collapse;margin:16px 0">
+          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Program</td><td style="padding:8px;border-bottom:1px solid #eee">${escapeHtml(reg.program_name || "LPU Summer School")}</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Classes</td><td style="padding:8px;border-bottom:1px solid #eee">${courses.map(escapeHtml).join(", ") || "As per selected program"}</td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Payment Ref</td><td style="padding:8px;border-bottom:1px solid #eee"><strong>${escapeHtml(reg.payment_reference || "")}</strong></td></tr>
+          <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#667085">Amount Paid</td><td style="padding:8px;border-bottom:1px solid #eee"><strong>${formatAmount(reg.total_fee)}</strong></td></tr>
+        </table>
+        <p style="margin:16px 0">We look forward to welcoming ${escapeHtml(reg.student_name || "the student")} to the campus. Joining details and the schedule will follow closer to the start date.</p>
+        <p style="font-size:13px;color:#667085">Questions? ${CONTACT_EMAIL} | ${CONTACT_PHONE}</p>
+      </div>
+    </div>
+  `;
+}
+
 function jsonResponse(data: Record<string, unknown>, status: number, headers: HeadersInit): Response {
   return new Response(JSON.stringify(data), { status, headers: { ...headers, "Content-Type": "application/json" } });
 }
@@ -245,9 +269,21 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: true, messageId: data.messageId || null }, 200, corsHeaders);
     }
 
+    // Everything below this point requires an authenticated admin.
     const userId = await getAuthedUserId(req);
     if (!userId || !(await isAdminUser(userId))) {
       return jsonResponse({ error: "Unauthorized. Admin access required." }, 401, corsHeaders);
+    }
+
+    if (payload.type === "payment_verified") {
+      if (!payload.registration_id || !payload.payment_reference) {
+        return jsonResponse({ error: "Missing registration_id or payment_reference" }, 400, corsHeaders);
+      }
+      const reg = await fetchRegistration(payload.registration_id, payload.payment_reference);
+      if (!reg) return jsonResponse({ error: "Registration not found" }, 404, corsHeaders);
+      if (!reg.email) return jsonResponse({ error: "Registration has no email address" }, 400, corsHeaders);
+      const data = await sendEmail(String(reg.email), "Payment Verified - LPU Summer School 2026", paymentConfirmedEmail(reg));
+      return jsonResponse({ success: true, messageId: data.messageId || null }, 200, corsHeaders);
     }
 
     const { to, subject, html } = payload;
