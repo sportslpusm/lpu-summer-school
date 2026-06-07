@@ -9,7 +9,10 @@ function optimizedImg(url, width, quality) {
   if (!url || typeof url !== "string") return url;
   if (url.indexOf("/storage/v1/object/public/") === -1) return url;
   var rendered = url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
-  return rendered + (rendered.indexOf("?") === -1 ? "?" : "&") + "width=" + (width || 600) + "&quality=" + (quality || 68);
+  // resize=contain keeps the original aspect ratio (width-only wrongly keeps the
+  // source height, which distorts/zooms the image). The CSS box still object-fit
+  // covers it, so cards crop minimally and look like the real photo.
+  return rendered + (rendered.indexOf("?") === -1 ? "?" : "&") + "width=" + (width || 600) + "&resize=contain&quality=" + (quality || 68);
 }
 document.addEventListener("error", function (e) {
   var img = e.target;
