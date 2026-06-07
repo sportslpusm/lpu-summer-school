@@ -1422,13 +1422,16 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 .cta-band .trust-line { color: rgba(255,255,255,0.9); width: 100%; }
 .cta-band .trust-line svg { color: #fff; }
 .cta-band .trust-line .dot { background: rgba(255,255,255,0.5); }
+/* Hero trust line is one clean line on desktop but wraps awkwardly on phones —
+   hide it there (the closing CTA band still carries the same reassurance). */
+@media (max-width: 700px) { .hero-copy .trust-line { display: none; } }
 
 /* something else — "How registration works" 3 steps */
 .howto-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(16px, 2.2vw, 30px); position: relative; }
 .howto-steps::before { content: ""; position: absolute; top: 34px; left: 16%; right: 16%; height: 2px;
   background: repeating-linear-gradient(90deg, var(--orange-soft) 0 8px, transparent 8px 16px); z-index: 0; }
 .howto-step { position: relative; z-index: 1; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.howto-num { width: 68px; height: 68px; border-radius: 50%; display: grid; place-items: center;
+.howto-num { width: 68px; height: 68px; flex: 0 0 auto; border-radius: 50%; display: grid; place-items: center;
   background: linear-gradient(135deg, var(--orange), #ff9a3d); color: #fff; box-shadow: 0 12px 26px -10px rgba(243,112,13,0.6); margin-bottom: 6px; }
 .howto-num svg { width: 30px; height: 30px; }
 .howto-step h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.15rem; color: var(--ink); }
