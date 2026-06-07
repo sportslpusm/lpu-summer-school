@@ -1088,3 +1088,41 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 @media print {
   .utility-bar, .site-header, .floating-contact, .wizard-bar, .form-progress, .payment-overlay { display: none !important; }
 }
+
+/* =====================================================================
+   CUSTOM SELECT (select-enhance.js) — styled dropdown to replace the
+   unstyleable native <option> popup. Matches the registration inputs.
+   ===================================================================== */
+.cs { position: relative; }
+.cs-native { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); border: 0; opacity: 0; pointer-events: none; }
+.cs-trigger {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;
+  padding: 14px 16px; min-height: 54px; text-align: left; cursor: pointer;
+  border: 1.5px solid var(--line-2); border-radius: var(--radius-sm); background: var(--cream);
+  font-size: 1.02rem; font-weight: 500; color: var(--ink);
+  transition: border-color 180ms var(--ease), box-shadow 180ms var(--ease), background 180ms var(--ease);
+}
+.cs-trigger:focus-visible, .cs-open .cs-trigger { outline: none; border-color: var(--orange); background: var(--surface); box-shadow: var(--ring); }
+.cs.cs-placeholder .cs-value { color: var(--muted-2); font-weight: 400; }
+.cs-disabled .cs-trigger { opacity: 0.55; cursor: not-allowed; background: var(--cream-2); }
+.cs-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-chevron { flex: 0 0 auto; color: var(--muted); transition: transform 200ms var(--ease); }
+.cs-open .cs-chevron { transform: rotate(180deg); color: var(--orange-dark); }
+.cs-menu {
+  position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 50;
+  max-height: 264px; overflow-y: auto; padding: 6px; -webkit-overflow-scrolling: touch;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  box-shadow: var(--shadow); animation: csIn 140ms var(--ease);
+}
+.cs-up .cs-menu { top: auto; bottom: calc(100% + 6px); animation: csInUp 140ms var(--ease); }
+@keyframes csIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@keyframes csInUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.cs-option {
+  display: flex; align-items: center; gap: 8px; padding: 11px 13px; border-radius: 9px;
+  cursor: pointer; font-size: 0.96rem; font-weight: 500; color: var(--ink-soft);
+}
+.cs-option.cs-active { background: var(--orange-wash); color: var(--orange-dark); }
+.cs-option[aria-selected="true"] { font-weight: 800; color: var(--orange-dark); }
+.cs-option[aria-selected="true"]::after { content: "\2713"; margin-left: auto; }
+.cs-option[aria-disabled] { color: var(--muted-2); cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) { .cs-menu { animation: none; } }
