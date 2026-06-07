@@ -2905,6 +2905,7 @@ function renderHeroGalleryStrip(images) {
 
   galleryImages = uniqueHeroImages(galleryImages);
   renderHeroGalleryStrip(galleryImages);
+  if (typeof renderGallerySection === "function") renderGallerySection(galleryImages);
 
   galleryTargets.forEach((target, index) => {
     const image = galleryImages[index % galleryImages.length];
@@ -2962,6 +2963,7 @@ function showReceipt(data) {
   document.querySelector(".form-progress-wrapper")?.remove();
   receiptEl.hidden = false;
   requestAnimationFrame(() => receiptEl.focus({ preventScroll: true }));
+  if (typeof fireConfetti === "function") fireConfetti();
   sessionStorage.removeItem("lpu_pending_reg");
 }
 
@@ -3917,3 +3919,144 @@ if (contactToggle && contactOverlay) {
     });
   }
 })();
+
+/* =====================================================================
+   UI ENHANCEMENT PASS 2 — runtime (recognition marquee clone, photo
+   gallery + lightbox, confetti). Guarded for reduced-motion / support.
+   ===================================================================== */
+
+// #3 — duplicate marquee chips once so the CSS loop is seamless
+(function setupRecognitionMarquee() {
+  var marquee = document.querySelector("[data-rec-marquee]");
+  if (!marquee || marquee.children.length === 0) return;
+  Array.prototype.slice.call(marquee.children).forEach(function (chip) {
+    var clone = chip.cloneNode(true);
+    clone.setAttribute("aria-hidden", "true");
+    marquee.appendChild(clone);
+  });
+})();
+
+// #4 — photo gallery section + lightbox (hidden when no images)
+var galleryLightbox = (function () {
+  var box = document.querySelector("[data-lightbox]");
+  if (!box) return { open: function () {} };
+  var imgEl = box.querySelector("[data-lightbox-img]");
+  var capEl = box.querySelector("[data-lightbox-cap]");
+  var items = [];
+  var index = 0;
+  var lastFocus = null;
+
+  function setScroll(lock) {
+    document.documentElement.classList.toggle("modal-open", lock);
+    document.body.classList.toggle("modal-open", lock);
+  }
+  function show(i) {
+    if (!items.length) return;
+    index = (i + items.length) % items.length;
+    var it = items[index];
+    imgEl.src = it.src;
+    imgEl.alt = it.alt || "Campus photo";
+    capEl.textContent = it.alt || "";
+  }
+  function open(list, i) {
+    items = list || [];
+    if (!items.length) return;
+    lastFocus = document.activeElement;
+    show(i || 0);
+    box.classList.add("open");
+    box.setAttribute("aria-hidden", "false");
+    setScroll(true);
+    var closeBtn = box.querySelector("[data-lightbox-close]");
+    if (closeBtn) closeBtn.focus();
+  }
+  function close() {
+    box.classList.remove("open");
+    box.setAttribute("aria-hidden", "true");
+    setScroll(false);
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  box.addEventListener("click", function (e) {
+    if (e.target === box) close();
+  });
+  var closeBtn = box.querySelector("[data-lightbox-close]");
+  var prevBtn = box.querySelector("[data-lightbox-prev]");
+  var nextBtn = box.querySelector("[data-lightbox-next]");
+  if (closeBtn) closeBtn.addEventListener("click", close);
+  if (prevBtn) prevBtn.addEventListener("click", function () { show(index - 1); });
+  if (nextBtn) nextBtn.addEventListener("click", function () { show(index + 1); });
+  document.addEventListener("keydown", function (e) {
+    if (!box.classList.contains("open")) return;
+    if (e.key === "Escape") close();
+    else if (e.key === "ArrowLeft") show(index - 1);
+    else if (e.key === "ArrowRight") show(index + 1);
+  });
+  return { open: open };
+})();
+
+function renderGallerySection(images) {
+  var section = document.querySelector("[data-gallery-section]");
+  var grid = document.querySelector("[data-gallery-grid]");
+  if (!section || !grid) return;
+  var list = (images || []).filter(function (im) { return im && im.src; }).slice(0, 9);
+  if (!list.length) { section.hidden = true; return; }
+  section.hidden = false;
+  grid.innerHTML = list.map(function (im, i) {
+    return '<figure class="gallery-item" data-gallery-open="' + i + '" role="button" tabindex="0" aria-label="' +
+      esc(im.alt || "Campus photo") + ' — view larger">' +
+      '<img src="' + esc(im.src) + '" alt="' + esc(im.alt || "LPU Summer School campus photo") + '" loading="lazy" decoding="async"></figure>';
+  }).join("");
+  grid.querySelectorAll("[data-gallery-open]").forEach(function (el) {
+    var openIt = function () { galleryLightbox.open(list, Number(el.dataset.galleryOpen)); };
+    el.addEventListener("click", openIt);
+    el.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openIt(); }
+    });
+  });
+}
+
+// #11 — lightweight canvas confetti for the registration success screen
+function fireConfetti() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var canvas = document.createElement("canvas");
+  canvas.className = "confetti-canvas";
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  var ctx = canvas.getContext("2d");
+  if (!ctx) { canvas.remove(); return; }
+  var colors = ["#f3700d", "#ff9a3d", "#1f7a52", "#6d2bd6", "#b07d22", "#ffd9b8"];
+  var pieces = [];
+  var count = Math.min(140, Math.round(window.innerWidth / 9));
+  for (var i = 0; i < count; i++) {
+    pieces.push({
+      x: canvas.width / 2 + (i % 2 ? 1 : -1) * (i * 1.5),
+      y: canvas.height * 0.32,
+      vx: (i / count - 0.5) * 12 + ((i * 13) % 7 - 3),
+      vy: -(6 + (i * 7) % 9),
+      g: 0.28 + (i % 5) * 0.02,
+      size: 6 + (i % 4) * 2,
+      rot: (i * 37) % 360,
+      vr: ((i % 7) - 3) * 0.3,
+      color: colors[i % colors.length]
+    });
+  }
+  var start = null;
+  function frame(ts) {
+    if (start === null) start = ts;
+    var elapsed = ts - start;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(function (p) {
+      p.vy += p.g; p.x += p.vx; p.y += p.vy; p.vx *= 0.99; p.rot += p.vr;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot * Math.PI / 180);
+      ctx.globalAlpha = Math.max(0, 1 - elapsed / 2600);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+      ctx.restore();
+    });
+    if (elapsed < 2600) requestAnimationFrame(frame);
+    else canvas.remove();
+  }
+  requestAnimationFrame(frame);
+}
