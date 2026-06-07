@@ -1,6 +1,25 @@
 const SUPABASE_URL = "https://bynpuhoysivxxlblxica.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5bnB1aG95c2l2eHhsYmx4aWNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MTE1NjAsImV4cCI6MjA5NDQ4NzU2MH0.JltZJYggs2ycs3u0HUelRMivZgsByW_g5-n3qz6EaPk";
 
+// Serve display images through Supabase's image-transformation CDN (auto WebP,
+// resized) to cut page weight ~90%. Returns the original URL for non-storage URLs
+// (e.g. data: placeholders). A global error handler reverts to the untransformed
+// original if a transform ever fails, so images can never break.
+function optimizedImg(url, width, quality) {
+  if (!url || typeof url !== "string") return url;
+  if (url.indexOf("/storage/v1/object/public/") === -1) return url;
+  var rendered = url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
+  return rendered + (rendered.indexOf("?") === -1 ? "?" : "&") + "width=" + (width || 600) + "&quality=" + (quality || 68);
+}
+document.addEventListener("error", function (e) {
+  var img = e.target;
+  if (!img || img.tagName !== "IMG") return;
+  var src = img.getAttribute("src") || "";
+  if (src.indexOf("/storage/v1/render/image/public/") === -1) return;
+  var original = src.replace("/storage/v1/render/image/public/", "/storage/v1/object/public/").split("?")[0];
+  if (img.src !== original) img.src = original;
+}, true);
+
 const navToggle = document.querySelector("[data-nav-toggle]");
 const nav = document.querySelector("[data-nav]");
 const header = document.querySelector("[data-header]");
@@ -338,7 +357,8 @@ function renderHeroProgramTabs() {
     const dbProgram = programBySlug[slug];
     const img = tab.querySelector("img");
     if (img) {
-      const desired = (dbProgram && dbProgram.imageUrl) || img.getAttribute("data-fallback") || "";
+      const desiredRaw = (dbProgram && dbProgram.imageUrl) || img.getAttribute("data-fallback") || "";
+      const desired = optimizedImg(desiredRaw, 380, 70);
       if (desired && img.getAttribute("src") !== desired) {
         img.classList.remove("is-loaded");
         const markLoaded = () => img.classList.add("is-loaded");
@@ -879,7 +899,7 @@ function startHeroPhotoSlideshow() {
     var list = galleryImageSrcs();
     if (list.length < 2) return;
     heroPhotoIndex = (heroPhotoIndex + 1) % list.length;
-    var next = list[heroPhotoIndex];
+    var next = optimizedImg(list[heroPhotoIndex], 1000, 70);
     if (!next || heroProgramBgImage.getAttribute("src") === next) return;
     var pre = new Image();
     pre.onload = function () {
@@ -1092,7 +1112,7 @@ function coursePlaceholderImage(course) {
   return "data:image/svg+xml," + encodeURIComponent(svg);
 }
 function courseImageSrc(course) {
-  return (course && course.image_url) ? course.image_url : coursePlaceholderImage(course);
+  return (course && course.image_url) ? optimizedImg(course.image_url, 480, 70) : coursePlaceholderImage(course);
 }
 
 function renderHomepageTrackCards(program, trackGrid) {
@@ -4000,13 +4020,15 @@ function renderGallerySection(images) {
   var list = (images || []).filter(function (im) { return im && im.src; }).slice(0, 9);
   if (!list.length) { section.hidden = true; return; }
   section.hidden = false;
+  // Large versions for the lightbox; lighter thumbnails for the grid.
+  var lbList = list.map(function (im) { return { src: optimizedImg(im.src, 1600, 78), alt: im.alt }; });
   grid.innerHTML = list.map(function (im, i) {
     return '<figure class="gallery-item" data-gallery-open="' + i + '" role="button" tabindex="0" aria-label="' +
       esc(im.alt || "Campus photo") + ' — view larger">' +
-      '<img src="' + esc(im.src) + '" alt="' + esc(im.alt || "LPU Summer School campus photo") + '" loading="lazy" decoding="async"></figure>';
+      '<img src="' + esc(optimizedImg(im.src, 600, 70)) + '" alt="' + esc(im.alt || "LPU Summer School campus photo") + '" loading="lazy" decoding="async"></figure>';
   }).join("");
   grid.querySelectorAll("[data-gallery-open]").forEach(function (el) {
-    var openIt = function () { galleryLightbox.open(list, Number(el.dataset.galleryOpen)); };
+    var openIt = function () { galleryLightbox.open(lbList, Number(el.dataset.galleryOpen)); };
     el.addEventListener("click", openIt);
     el.addEventListener("keydown", function (e) {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openIt(); }

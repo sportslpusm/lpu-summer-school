@@ -1413,30 +1413,35 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 @keyframes rc-draw { to { stroke-dashoffset: 0; } }
 .confetti-canvas { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
 
-/* #2 — testimonials */
-.testi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: clamp(14px, 1.8vw, 22px); }
-.testi-card { display: flex; flex-direction: column; gap: 14px; padding: clamp(20px, 2.2vw, 28px);
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm);
-  transition: transform 260ms var(--ease), box-shadow 260ms var(--ease); }
-.testi-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
-.testi-stars { color: var(--orange); letter-spacing: 3px; font-size: 0.95rem; line-height: 1; }
-.testi-card blockquote { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: clamp(1rem, 0.96rem + 0.3vw, 1.12rem);
-  line-height: 1.55; color: var(--ink-soft); position: relative; }
-.testi-card blockquote::before { content: "\201C"; position: absolute; left: -6px; top: -18px; font-family: var(--font-display);
-  font-size: 2.6rem; color: var(--orange-soft); line-height: 1; }
-.testi-card figcaption { display: flex; align-items: center; gap: 12px; margin-top: auto; padding-top: 4px; }
-.testi-avatar { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 auto;
-  font-weight: 800; color: #fff; font-size: 0.95rem; background: var(--orange); }
-.testi-meta { display: flex; flex-direction: column; min-width: 0; }
-.testi-meta strong { color: var(--ink); font-size: 0.98rem; }
-.testi-meta small { color: var(--muted); font-size: 0.8rem; }
-.testi-card:nth-child(6n+1) .testi-avatar { background: #f3700d; }
-.testi-card:nth-child(6n+2) .testi-avatar { background: #1f7a52; }
-.testi-card:nth-child(6n+3) .testi-avatar { background: #6d2bd6; }
-.testi-card:nth-child(6n+4) .testi-avatar { background: #d85b00; }
-.testi-card:nth-child(6n+5) .testi-avatar { background: #b07d22; }
-.testi-card:nth-child(6n+6) .testi-avatar { background: #2a6f97; }
-@media (prefers-reduced-motion: reduce) { .testi-card { transition: none; } }
+/* #3 — trust line under register CTAs */
+.trust-line { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;
+  margin: 14px 0 0; font-size: 0.82rem; font-weight: 600; color: var(--muted); }
+.trust-line svg { width: 15px; height: 15px; color: var(--green); flex: 0 0 auto; }
+.trust-line .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--line-2); }
+.cta-band .trust-line { color: rgba(255,255,255,0.9); width: 100%; }
+.cta-band .trust-line svg { color: #fff; }
+.cta-band .trust-line .dot { background: rgba(255,255,255,0.5); }
+
+/* something else — "How registration works" 3 steps */
+.howto-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(16px, 2.2vw, 30px); position: relative; }
+.howto-steps::before { content: ""; position: absolute; top: 34px; left: 16%; right: 16%; height: 2px;
+  background: repeating-linear-gradient(90deg, var(--orange-soft) 0 8px, transparent 8px 16px); z-index: 0; }
+.howto-step { position: relative; z-index: 1; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.howto-num { width: 68px; height: 68px; border-radius: 50%; display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--orange), #ff9a3d); color: #fff; box-shadow: 0 12px 26px -10px rgba(243,112,13,0.6); margin-bottom: 6px; }
+.howto-num svg { width: 30px; height: 30px; }
+.howto-step h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.15rem; color: var(--ink); }
+.howto-step p { margin: 0; font-size: 0.92rem; color: var(--muted); line-height: 1.55; max-width: 30ch; }
+.howto-step .howto-badge { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--orange-dark); }
+@media (max-width: 700px) {
+  .howto-steps { grid-template-columns: 1fr; gap: 22px; }
+  .howto-steps::before { display: none; }
+  .howto-step { flex-direction: row; text-align: left; align-items: flex-start; gap: 16px; }
+  .howto-num { margin-bottom: 0; width: 56px; height: 56px; }
+  .howto-num svg { width: 26px; height: 26px; }
+  .howto-step p { max-width: none; }
+  .howto-step > div { display: flex; flex-direction: column; gap: 6px; }
+}
 
 /* ===================== reduced-motion guards (pass 2) ===================== */
 @media (prefers-reduced-motion: reduce) {
