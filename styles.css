@@ -87,6 +87,8 @@ body > * { position: relative; z-index: 1; }
 
 img { display: block; max-width: 100%; height: auto; }
 [hidden] { display: none !important; }
+/* scroll lock while a modal is open (applied to <html> and <body>) */
+.modal-open { overflow: hidden !important; }
 a { color: inherit; text-decoration: none; }
 button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; border-radius: 6px; }
@@ -977,6 +979,12 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 .stay-range-note { margin: 12px 0 0; font-size: 0.86rem; font-weight: 700; color: var(--orange-dark); }
 
 /* ---- confirm fees + consent (step 5) ---- */
+.confirm-summary { margin: 0 0 18px; padding: 18px 20px; border-radius: var(--radius-sm); background: var(--orange-wash); border: 1px solid var(--orange-soft); }
+.confirm-summary-title { margin: 0 0 10px; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--orange-dark); }
+.confirm-summary-row { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-top: 1px solid var(--orange-soft); }
+.confirm-summary-row:first-of-type { border-top: 0; }
+.confirm-summary-row > span { flex: 0 0 auto; color: var(--muted); font-size: 0.86rem; }
+.confirm-summary-row > strong { text-align: right; color: var(--ink); font-weight: 700; font-size: 0.92rem; }
 .confirm-fees { margin-top: 20px; padding: 20px; border-radius: var(--radius-sm); background: var(--cream-2); border: 1px solid var(--line); }
 .fee-line { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 7px 0; }
 .fee-line span { color: var(--muted); }

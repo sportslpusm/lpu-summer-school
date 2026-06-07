@@ -2233,6 +2233,38 @@ function updateRegistrationState() {
       select.value = "";
     }
   });
+
+  renderConfirmSummary();
+}
+
+// Plain-language summary on the Confirm step so parents can double-check exactly
+// what they are registering for before they pay.
+function selectedCourseNames(program = selectedRegistrationProgram()) {
+  return registrationCourseIds(program).map((id) => courseById(id)?.name).filter(Boolean);
+}
+function renderConfirmSummary() {
+  const el = document.querySelector("[data-confirm-summary]");
+  if (!el || !form) return;
+  const program = selectedRegistrationProgram();
+  const fd = new FormData(form);
+  const studentName = String(fd.get("studentName") || "").trim();
+  if (!program || !studentName) { el.hidden = true; return; }
+  const age = fd.get("studentAge");
+  const classLevel = String(fd.get("classLevel") || "");
+  const courseNames = selectedCourseNames(program);
+  const hostelVal = String(fd.get("hostel") || "none");
+  const stayLabel = programShowsHostelStep(program)
+    ? hostelLabelForOption(hostelVal)
+    : (programIncludesAccommodation(program) ? "Included in the program" : "");
+  const rows = [
+    ["Student", `${esc(studentName)}${age ? ` &middot; ${esc(age)} yrs` : ""}${classLevel ? ` &middot; ${esc(classLevel)}` : ""}`],
+    ["Program", esc(program.name)],
+    ["Classes", courseNames.length ? courseNames.map(esc).join(", ") : "Not chosen yet"],
+  ];
+  if (stayLabel) rows.push(["Stay &amp; food", esc(stayLabel)]);
+  el.hidden = false;
+  el.innerHTML = `<h3 class="confirm-summary-title">You're registering</h3>` +
+    rows.map(([k, v]) => `<div class="confirm-summary-row"><span>${k}</span><strong>${v}</strong></div>`).join("");
 }
 
 attachSessionInputListeners();
@@ -2786,6 +2818,7 @@ function showReceipt(data) {
   const receiptEl = document.querySelector("[data-receipt]");
   const table = document.querySelector("[data-receipt-table]");
   if (!receiptEl || !table) return;
+  if (receiptEl.parentElement !== document.body) document.body.appendChild(receiptEl);
 
   const receiptProgram = getProgram(data.program_slug || registrationProgramSlug);
   const progDatesEl = document.querySelector('[data-cfg="program-dates"]');
@@ -2822,7 +2855,7 @@ function showReceipt(data) {
   uploadSelection.selectedFile = null;
   uploadSelection.previewVisible = false;
   uploadSelection.uploadInProgress = false;
-  document.body.style.overflow = "hidden";
+  setScrollLock(true);
   form.hidden = true;
   document.querySelector(".form-progress-wrapper")?.remove();
   receiptEl.hidden = false;
@@ -3128,9 +3161,20 @@ async function preparePreviewAndUploadFile(section, file, token) {
   return uploadFile;
 }
 
+// Lock page scroll while a modal is open. We toggle the class on <html> too
+// because html{overflow-x:hidden} breaks body→viewport overflow propagation,
+// so locking only <body> would not stop the page from scrolling.
+function setScrollLock(on) {
+  document.documentElement.classList.toggle("modal-open", on);
+  document.body.classList.toggle("modal-open", on);
+}
+
 function showPaymentSection(data) {
   const section = document.querySelector("[data-payment-section]");
   if (!section) return;
+  // Lift the modal to <body> so its fixed overlay sits above the footer instead
+  // of being trapped inside <main>'s stacking context (the footer would paint over it).
+  if (section.parentElement !== document.body) document.body.appendChild(section);
 
   pendingRegistration = data;
 
@@ -3266,7 +3310,7 @@ function showPaymentSection(data) {
       if (!confirm("Cancel payment? Your registration is saved — you can upload the screenshot later by revisiting this page.")) return;
       resetUploadSelection(section, "payment modal closed");
       section.hidden = true;
-      document.body.style.overflow = "";
+      setScrollLock(false);
       // Restore the submit button (it was left on "Creating registration..."). The
       // registration is already saved, so clicking it reopens payment (it never duplicates).
       if (submitButton) {
@@ -3278,7 +3322,7 @@ function showPaymentSection(data) {
 
   // Show modal overlay
   section.hidden = false;
-  document.body.style.overflow = "hidden";
+  setScrollLock(true);
 }
 
 // ── Page recovery (if user navigated away during payment) ──────────
