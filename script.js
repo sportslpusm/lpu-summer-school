@@ -3144,7 +3144,9 @@ function showPaymentSection(data) {
 
   // Populate fields
   section.querySelector("[data-pay-ref]").textContent = data.payment_reference;
-  section.querySelector("[data-pay-total]").textContent = formatFee(data.total_amount);
+  section.querySelectorAll("[data-pay-total]").forEach((el) => { el.textContent = formatFee(data.total_amount); });
+  const studentEl = section.querySelector("[data-pay-student]");
+  if (studentEl) studentEl.textContent = data.student_name || data.guardian_name || "your registration";
 
   const paymentProgram = getProgram(data.program_slug || registrationProgramSlug);
   const mainFeeLabel = paymentProgram?.feeMode === "session_count" ? "Session fee" : "Program fee";
@@ -3153,15 +3155,6 @@ function showPaymentSection(data) {
   if (data.hostel_option === "included" && data.included_services) splitText += ` + ${data.included_services}: Included`;
   section.querySelector("[data-pay-split]").textContent = splitText;
 
-  const paytmName = `${data.student_name || data.guardian_name || "LPU Summer School"} - ${data.payment_reference || ""}`.trim();
-  const paytmPhone = data.phone || data.emergency_phone || "";
-  const paytmEmail = data.email || "";
-  const paytmAmount = String(Math.round(Number(data.total_amount || 0)));
-
-  section.querySelector("[data-paytm-name]").textContent = paytmName || "Student name";
-  section.querySelector("[data-paytm-phone]").textContent = paytmPhone || "Registered mobile number";
-  section.querySelector("[data-paytm-email]").textContent = paytmEmail || "Registered email";
-  section.querySelector("[data-paytm-amount]").textContent = paytmAmount || "0";
   section.querySelector("[data-paytm-link]").href = LPU_PAYTM_PAYMENT_URL;
 
   resetUploadSelection(section, "payment section opened");
@@ -3169,36 +3162,6 @@ function showPaymentSection(data) {
   // Bind events only once
   if (!paymentModalBound) {
     paymentModalBound = true;
-
-    // Copy Paytm payment details button
-    const copyBtn = section.querySelector("[data-copy-paytm-details]");
-    copyBtn.addEventListener("click", () => {
-      const details = [
-        "LPU Summer School 2026 Payment",
-        `Full Name: ${section.querySelector("[data-paytm-name]").textContent}`,
-        `Mobile no: ${section.querySelector("[data-paytm-phone]").textContent}`,
-        `e mail id: ${section.querySelector("[data-paytm-email]").textContent}`,
-        `Fee: ${section.querySelector("[data-paytm-amount]").textContent}`,
-        `Payment Ref: ${section.querySelector("[data-pay-ref]").textContent}`,
-        `Paytm link: ${LPU_PAYTM_PAYMENT_URL}`
-      ].join("\n");
-      const writeClipboard = navigator.clipboard?.writeText
-        ? navigator.clipboard.writeText(details)
-        : Promise.reject(new Error("Clipboard API unavailable"));
-      writeClipboard.then(() => {
-        copyBtn.textContent = "Copied!";
-        setTimeout(() => { copyBtn.textContent = "Copy Payment Details"; }, 2000);
-      }).catch(() => {
-        const ta = document.createElement("textarea");
-        ta.value = details;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        ta.remove();
-        copyBtn.textContent = "Copied!";
-        setTimeout(() => { copyBtn.textContent = "Copy Payment Details"; }, 2000);
-      });
-    });
 
     // Upload area click → open body-level file input
     const uploadArea = section.querySelector("[data-upload-area]");

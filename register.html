@@ -292,74 +292,66 @@
             </div>
 
             <div class="payment-modal-scroll">
-              <div class="payment-sticky-notice" data-payment-notice>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                <span>After paying, upload a screenshot below to complete your registration.</span>
+              <div class="pay-amount-card">
+                <span class="pay-for">Paying for <b data-pay-student>&mdash;</b></span>
+                <span class="pay-amount-label">Amount to pay</span>
+                <strong class="pay-amount" data-pay-total>Rs. 0</strong>
+                <span class="pay-amount-split" data-pay-split></span>
               </div>
 
-              <div class="payment-amount-box">
-                <span>Total payable</span>
-                <strong data-pay-total>Rs. 0</strong>
-                <div class="payment-fee-split"><small data-pay-split></small></div>
-              </div>
-
-              <div class="payment-methods">
-                <h3>Pay only on the official LPU payment page</h3>
-                <p class="payment-hint">Open the Paytm page, enter the details below exactly, complete the payment there, then return and upload the screenshot.</p>
-
-                <div class="paytm-detail-card">
-                  <div class="paytm-detail-grid">
-                    <div class="paytm-detail"><span>Full name</span><strong data-paytm-name></strong></div>
-                    <div class="paytm-detail"><span>Mobile no</span><strong data-paytm-phone></strong></div>
-                    <div class="paytm-detail"><span>Email id</span><strong data-paytm-email></strong></div>
-                    <div class="paytm-detail"><span>Fee</span><strong data-paytm-amount></strong></div>
+              <ol class="pay-steps">
+                <li class="pay-step">
+                  <span class="pay-step-num">1</span>
+                  <div class="pay-step-body">
+                    <strong>Pay on the official LPU page</strong>
+                    <p>Tap the button. On the page that opens, enter <b data-pay-total>Rs. 0</b> and complete the payment.</p>
+                    <a class="btn btn-primary pay-cta" data-paytm-link href="https://secure.paytmpayments.com/link/paymentForm/38633/LL_920680970" target="_blank" rel="noopener">
+                      Open Paytm &amp; pay <span data-pay-total>Rs. 0</span>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+                    </a>
                   </div>
-                </div>
-
-                <ol class="paytm-steps">
-                  <li>Tap <strong>Copy payment details</strong>.</li>
-                  <li>Tap <strong>Open LPU Paytm page</strong>.</li>
-                  <li>Paste or type the same name, mobile, email, and fee on Paytm.</li>
-                  <li>After payment, come back here and upload the payment screenshot.</li>
-                </ol>
-
-                <div class="paytm-action-row">
-                  <button type="button" class="btn btn-ghost paytm-copy-btn" data-copy-paytm-details>Copy payment details</button>
-                  <a class="btn btn-primary paytm-open-btn" data-paytm-link href="https://secure.paytmpayments.com/link/paymentForm/38633/LL_920680970" target="_blank" rel="noopener">Open LPU Paytm page</a>
-                </div>
-
-                <div class="payment-help-card">
-                  <strong>Need help paying?</strong>
-                  <span>Call +91 860 723 4098 or +91 940 447 1385.</span>
-                </div>
-              </div>
-
-              <div class="upload-section">
-                <div class="upload-header">
-                  <h3>Upload payment screenshot</h3>
-                  <p>Take a screenshot of your Paytm payment confirmation and upload it here.</p>
-                </div>
-                <div class="upload-state" data-upload-state="pick">
-                  <div class="upload-area" role="button" tabindex="0" data-upload-area>
-                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    <strong>Tap to select screenshot</strong>
-                    <span>JPG, PNG, WebP, or HEIC (max 10 MB)</span>
+                </li>
+                <li class="pay-step">
+                  <span class="pay-step-num">2</span>
+                  <div class="pay-step-body">
+                    <strong>Take a screenshot</strong>
+                    <p>When Paytm shows &ldquo;Payment Successful&rdquo;, take a screenshot of that screen.</p>
                   </div>
-                  <div class="upload-processing" data-upload-processing>
-                    <div class="upload-spinner"></div>
-                    <span>Compressing your photo&hellip; please wait</span>
-                  </div>
-                  <div class="upload-ready" data-upload-ready>
-                    <img data-preview-img alt="Screenshot preview">
-                    <div class="upload-file-info">
-                      <span class="upload-filename" data-upload-filename></span>
-                      <span class="upload-success-badge">Ready to submit</span>
+                </li>
+                <li class="pay-step">
+                  <span class="pay-step-num">3</span>
+                  <div class="pay-step-body">
+                    <strong>Upload your screenshot here</strong>
+                    <div class="upload-section">
+                      <div class="upload-state" data-upload-state="pick">
+                        <div class="upload-area" role="button" tabindex="0" data-upload-area>
+                          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                          <strong>Tap to add your payment screenshot</strong>
+                          <span>JPG, PNG, WebP or HEIC (max 10 MB)</span>
+                        </div>
+                        <div class="upload-processing" data-upload-processing>
+                          <div class="upload-spinner"></div>
+                          <span>Compressing your photo&hellip; please wait</span>
+                        </div>
+                        <div class="upload-ready" data-upload-ready>
+                          <img data-preview-img alt="Screenshot preview">
+                          <div class="upload-file-info">
+                            <span class="upload-filename" data-upload-filename></span>
+                            <span class="upload-success-badge">Ready to submit</span>
+                          </div>
+                          <button type="button" class="upload-remove-btn" data-remove-upload aria-label="Remove screenshot">&times;</button>
+                        </div>
+                      </div>
+                      <p class="form-status" role="status" data-upload-status></p>
+                      <button class="btn btn-primary upload-submit" type="button" data-submit-screenshot disabled>Submit registration</button>
                     </div>
-                    <button type="button" class="upload-remove-btn" data-remove-upload aria-label="Remove screenshot">&times;</button>
                   </div>
-                </div>
-                <p class="form-status" role="status" data-upload-status></p>
-                <button class="btn btn-primary upload-submit" type="button" data-submit-screenshot disabled>Submit registration</button>
+                </li>
+              </ol>
+
+              <div class="payment-help-card">
+                <strong>Need help paying?</strong>
+                <span>Call +91 860 723 4098 or +91 940 447 1385 &mdash; we'll guide you.</span>
               </div>
             </div>
           </div>
