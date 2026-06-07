@@ -324,12 +324,23 @@ function getProgram(slug, fallback = "campus") {
 function renderHeroProgramTabs() {
   if (!heroProgramTabs.length) return;
   heroProgramTabs.forEach((tab) => {
-    const program = getProgram(tab.dataset.programOption);
+    const slug = tab.dataset.programOption;
+    const program = getProgram(slug);
     if (!program) return;
     const title = tab.querySelector("span");
     const date = tab.querySelector("small");
     if (title) title.textContent = program.name;
     if (date) date.textContent = program.meta?.dates || program.urgency?.deadlineLabel || "";
+    // Apply the admin-managed Card image (programs.image_url) once the DB program is
+    // loaded, so replacing the photo in admin reflects on the homepage explore tabs.
+    // The hardcoded <img> in index.html stays as the pre-load fallback.
+    const dbProgram = programBySlug[slug];
+    const img = tab.querySelector("img");
+    const imageUrl = dbProgram && dbProgram.imageUrl;
+    if (img && imageUrl && img.getAttribute("src") !== imageUrl) {
+      img.src = imageUrl;
+      img.alt = program.name || "";
+    }
   });
 }
 
