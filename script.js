@@ -4082,3 +4082,45 @@ function fireConfetti() {
   }
   requestAnimationFrame(frame);
 }
+
+/* =====================================================================
+   UI ENHANCEMENT PASS 3 — runtime (back-to-top, nav scroll-spy,
+   save/print details).
+   ===================================================================== */
+(function uiEnhancements3() {
+  // back-to-top button
+  var toTop = document.querySelector("[data-back-to-top]");
+  if (toTop) {
+    var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var onScroll = function () { toTop.classList.toggle("visible", window.scrollY > 640); };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    toTop.addEventListener("click", function () {
+      window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+    });
+  }
+
+  // nav scroll-spy: highlight the link for the section currently in view
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll('.site-nav a[href^="#"]'));
+  if (navLinks.length && "IntersectionObserver" in window) {
+    var linkByHash = {};
+    var sections = [];
+    navLinks.forEach(function (a) {
+      var id = a.getAttribute("href").slice(1);
+      var sec = id && document.getElementById(id);
+      if (sec) { linkByHash[id] = a; sections.push(sec); }
+    });
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        navLinks.forEach(function (a) { a.classList.remove("active"); });
+        if (linkByHash[e.target.id]) linkByHash[e.target.id].classList.add("active");
+      });
+    }, { rootMargin: "-45% 0px -45% 0px", threshold: 0 });
+    sections.forEach(function (s) { spy.observe(s); });
+  }
+
+  // save / print details (browser print dialog → "Save as PDF")
+  var printBtn = document.querySelector("[data-print-page]");
+  if (printBtn) printBtn.addEventListener("click", function () { window.print(); });
+})();

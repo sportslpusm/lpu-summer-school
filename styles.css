@@ -680,7 +680,16 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 }
 
 /* ===================== print / fallback ===================== */
-@media print { .utility-bar, .site-header, .floating-register, .floating-contact, .hero-gallery { display: none; } }
+@media print {
+  .utility-bar, .site-header, .floating-register, .floating-contact, .back-to-top, .hero-gallery,
+  .scroll-progress, .hero-aurora, .program-rail, .stats-band, .recognition-strip, .gallery-section,
+  .cta-band, .howto, .hero-urgency, .hero-actions, .trust-line, .nav-toggle { display: none !important; }
+  body::before { display: none !important; }
+  .reveal, .reveal-group > * { opacity: 1 !important; transform: none !important; animation: none !important; }
+  * { box-shadow: none !important; animation: none !important; }
+  .hero { padding: 12px 0 0 !important; background: none !important; }
+  a { color: #000 !important; }
+}
 
 /* =====================================================================
    HERO REFINEMENTS — feedback pass
@@ -1254,15 +1263,8 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
   from { transform: translate3d(-2%, -1%, 0) scale(1); }
   to   { transform: translate3d(3%, 2%, 0) scale(1.1); }
 }
-.hero-bg-media img { animation: ken-burns 26s ease-in-out infinite alternate; }
-@keyframes ken-burns { from { transform: scale(1.03); } to { transform: scale(1.12); } }
-[data-program-hero].is-bg-switching .hero-bg-media img { animation-play-state: paused; }
-
-/* program-tab image zoom (ken-burns on hover / active) */
+/* program-tab media wrapper (clips corners; images shown at full frame, no zoom) */
 .tab-media { display: block; overflow: hidden; border-radius: 9px; }
-.tab-media img { transition: transform 700ms var(--ease); }
-.program-tab:hover .tab-media img,
-.program-tab.active .tab-media img { transform: scale(1.06); }
 
 /* #8 — track-filter stagger-in on (re)render */
 @media (prefers-reduced-motion: no-preference) {
@@ -1349,9 +1351,8 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
   cursor: zoom-in; border: 1px solid var(--line); background: var(--cream-2);
   box-shadow: var(--shadow-sm); transition: transform 360ms var(--ease), box-shadow 360ms var(--ease); }
 .gallery-item:nth-child(1) { grid-column: span 2; grid-row: span 2; }
-.gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 700ms var(--ease); }
+.gallery-item img { width: 100%; height: 100%; object-fit: cover; }
 .gallery-item:hover { box-shadow: var(--shadow); transform: translateY(-3px); }
-.gallery-item:hover img { transform: scale(1.07); }
 .gallery-item:focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; }
 .gallery-item::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(26,20,13,0.4)); opacity: 0; transition: opacity 360ms var(--ease); }
 .gallery-item:hover::after { opacity: 1; }
@@ -1442,6 +1443,30 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
   .howto-step p { max-width: none; }
   .howto-step > div { display: flex; flex-direction: column; gap: 6px; }
 }
+
+/* back-to-top button */
+.back-to-top {
+  position: fixed; left: 18px; bottom: 18px; z-index: 70;
+  width: 48px; height: 48px; border-radius: 50%; border: 0; cursor: pointer;
+  display: grid; place-items: center; color: #fff; background: var(--ink); box-shadow: var(--shadow);
+  opacity: 0; transform: translateY(16px); pointer-events: none;
+  transition: opacity 280ms var(--ease), transform 280ms var(--ease), background 200ms var(--ease);
+}
+.back-to-top.visible { opacity: 1; transform: none; pointer-events: auto; }
+.back-to-top:hover { background: var(--orange); transform: translateY(-3px); }
+.back-to-top svg { width: 22px; height: 22px; }
+@media (max-width: 600px) { .back-to-top { bottom: calc(84px + env(safe-area-inset-bottom)); width: 44px; height: 44px; } }
+@media (prefers-reduced-motion: reduce) { .back-to-top { transition: opacity 200ms linear; transform: none; } .back-to-top.visible { transform: none; } }
+
+/* active section highlight in the (sticky) nav */
+.site-nav a.active { color: var(--orange-dark); }
+@media (min-width: 901px) {
+  .site-nav a.active { position: relative; }
+  .site-nav a.active::after { content: ""; position: absolute; left: 2px; right: 2px; bottom: -5px; height: 2px; background: var(--orange); border-radius: 2px; }
+}
+
+/* fee section action buttons (Open Registration + Save details) */
+.fee-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; }
 
 /* ===================== reduced-motion guards (pass 2) ===================== */
 @media (prefers-reduced-motion: reduce) {
