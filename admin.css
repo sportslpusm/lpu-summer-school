@@ -222,6 +222,11 @@ select.input, .field select { appearance: none; background-image: url("data:imag
 .modal-detail dd { margin: 0; font-weight: 600; color: var(--ink); }
 .modal-screenshot { margin-top: 6px; }
 .modal-screenshot img { width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--line); }
+.modal-contact { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.proof-upload { margin-top: 14px; padding: 14px 16px; border-radius: var(--radius-sm); background: var(--amber-wash); border: 1px dashed var(--amber); }
+.proof-upload .field-hint { margin: 0 0 10px; font-weight: 500; color: var(--ink-soft); }
+.proof-status { margin: 8px 0 0; font-size: 0.82rem; color: var(--muted); }
+.proof-status .image-err { color: var(--red); font-weight: 700; }
 
 /* ---- image upload field (upload-only, compresses) ---- */
 .image-up { display: flex; gap: 14px; align-items: flex-start; }

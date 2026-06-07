@@ -254,6 +254,19 @@ const api = {
     if (!res.ok) throw new Error(data.error || "Email could not be sent");
     return data;
   },
+  // Upload a payment screenshot on the parent's behalf via the public upload
+  // endpoint (validates registration_id + payment_reference; sets screenshot_url
+  // and payment_status='verification_pending'). File should be pre-compressed.
+  async uploadPaymentProof(reg, file) {
+    const fd = new FormData();
+    fd.append("registration_id", reg.id);
+    fd.append("payment_reference", reg.payment_reference);
+    fd.append("screenshot", file);
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/upload-screenshot`, { method: "POST", body: fd });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Upload failed");
+    return data;
+  },
   async uploadImage(file) {
     await this.ensureFresh();
     const safe = file.name.replace(/[^a-zA-Z0-9.]/g, "-").toLowerCase();
@@ -390,25 +403,30 @@ function renderActive() {
 function renderDashboard() {
   const regs = state.registrations;
   const pending = regs.filter((r) => r.payment_status === "verification_pending");
+  const unpaid = regs.filter((r) => r.payment_status === "unpaid");
   const verified = regs.filter((r) => r.payment_status === "paid");
-  const today = regs.filter((r) => (r.created_at || "").slice(0, 10) === todayKey());
-  const revenue = verified.reduce((s, r) => s + Number(r.total_fee || 0), 0);
 
   $("[data-stat-grid]").innerHTML = [
     statCard("Total registrations", regs.length, "All submitted records", "orange"),
-    statCard("Pending payments", pending.length, "Need screenshot review", "amber"),
-    statCard("Verified payments", verified.length, "Confirmed paid", "green"),
-    statCard("Verified revenue", fmtFee(revenue), `${today.length} new today`, "blue"),
+    statCard("Awaiting proof", unpaid.length, "Started — no screenshot yet", "amber"),
+    statCard("Needs review", pending.length, "Screenshot to verify", "blue"),
+    statCard("Verified", verified.length, "Confirmed paid", "green"),
   ].join("");
 
+  // Needs attention = screenshots to review + people who started but never uploaded proof.
+  const attentionItems = [
+    ...pending.map((r) => ({ r, tag: "Needs review", cls: "blue" })),
+    ...unpaid.map((r) => ({ r, tag: "Awaiting proof", cls: "amber" })),
+  ].slice(0, 8);
   const attention = $("[data-attention]");
-  attention.innerHTML = pending.length
-    ? pending.slice(0, 6).map((r) => `
+  attention.innerHTML = attentionItems.length
+    ? attentionItems.map(({ r, tag, cls }) => `
         <div class="stack-row">
           <div class="grow"><strong>${esc(r.student_name)}</strong><small>${esc(r.program_name || "—")} · ${fmtFee(r.total_fee)} · ${fmtDateTime(r.created_at)}</small></div>
-          <button class="btn btn-ghost btn-sm" data-open-reg="${r.id}">Review</button>
+          <span class="badge ${cls}">${tag}</span>
+          <button class="btn btn-ghost btn-sm" data-open-reg="${r.id}">Open</button>
         </div>`).join("")
-    : `<p class="stack-empty">All payments reviewed. Nothing pending 🎉</p>`;
+    : `<p class="stack-empty">All caught up — nothing needs attention 🎉</p>`;
 
   const health = $("[data-program-health]");
   health.innerHTML = state.programs.length
@@ -498,6 +516,23 @@ async function openRegistration(id) {
   const r = state.registrations.find((x) => x.id === id);
   if (!r) return;
   const courses = Array.isArray(r.course_names) ? r.course_names : [];
+  const hasShot = !!r.screenshot_url;
+  const waDigits = String(r.phone || "").replace(/[^0-9]/g, "");
+  const waLink = waDigits ? `https://wa.me/${waDigits.length === 10 ? "91" + waDigits : waDigits}` : "";
+  const contactRow = (r.phone || waLink) ? `
+    <div class="modal-contact">
+      ${r.phone ? `<a class="btn btn-ghost btn-sm" href="tel:${esc(r.phone)}">📞 Call ${esc(r.phone)}</a>` : ""}
+      ${waLink ? `<a class="btn btn-ghost btn-sm" href="${waLink}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ""}
+    </div>` : "";
+  const proofArea = hasShot
+    ? `<div class="modal-screenshot" data-shot><p class="field-hint">Loading payment screenshot…</p></div>`
+    : `<div class="proof-upload">
+         <p class="field-hint">No payment screenshot from the parent yet. If they have paid, ask for the proof (e.g. on WhatsApp) and upload it here on their behalf — it will then be ready to verify.</p>
+         <input type="file" accept="image/*" data-proof-file hidden>
+         <button class="btn btn-primary btn-sm" type="button" data-proof-pick>Upload payment proof</button>
+         <p class="proof-status" data-proof-status></p>
+       </div>`;
+
   const detail = `
     <div class="modal-detail">
       <dl>
@@ -517,7 +552,8 @@ async function openRegistration(id) {
         ${r.verified_by ? `<dt>Verified by</dt><dd>${esc(r.verified_by)} · ${fmtDateTime(r.verified_at)}</dd>` : ""}
         ${r.payment_review_note ? `<dt>Review note</dt><dd>${esc(r.payment_review_note)}</dd>` : ""}
       </dl>
-      <div class="modal-screenshot" data-shot>${r.screenshot_url ? `<p class="field-hint">Loading payment screenshot…</p>` : `<p class="field-hint">No payment screenshot uploaded.</p>`}</div>
+      ${contactRow}
+      ${proofArea}
     </div>`;
 
   const footer = `
@@ -527,7 +563,7 @@ async function openRegistration(id) {
 
   openModal({ title: `Registration · ${r.student_name}`, bodyHTML: detail, footerHTML: footer });
 
-  if (r.screenshot_url) {
+  if (hasShot) {
     const signed = await api.signScreenshot(r.screenshot_url);
     const shot = $("[data-shot]");
     if (shot) shot.innerHTML = signed
@@ -536,6 +572,31 @@ async function openRegistration(id) {
   }
   const verifyBtn = $("[data-reg-verify]"); if (verifyBtn) verifyBtn.addEventListener("click", () => verifyRegistration(r));
   const rejectBtn = $("[data-reg-reject]"); if (rejectBtn) rejectBtn.addEventListener("click", () => rejectRegistration(r));
+
+  const proofPick = $("[data-proof-pick]");
+  if (proofPick) {
+    const fileInput = $("[data-proof-file]");
+    const status = $("[data-proof-status]");
+    proofPick.addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      proofPick.disabled = true;
+      try {
+        status.textContent = "Compressing photo…";
+        const compressed = await compressImage(file);
+        status.textContent = "Uploading…";
+        const data = await api.uploadPaymentProof(r, compressed);
+        Object.assign(r, { screenshot_url: data.screenshot_url || r.screenshot_url, payment_status: "verification_pending" });
+        toast("Proof uploaded — now ready to verify.", "success");
+        updateNavBadge(); renderActive();
+        openRegistration(r.id); // re-render modal with the screenshot + verify button
+      } catch (e) {
+        status.innerHTML = `<span class="image-err">${esc(e.message || "Upload failed")}</span>`;
+        proofPick.disabled = false;
+      }
+    });
+  }
 }
 
 async function verifyRegistration(r) {
