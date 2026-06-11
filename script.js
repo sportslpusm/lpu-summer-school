@@ -100,19 +100,19 @@ const FALLBACK_HERO_IMAGES = [
 const HERO_PROGRAMS = {
   campus: {
     name: "2 Week Campus Program",
-    description: "A focused two-week LPU campus journey where students choose sessions, learn with mentors, build visible outcomes, and present their best work in a grand showcase.",
+    description: "A focused two-week LPU campus journey where students pick one track, learn with mentors six days a week, build visible outcomes, and present their best work in a grand showcase.",
     context: "For students ready to learn by doing inside a vibrant university campus.",
     backgroundImage: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779163726439-f0drdpdqahd.png",
-    startDate: "2026-06-15",
-    endDate: "2026-06-27",
+    startDate: "2026-06-22",
+    endDate: "2026-07-04",
     scheduleType: "selectable",
     dateDisplayMode: "date_range",
     accommodationMode: "optional",
     allowHostel: true,
     allowMess: true,
-    facts: { eligibility: "Grades 6-12", duration: "2 weeks", mode: "On Campus", focus: "Session-wise tracks" },
-    urgency: { deadlineLabel: "14 June 2026", deadline: "2026-06-14T23:59:59+05:30", seatsBase: 24, seatsMin: 6, note: "Final seats moving fast. Register today." },
-    meta: { dates: "15–27 June 2026", mode: "On Campus", duration: "2 weeks", location: "LPU Campus, Phagwara" }
+    facts: { eligibility: "Grades 6-12", duration: "2 weeks", mode: "On Campus", focus: "Track-based learning" },
+    urgency: { deadlineLabel: "21 June 2026", deadline: "2026-06-21T23:59:59+05:30", seatsBase: 24, seatsMin: 6, note: "Final seats moving fast. Register today." },
+    meta: { dates: "22 Jun to 4 Jul 2026", mode: "On Campus", duration: "2 weeks", location: "LPU Campus, Phagwara" }
   },
   online: {
     name: "Online Course",
@@ -413,15 +413,88 @@ function programUsesFixedSchedule(program) {
 
 // --- Track model (e.g. 2 Week Campus): pick ONE umbrella track, attend all its classes ---
 const TRACK_META = [
-  { slug: "ai-robots",        name: "AI, Robots & Future Tech",      blurb: "Code, build and create with AI, IoT, web and CAD tools." },
-  { slug: "creative-arts",    name: "Creative Arts",                 blurb: "Photography, textile art, paper craft and hands-on making." },
-  { slug: "agri-food",        name: "Agri-Food & Healthy Living",    blurb: "Hydroponics, mushroom farming and teen health & fitness." },
-  { slug: "entrepreneurship", name: "Entrepreneurship / Shark Tank", blurb: "Design thinking, pitching, law and real founder skills." },
-  { slug: "eng-tech",         name: "Eng & Tech",                    blurb: "Drones, sustainable engineering and build-it-yourself innovation." }
+  { slug: "ai-robots",        name: "AI, Robots & Future Tech",         blurb: "AI tools, IoT, full-stack web and CAD for future engineers." },
+  { slug: "creative-arts",    name: "Creative Arts",                    blurb: "Textile art, home-decor design and a world made of paper." },
+  { slug: "agri-food",        name: "Food, Science & Sustainability",   blurb: "Farm innovation, bread & mocktail craft, hydroponics and hands-on science." },
+  { slug: "entrepreneurship", name: "Startup Launchpad",                blurb: "One founder journey: idea to startup to pitch to funding." },
+  { slug: "eng-tech",         name: "Engineering Edge",                 blurb: "Aerobotix and build-it-yourself engineering workshops." }
 ];
 const TRACK_SLUGS = new Set(TRACK_META.map((t) => t.slug));
 const TRACK_LABELS = TRACK_META.reduce((acc, t) => { acc[t.slug] = t.name; return acc; }, {});
 let selectedTrack = "";
+
+// Weekly timetable for the campus program — mirrors the official schedule PDF
+// (Summer School 2026 v4). Mornings are track classes; from lunch onward the day
+// is common for every student. Update here when a new schedule version ships.
+const CAMPUS_TIMETABLE = {
+  times: ["9:30 – 11:00", "11:15 – 12:45", "12:45 – 1:30", "1:30 – 2:30", "2:30 – 3:30", "3:30 onwards"],
+  rows: [
+    { track: "ai-robots", days: "Mon / Wed / Fri", cells: ["AI Tools & Emerging Technologies", "Fundamentals of IoT", "LUNCH", "Mobile Photography & Editing", "JunkGenie", "Art & Culture or Sports"] },
+    { track: "ai-robots", days: "Tue / Thu / Sat", cells: ["Web Development & Full Stack Technologies Lab", "Create, Design, Draw: Intro to CAD for Future Engineers", "LUNCH", "Personality Development", "JunkGenie", "Art & Culture or Sports"] },
+    { track: "creative-arts", days: "All 6 Days", cells: ["Creative Textile Arts & Home Decor Product Design", "Paperverse: A World Made of Paper", "LUNCH", "Mobile Photography & Editing", "JunkGenie", "Art & Culture or Sports"] },
+    { track: "entrepreneurship", days: "All 6 Days", cells: [{ text: "Idea to StartUp to Pitch to Funding", span: 2 }, "LUNCH", "Personality Development", "JunkGenie", "Art & Culture or Sports"] },
+    { track: "agri-food", days: "Mon / Wed / Fri", cells: ["Farm, Food & Innovation", "Art of Bread Making, Mocktails & Ice Cream", "LUNCH", "Mobile Photography & Editing", "Science Experiment", "Art & Culture or Sports"] },
+    { track: "agri-food", days: "Tue / Thu / Sat", cells: ["Hydroponics: Soilless Culture (Advanced)", "Art of Bread Making, Mocktails & Ice Cream", "LUNCH", "Personality Development", "Green Innovative Camp: Sustainable Practices", "Art & Culture or Sports"] },
+    { track: "eng-tech", days: "Mon / Wed / Fri", cells: [{ text: "Aerobotix", span: 2 }, "LUNCH", "Mobile Photography & Editing", "JunkGenie", "Art & Culture or Sports"] },
+    { track: "eng-tech", days: "Tue / Thu / Sat", cells: ["Future Builders: Hands-on Engineering Workshop", "Future Engineers Bootcamp: Design, Build & Innovate", "LUNCH", "Personality Development", "JunkGenie", "Art & Culture or Sports"] }
+  ]
+};
+
+function renderCampusTimetable() {
+  const head = `<tr><th scope="col">Track</th><th scope="col">Days</th>${CAMPUS_TIMETABLE.times.map((t) => `<th scope="col">${esc(t)}</th>`).join("")}</tr>`;
+  const rowsPerTrack = {};
+  CAMPUS_TIMETABLE.rows.forEach((r) => { rowsPerTrack[r.track] = (rowsPerTrack[r.track] || 0) + 1; });
+  const seenTracks = new Set();
+  const body = CAMPUS_TIMETABLE.rows.map((row) => {
+    const cells = row.cells.map((cell) => {
+      const text = typeof cell === "string" ? cell : cell.text;
+      const span = (typeof cell === "object" && cell.span) ? ` colspan="${cell.span}"` : "";
+      if (text === "LUNCH") return `<td class="tt-lunch">Lunch</td>`;
+      return `<td${span}${span ? ' class="tt-span"' : ""}>${esc(text)}</td>`;
+    }).join("");
+    const trackCell = seenTracks.has(row.track)
+      ? ""
+      : `<th scope="row" class="tt-track" rowspan="${rowsPerTrack[row.track]}">${esc(TRACK_LABELS[row.track] || row.track)}</th>`;
+    seenTracks.add(row.track);
+    return `<tr>${trackCell}<td class="tt-days">${esc(row.days)}</td>${cells}</tr>`;
+  }).join("");
+  return `
+    <div class="timetable-wrap" tabindex="0" role="region" aria-label="Weekly timetable for all tracks">
+      <table class="timetable"><thead>${head}</thead><tbody>${body}</tbody></table>
+    </div>
+    <p class="timetable-hint" aria-hidden="true">Swipe sideways to see the full week &rarr;</p>
+    <p class="timetable-note">Mornings run your chosen track's classes &middot; afternoons are shared activities for every student &middot; Sundays off.</p>
+    ${campusCommonAfternoonCards()}`;
+}
+
+// The shared afternoon classes (category "general") aren't part of any one track,
+// so they get their own card row under the timetable — same card + detail sheet
+// as track classes, so their photos and descriptions stay visible.
+function campusCommonAfternoonCards() {
+  const program = getProgram("campus");
+  const commons = publicCourses
+    .filter((c) => c.program_id === program?.id && c.is_active !== false && c.category === "general")
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  if (!commons.length) return "";
+  const cards = commons.map((c) => {
+    const slot = publicSessions.find((s) => s.id === c.session_id);
+    return `
+      <article class="track-card" data-course-id="${esc(c.id)}" role="button" tabindex="0" aria-label="${esc(c.name)} — view details">
+        <img src="${esc(courseImageSrc(c))}" alt="${esc(c.name)}" loading="lazy" decoding="async">
+        <div>
+          <span>${esc(slotDayTimeLabel(slot))}</span>
+          <h3>${esc(c.name)}</h3>
+          <p>${esc(c.description || "")}</p>
+          <span class="track-card-more">Read details</span>
+        </div>
+      </article>`;
+  }).join("");
+  return `
+    <div class="timetable-common">
+      <h3>Common afternoon &mdash; every student, every track</h3>
+      <div class="timetable-common-grid">${cards}</div>
+    </div>`;
+}
 
 const TRACK_PROGRAMS = new Set(["campus"]);
 
@@ -472,6 +545,16 @@ function formatSlotTime(slot) {
   const ampm = h >= 12 ? "PM" : "AM";
   const hr = ((h + 11) % 12) + 1;
   return `${hr}:${match[2]} ${ampm}`;
+}
+
+// "Mon / Wed / Fri · 9:30 AM" — day pattern (session name) + start time for track classes.
+// Legacy "Slot 1" / "Session 2" style names add nothing, so those show just the time.
+function slotDayTimeLabel(slot) {
+  if (!slot) return "";
+  const time = formatSlotTime(slot.time_slot);
+  const name = String(slot.name || "").trim();
+  if (!name || /^(slot|session)\b/i.test(name)) return time;
+  return time ? `${name} · ${time}` : name;
 }
 
 function programAccommodationMode(program) {
@@ -990,6 +1073,14 @@ if (heroProgramRoot && heroProgramTabs.length) {
       applySettings(cfg);
     }
 
+    // Keep the closing CTA-band countdown in sync with the campus program's own
+    // deadline. Runs AFTER applySettings, which overwrites every [data-countdown]
+    // with the site-wide default — the program row is the source of truth here.
+    const campusDeadline = programsData.find((r) => r.slug === "campus")?.registration_deadline;
+    if (campusDeadline) {
+      document.querySelectorAll(".cta-band [data-countdown]").forEach((el) => { el.dataset.deadline = campusDeadline; });
+    }
+
     buildFeeMaps();
     renderTrackProgramFilters();
     renderHomepageProgramContent();
@@ -1130,7 +1221,7 @@ function renderHomepageTrackCards(program, trackGrid) {
         <article class="track-card" data-course-id="${esc(course.id)}" role="button" tabindex="0" aria-label="${esc(course.name)} — view details">
           <img src="${esc(courseImageSrc(course))}" alt="${esc(course.name)}" loading="lazy" decoding="async">
           <div>
-            <span>${esc(formatSlotTime(slot?.time_slot))} &middot; ${esc(courseEligibilityLabel(course))}</span>
+            <span>${esc(slotDayTimeLabel(slot))} &middot; ${esc(courseEligibilityLabel(course))}</span>
             <h3>${esc(course.name)}</h3>
             <p>${esc(course.description || "")}</p>
             <span class="track-card-more">Read details</span>
@@ -1144,7 +1235,7 @@ function renderHomepageTrackCards(program, trackGrid) {
           <p>${esc(track.blurb)}</p>
         </div>
         <div class="track-section-courses">${cards}</div>
-        <p class="track-section-foot">Plus daily Lunch &amp; Dance / Sports / PEP</p>
+        <p class="track-section-foot">Plus daily: Lunch &middot; Mobile Photography / Personality Development &middot; Art &amp; Culture or Sports &mdash; see the weekly timetable below</p>
       </section>
     `;
   }).join("");
@@ -1202,21 +1293,23 @@ function renderHomepageSessions() {
   const tracksMode = programUsesTracks(getProgram(trackProgramSlug));
   const sessionsHeading = document.querySelector("[data-sessions-heading]");
   const sessionsSub = document.querySelector("[data-sessions-sub]");
-  if (sessionsHeading) sessionsHeading.textContent = tracksMode ? "Your day, slot by slot." : "One class per session.";
+  if (sessionsHeading) sessionsHeading.textContent = tracksMode ? "One timetable, six days a week." : "One class per session.";
   if (sessionsSub) sessionsSub.textContent = tracksMode
-    ? "Pick one track and follow its full-day schedule. Lunch and Dance / Sports / PEP are included for everyone."
+    ? "Mornings run your chosen track's classes. From lunch onward, every student joins the common afternoon line-up."
     : "Students can register for one, two, or all three sessions. Each session has its own allowed class list.";
+
+  // Tracks mode (campus): show the full weekly timetable grid, like the official schedule.
+  sessionColumns.classList.toggle("timetable-mode", tracksMode);
+  if (tracksMode) {
+    sessionColumns.innerHTML = renderCampusTimetable();
+    return;
+  }
   const sessions = programSessions(trackProgramSlug);
   if (!sessions.length) {
     sessionColumns.innerHTML = `<article class="session-card empty-session-card"><h3>Schedule coming soon</h3><ul><li>Admin can add sessions for ${esc(getProgram(trackProgramSlug).name)} from the admin panel.</li></ul></article>`;
     return;
   }
   sessionColumns.innerHTML = sessions.map((session) => {
-    // Tracks mode: a student picks ONE track and that track fills every slot. Don't list
-    // all tracks' classes per slot — that would look like a pick-one-per-slot menu.
-    if (tracksMode) {
-      return `<article class="session-card"><h3>${esc(session.name)} <span>${esc(session.time_slot)}</span></h3><ul><li>One class from your chosen track</li></ul></article>`;
-    }
     const courses = programCourses(trackProgramSlug).filter((course) => course.session_id === session.id);
     const items = courses.length
       ? courses.map((course) => `<li>${esc(course.name)}</li>`).join("")
@@ -1340,8 +1433,10 @@ function renderHomepageAccommodation(program) {
     const course = publicCourses.find((c) => String(c.id) === card.dataset.courseId);
     if (course) { e.preventDefault(); openSheet(course); }
   };
-  grid.addEventListener("click", openFromEvent);
-  grid.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") openFromEvent(e); });
+  // Delegate on document so cards outside #trackGrid (e.g. the common-afternoon
+  // classes under the weekly timetable) open the same detail sheet.
+  document.addEventListener("click", openFromEvent);
+  document.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") openFromEvent(e); });
   el(".course-sheet-close").addEventListener("click", closeSheet);
   overlay.addEventListener("click", (e) => { if (e.target === overlay) closeSheet(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
@@ -2058,7 +2153,7 @@ function renderRegistrationTrackCards(program) {
     const ineligible = hasAge && track.courses.some((c) => !courseAgeEligible(c, studentAge));
     const classes = track.courses.map((c) => {
       const slot = publicSessions.find((s) => s.id === c.session_id);
-      return `<span class="track-class"><b>${esc(formatSlotTime(slot?.time_slot))}</b>${esc(c.name)}</span>`;
+      return `<span class="track-class"><b>${esc(slotDayTimeLabel(slot))}</b>${esc(c.name)}</span>`;
     }).join("");
     return `
       <label class="track-option ${isSel ? "selected" : ""} ${isSel && ineligible ? "invalid" : ""}">
@@ -2083,8 +2178,8 @@ function renderRegistrationTrackCards(program) {
       ${cards || `<article class="selection-card selection-empty"><strong>Tracks coming soon</strong><p>Admin needs to add the track classes before this program can accept registrations.</p></article>`}
     </div>
     <div class="track-common-note">
-      <span>Every track also includes:</span>
-      <strong>Lunch break</strong> 12:30 - 1:30 PM <i>&middot;</i> <strong>Dance / Sports / PEP</strong> 4:30 PM onwards
+      <span>Every track's day also includes:</span>
+      <strong>Lunch</strong> 12:45 - 1:30 PM <i>&middot;</i> <strong>Mobile Photography / Personality Development</strong> 1:30 - 2:30 PM <i>&middot;</i> <strong>JunkGenie / science hour</strong> 2:30 - 3:30 PM <i>&middot;</i> <strong>Art &amp; Culture or Sports</strong> 3:30 PM onwards
     </div>
     <p class="eligibility-note ${selIneligible ? "warning" : ""}">
       ${!open
