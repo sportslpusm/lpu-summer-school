@@ -1518,7 +1518,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
   font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
 }
 .track-day { display: flex; flex-direction: column; }
-.track-day-grid { display: grid; grid-template-columns: 1.4fr 1.4fr 0.7fr 1fr 1fr 1fr; gap: 12px; align-items: stretch; }
+.track-day-grid { display: grid; grid-template-columns: 1fr 1fr 0.55fr 1fr 1fr 1fr; gap: 12px; align-items: stretch; }
 .tday-cell { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
 .tday-cell-span { grid-column: span 2; }
 .tday-time { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--orange-dark); white-space: nowrap; }
@@ -1529,16 +1529,6 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
   color: var(--muted-2); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; text-align: center;
 }
 .tday-plain { text-transform: none; letter-spacing: 0; font-size: 0.85rem; color: var(--muted); }
-.tday-common {
-  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px;
-  min-height: 96px; padding: 14px 10px; cursor: pointer; text-align: center;
-  border: 1.5px dashed var(--orange-soft); border-radius: var(--radius-sm); background: var(--orange-wash);
-  font-family: var(--font-body); transition: transform 200ms var(--ease), box-shadow 200ms var(--ease), background 200ms var(--ease);
-}
-.tday-common img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; box-shadow: var(--shadow-sm); }
-.tday-common strong { font-size: 0.8rem; font-weight: 800; color: var(--ink-soft); line-height: 1.3; }
-.tday-common:hover { transform: translateY(-3px); box-shadow: var(--shadow-sm); background: #ffe9d6; }
-.tday-common:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
 /* phones / narrow: the day becomes a swipeable left-to-right timeline */
 @media (max-width: 999px) {
   .track-day-grid { display: flex; overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x proximity; scrollbar-width: none; }

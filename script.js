@@ -525,7 +525,8 @@ function renderTrackDayRow(row) {
       return `<div class="tday-cell tday-cell-lunch"><span class="tday-time">${esc(timeLabel)}</span><div class="tday-lunch">Lunch break</div></div>`;
     }
     const course = campusCourseByName(text);
-    if (course && TRACK_SLUGS.has(course.category)) {
+    if (course) {
+      // Every class — track or common afternoon — gets the same full photo card.
       return `<div class="tday-cell${span > 1 ? " tday-cell-span" : ""}"><span class="tday-time">${esc(timeLabel)}</span>
         <article class="track-card" data-course-id="${esc(course.id)}" role="button" tabindex="0" aria-label="${esc(course.name)} — view details">
           <img src="${esc(courseImageSrc(course))}" alt="${esc(course.name)}" loading="lazy" decoding="async">
@@ -536,14 +537,6 @@ function renderTrackDayRow(row) {
             <span class="track-card-more">Read details</span>
           </div>
         </article></div>`;
-    }
-    if (course) {
-      // Common (shared-afternoon) class — compact cell; tap opens the same detail sheet.
-      return `<div class="tday-cell"><span class="tday-time">${esc(timeLabel)}</span>
-        <button type="button" class="tday-common" data-course-id="${esc(course.id)}" aria-label="${esc(course.name)} — view details">
-          <img src="${esc(courseImageSrc(course))}" alt="" loading="lazy" decoding="async">
-          <strong>${esc(course.name)}</strong>
-        </button></div>`;
     }
     return `<div class="tday-cell"><span class="tday-time">${esc(timeLabel)}</span><div class="tday-plain">${esc(text)}</div></div>`;
   }).join("");
@@ -1473,7 +1466,7 @@ function renderHomepageAccommodation(program) {
   }
 
   const openFromEvent = (e) => {
-    const card = e.target.closest(".track-card[data-course-id], .tday-common[data-course-id]");
+    const card = e.target.closest(".track-card[data-course-id]");
     if (!card) return;
     const course = publicCourses.find((c) => String(c.id) === card.dataset.courseId);
     if (course) { e.preventDefault(); openSheet(course); }
