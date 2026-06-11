@@ -604,6 +604,13 @@ function slotDayTimeLabel(slot) {
   return time ? `${name} · ${time}` : name;
 }
 
+// "09:30 - 12:45" -> "9:30 – 12:45" (12-hour, compact) for the mini-timetables.
+function formatSlotRange(slot) {
+  return String(slot?.time_slot || "")
+    .replace(/(\d{1,2}):(\d{2})/g, (_, h, mm) => `${((Number(h) + 11) % 12) + 1}:${mm}`)
+    .replace(/\s*-\s*/, " – ");
+}
+
 function programAccommodationMode(program) {
   if (!program) return "none";
   return program.accommodationMode || (program.allowHostel ? "optional" : "none");
@@ -2189,10 +2196,17 @@ function renderRegistrationTrackCards(program) {
   const cards = tracks.map((track) => {
     const isSel = selectedTrack === track.slug;
     const ineligible = hasAge && track.courses.some((c) => !courseAgeEligible(c, studentAge));
-    const classes = track.courses.map((c) => {
+    // Mini-timetable: classes grouped by day pattern with aligned time -> class rows,
+    // so each option reads like the schedule a student will actually follow.
+    const dayGroups = new Map();
+    track.courses.forEach((c) => {
       const slot = publicSessions.find((s) => s.id === c.session_id);
-      return `<span class="track-class"><b>${esc(slotDayTimeLabel(slot))}</b>${esc(c.name)}</span>`;
-    }).join("");
+      const day = (slot?.name || "Schedule").trim();
+      if (!dayGroups.has(day)) dayGroups.set(day, []);
+      dayGroups.get(day).push(`<span class="track-sched-row"><b>${esc(formatSlotRange(slot))}</b><i>${esc(c.name)}</i></span>`);
+    });
+    const classes = `<span class="track-sched">${Array.from(dayGroups.entries()).map(([day, rows]) =>
+      `<span class="track-sched-day">${esc(day)}</span>${rows.join("")}`).join("")}</span>`;
     return `
       <label class="track-option ${isSel ? "selected" : ""} ${isSel && ineligible ? "invalid" : ""}">
         <input type="radio" name="track" value="${esc(track.slug)}" data-track-select ${isSel ? "checked" : ""} ${open ? "" : "disabled"}>
