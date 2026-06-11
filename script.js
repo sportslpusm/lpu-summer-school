@@ -430,7 +430,7 @@ const CAMPUS_TIMETABLE = {
   times: ["9:30 – 11:00", "11:15 – 12:45", "12:45 – 1:30", "1:30 – 2:30", "2:30 – 3:30", "3:30 onwards"],
   rows: [
     { track: "ai-robots", days: "Mon / Wed / Fri", cells: ["AI Tools & Emerging Technologies", "Fundamentals of IoT", "LUNCH", "Mobile Photography & Editing", "JunkGenie", "Art & Culture or Sports"] },
-    { track: "ai-robots", days: "Tue / Thu / Sat", cells: ["Web Development & Full Stack Technologies Lab", "Create, Design, Draw: Intro to CAD for Future Engineers", "LUNCH", "Personality Development", "JunkGenie", "Art & Culture or Sports"] },
+    { track: "ai-robots", days: "Tue / Thu / Sat", cells: ["Web Development & Full Stack Technologies Lab", "Create, Design, Draw : Introduction to CAD for Future Engineers", "LUNCH", "Personality Development", "JunkGenie", "Art & Culture or Sports"] },
     { track: "creative-arts", days: "All 6 Days", cells: ["Creative Textile Arts & Home Decor Product Design", "Paperverse: A World Made of Paper", "LUNCH", "Mobile Photography & Editing", "JunkGenie", "Art & Culture or Sports"] },
     { track: "entrepreneurship", days: "All 6 Days", cells: [{ text: "Idea to StartUp to Pitch to Funding", span: 2 }, "LUNCH", "Personality Development", "JunkGenie", "Art & Culture or Sports"] },
     { track: "agri-food", days: "Mon / Wed / Fri", cells: ["Farm, Food & Innovation", "Art of Bread Making, Mocktails & Ice Cream", "LUNCH", "Mobile Photography & Editing", "Science Experiment", "Art & Culture or Sports"] },
@@ -494,6 +494,60 @@ function campusCommonAfternoonCards() {
       <h3>Common afternoon &mdash; every student, every track</h3>
       <div class="timetable-common-grid">${cards}</div>
     </div>`;
+}
+
+// Resolve a CAMPUS_TIMETABLE cell to its DB course (case/punctuation-insensitive),
+// so timetable cells can render real course cards with photo + description.
+function campusCourseByName(name) {
+  const program = getProgram("campus");
+  const norm = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const target = norm(name);
+  if (!target) return null;
+  return publicCourses.find((c) =>
+    c.program_id === program?.id && c.is_active !== false && norm(c.name) === target) || null;
+}
+
+// One day-pattern row of a track section, laid out like the timetable:
+// time labels on top, the track's classes as photo cards, lunch and the common
+// afternoon blocks as compact cells — the full day, left to right.
+function renderTrackDayRow(row) {
+  const times = CAMPUS_TIMETABLE.times;
+  let timeIdx = 0;
+  const cells = row.cells.map((cell) => {
+    const text = typeof cell === "string" ? cell : cell.text;
+    const span = (typeof cell === "object" && cell.span) ? cell.span : 1;
+    const start = String(times[timeIdx] || "").split("–")[0].trim();
+    const end = String(times[timeIdx + span - 1] || "").split("–").pop().trim();
+    const timeLabel = end && end !== start ? `${start} – ${end}` : (times[timeIdx] || "");
+    timeIdx += span;
+
+    if (text === "LUNCH") {
+      return `<div class="tday-cell tday-cell-lunch"><span class="tday-time">${esc(timeLabel)}</span><div class="tday-lunch">Lunch break</div></div>`;
+    }
+    const course = campusCourseByName(text);
+    if (course && TRACK_SLUGS.has(course.category)) {
+      return `<div class="tday-cell${span > 1 ? " tday-cell-span" : ""}"><span class="tday-time">${esc(timeLabel)}</span>
+        <article class="track-card" data-course-id="${esc(course.id)}" role="button" tabindex="0" aria-label="${esc(course.name)} — view details">
+          <img src="${esc(courseImageSrc(course))}" alt="${esc(course.name)}" loading="lazy" decoding="async">
+          <div>
+            <span>${esc(courseEligibilityLabel(course))}</span>
+            <h3>${esc(course.name)}</h3>
+            <p>${esc(course.description || "")}</p>
+            <span class="track-card-more">Read details</span>
+          </div>
+        </article></div>`;
+    }
+    if (course) {
+      // Common (shared-afternoon) class — compact cell; tap opens the same detail sheet.
+      return `<div class="tday-cell"><span class="tday-time">${esc(timeLabel)}</span>
+        <button type="button" class="tday-common" data-course-id="${esc(course.id)}" aria-label="${esc(course.name)} — view details">
+          <img src="${esc(courseImageSrc(course))}" alt="" loading="lazy" decoding="async">
+          <strong>${esc(course.name)}</strong>
+        </button></div>`;
+    }
+    return `<div class="tday-cell"><span class="tday-time">${esc(timeLabel)}</span><div class="tday-plain">${esc(text)}</div></div>`;
+  }).join("");
+  return `<div class="track-day"><span class="track-day-label">${esc(row.days)}</span><div class="track-day-grid">${cells}</div></div>`;
 }
 
 const TRACK_PROGRAMS = new Set(["campus"]);
@@ -1214,31 +1268,22 @@ function renderHomepageTrackCards(program, trackGrid) {
   if (trackEmpty) trackEmpty.hidden = tracks.length > 0;
   if (trackScrollHint) trackScrollHint.hidden = true;
   trackGrid.classList.add("track-grid-sections");
-  trackGrid.innerHTML = tracks.map((track) => {
-    const cards = track.courses.map((course) => {
-      const slot = publicSessions.find((s) => s.id === course.session_id);
-      return `
-        <article class="track-card" data-course-id="${esc(course.id)}" role="button" tabindex="0" aria-label="${esc(course.name)} — view details">
-          <img src="${esc(courseImageSrc(course))}" alt="${esc(course.name)}" loading="lazy" decoding="async">
-          <div>
-            <span>${esc(slotDayTimeLabel(slot))} &middot; ${esc(courseEligibilityLabel(course))}</span>
-            <h3>${esc(course.name)}</h3>
-            <p>${esc(course.description || "")}</p>
-            <span class="track-card-more">Read details</span>
-          </div>
-        </article>`;
-    }).join("");
-    return `
-      <section class="track-section" data-category="${esc(track.slug)}">
+
+  // Each track section IS its timetable: one row per day pattern, time labels on
+  // top, the track's classes as photo cards, lunch + common afternoon included —
+  // the same day a student will actually live, left to right.
+  const rowsByTrack = {};
+  CAMPUS_TIMETABLE.rows.forEach((r) => { (rowsByTrack[r.track] = rowsByTrack[r.track] || []).push(r); });
+
+  trackGrid.innerHTML = TRACK_META.filter((t) => rowsByTrack[t.slug]).map((t) => `
+      <section class="track-section" data-category="${esc(t.slug)}">
         <div class="track-section-head">
-          <h3>${esc(track.name)}</h3>
-          <p>${esc(track.blurb)}</p>
+          <h3>${esc(t.name)}</h3>
+          <p>${esc(t.blurb)}</p>
         </div>
-        <div class="track-section-courses">${cards}</div>
-        <p class="track-section-foot">Plus daily: Lunch &middot; Mobile Photography / Personality Development &middot; Art &amp; Culture or Sports &mdash; see the weekly timetable below</p>
+        <div class="track-days">${rowsByTrack[t.slug].map((row) => renderTrackDayRow(row)).join("")}</div>
       </section>
-    `;
-  }).join("");
+    `).join("");
   trackGrid.querySelectorAll(".track-card").forEach((c, i) => c.style.setProperty("--i", i % 12));
 }
 
@@ -1428,7 +1473,7 @@ function renderHomepageAccommodation(program) {
   }
 
   const openFromEvent = (e) => {
-    const card = e.target.closest(".track-card[data-course-id]");
+    const card = e.target.closest(".track-card[data-course-id], .tday-common[data-course-id]");
     if (!card) return;
     const course = publicCourses.find((c) => String(c.id) === card.dataset.courseId);
     if (course) { e.preventDefault(); openSheet(course); }
