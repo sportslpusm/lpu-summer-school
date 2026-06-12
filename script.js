@@ -1,13 +1,35 @@
 const SUPABASE_URL = "https://bynpuhoysivxxlblxica.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5bnB1aG95c2l2eHhsYmx4aWNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MTE1NjAsImV4cCI6MjA5NDQ4NzU2MH0.JltZJYggs2ycs3u0HUelRMivZgsByW_g5-n3qz6EaPk";
 
+// Emergency static fallback: when the Supabase gateway is unreachable (e.g. the
+// free-plan egress quota restriction), the site hydrates from /site-data.json (a
+// database snapshot served by Vercel) and maps storage images to local copies in
+// /assets/courses via image_map. Set by loadDynamicData when the API fails.
+let SUPABASE_DOWN = false;
+let IMG_LOCAL_MAP = {};
+let __snapPromise = null;
+function getSiteSnapshot() {
+  if (!__snapPromise) {
+    __snapPromise = fetch("/site-data.json").then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  }
+  return __snapPromise;
+}
+function imgBasename(url) {
+  return String(url || "").split("?")[0].split("/").pop();
+}
+
 // Serve display images through Supabase's image-transformation CDN (auto WebP,
 // resized) to cut page weight ~90%. Returns the original URL for non-storage URLs
 // (e.g. data: placeholders). A global error handler reverts to the untransformed
 // original if a transform ever fails, so images can never break.
+// Local copies (image_map) win when present; when the gateway is down and there is
+// no local copy, returns "" so callers substitute a branded placeholder.
 function optimizedImg(url, width, quality) {
   if (!url || typeof url !== "string") return url;
+  var local = IMG_LOCAL_MAP[imgBasename(url)];
+  if (local) return local;
   if (url.indexOf("/storage/v1/object/public/") === -1) return url;
+  if (SUPABASE_DOWN) return "";
   var rendered = url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
   // resize=contain keeps the original aspect ratio (width-only wrongly keeps the
   // source height, which distorts/zooms the image). The CSS box still object-fit
@@ -361,7 +383,7 @@ function renderHeroProgramTabs() {
     const img = tab.querySelector("img");
     if (img) {
       const desiredRaw = (dbProgram && dbProgram.imageUrl) || img.getAttribute("data-fallback") || "";
-      const desired = optimizedImg(desiredRaw, 380, 70);
+      const desired = optimizedImg(desiredRaw, 380, 70) || coursePlaceholderImage({ name: program.name });
       if (desired && img.getAttribute("src") !== desired) {
         img.classList.remove("is-loaded");
         const markLoaded = () => img.classList.add("is-loaded");
@@ -1085,8 +1107,10 @@ if (heroProgramRoot && heroProgramTabs.length) {
   startHeroProgramAutoRotation();
 }
 
-// Fetch all dynamic data from Supabase
+// Fetch all dynamic data from Supabase; if the gateway is unreachable (network
+// error or plan restriction), hydrate from the static snapshot on Vercel instead.
 (async function loadDynamicData() {
+  let programsData = [], sessionsData = [], coursesData = [], feesData = [], cfgRows = [], statsData = [];
   try {
     const [programsRes, sessionsRes, coursesRes, feesRes, settingsRes, statsRes] = await Promise.all([
       fetch(`${SUPABASE_URL}/rest/v1/programs?is_active=eq.true&order=sort_order.asc`, { headers: { "apikey": SUPABASE_KEY } }),
@@ -1101,13 +1125,28 @@ if (heroProgramRoot && heroProgramTabs.length) {
       })
     ]);
 
-    if (!sessionsRes.ok || !coursesRes.ok || !feesRes.ok) return;
+    if (!sessionsRes.ok || !coursesRes.ok || !feesRes.ok) throw new Error("API unavailable");
 
-    const programsData = programsRes.ok ? await programsRes.json() : [];
-    const sessionsData = await sessionsRes.json();
-    const coursesData = await coursesRes.json();
-    const feesData = await feesRes.json();
-    const statsData = statsRes.ok ? await statsRes.json() : [];
+    programsData = programsRes.ok ? await programsRes.json() : [];
+    sessionsData = await sessionsRes.json();
+    coursesData = await coursesRes.json();
+    feesData = await feesRes.json();
+    statsData = statsRes.ok ? await statsRes.json() : [];
+    cfgRows = settingsRes.ok ? await settingsRes.json() : [];
+  } catch (e) {
+    const snap = await getSiteSnapshot();
+    if (!snap) return;
+    SUPABASE_DOWN = true;
+    IMG_LOCAL_MAP = snap.image_map || {};
+    programsData = snap.programs || [];
+    sessionsData = snap.sessions || [];
+    coursesData = snap.courses || [];
+    feesData = snap.fee_tiers || [];
+    cfgRows = snap.site_config || [];
+    statsData = snap.stats || [];
+  }
+
+  try {
     programStatsById = {};
     statsData.forEach((row) => {
       programStatsById[row.program_id] = {
@@ -1122,10 +1161,8 @@ if (heroProgramRoot && heroProgramTabs.length) {
     if (typeof refreshStatCounts === "function") refreshStatCounts();
 
     const cfg = {};
-    if (settingsRes.ok) {
-      (await settingsRes.json()).forEach((r) => { cfg[r.key] = r.value; });
-      applySettings(cfg);
-    }
+    cfgRows.forEach((r) => { cfg[r.key] = r.value; });
+    if (cfgRows.length) applySettings(cfg);
 
     // Keep the closing CTA-band countdown in sync with the campus program's own
     // deadline. Runs AFTER applySettings, which overwrites every [data-countdown]
@@ -1142,8 +1179,19 @@ if (heroProgramRoot && heroProgramTabs.length) {
     updateRegistrationProgram(registrationProgramSlug, { preserveSelection: true });
     restoreFormDraft();
     updateHeroProgram(heroProgramRoot?.dataset.activeProgram || "campus", false);
+
+    // Static mode: the hero photo's hardcoded Supabase URL won't load — swap to a
+    // local copy if mapped, else an externally hosted fallback.
+    if (SUPABASE_DOWN && heroProgramBgImage) {
+      const cur = heroProgramBgImage.getAttribute("src") || "";
+      if (cur.indexOf("supabase") !== -1) {
+        const local = IMG_LOCAL_MAP[imgBasename(cur)];
+        const external = FALLBACK_HERO_IMAGES.find((i) => i.src.indexOf("supabase") === -1);
+        heroProgramBgImage.src = local || (external ? external.src : cur);
+      }
+    }
   } catch (e) {
-    // Silently fall back if fetch fails
+    // Keep whatever rendered; fallback content remains usable.
   }
 })();
 
@@ -1260,7 +1308,8 @@ function coursePlaceholderImage(course) {
   return "data:image/svg+xml," + encodeURIComponent(svg);
 }
 function courseImageSrc(course) {
-  return (course && course.image_url) ? optimizedImg(course.image_url, 480, 70) : coursePlaceholderImage(course);
+  const src = (course && course.image_url) ? optimizedImg(course.image_url, 480, 70) : "";
+  return src || coursePlaceholderImage(course);
 }
 
 function renderHomepageTrackCards(program, trackGrid) {
@@ -3063,6 +3112,7 @@ function renderHeroGalleryStrip(images) {
 // Load gallery exclusively from DB — no hardcoded fallback
 (async function loadGalleryImages() {
   const galleryTargets = gallerySlots.length ? Array.from(gallerySlots) : [galleryMain, gallerySideA, gallerySideB].filter(Boolean);
+  let galleryFetchFailed = false;
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/gallery_images?is_active=eq.true&order=sort_order.asc`, { headers: { "apikey": SUPABASE_KEY } });
     if (res.ok) {
@@ -3070,10 +3120,27 @@ function renderHeroGalleryStrip(images) {
       if (data.length) {
         galleryImages = data.map((img) => ({ src: img.image_url, alt: img.alt_text }));
       }
+    } else {
+      galleryFetchFailed = true;
     }
-  } catch (e) { /* no images to rotate */ }
+  } catch (e) { galleryFetchFailed = true; }
 
-  galleryImages = uniqueHeroImages(galleryImages);
+  // Static fallback: gateway down — take the snapshot's gallery, keeping only
+  // images that can actually load (local copies or externally hosted ones).
+  if (galleryFetchFailed) SUPABASE_DOWN = true;
+  if (!galleryImages.length) {
+    const snap = await getSiteSnapshot();
+    if (snap) {
+      IMG_LOCAL_MAP = Object.assign({}, snap.image_map || {}, IMG_LOCAL_MAP);
+      galleryImages = (snap.gallery_images || [])
+        .map((img) => ({ src: img.image_url, alt: img.alt_text }))
+        .filter((im) => IMG_LOCAL_MAP[imgBasename(im.src)] || String(im.src).indexOf("supabase") === -1)
+        .map((im) => ({ src: IMG_LOCAL_MAP[imgBasename(im.src)] || im.src, alt: im.alt }));
+    }
+  }
+
+  galleryImages = uniqueHeroImages(galleryImages).filter((im) =>
+    !SUPABASE_DOWN || IMG_LOCAL_MAP[imgBasename(im.src)] || String(im.src).indexOf("supabase") === -1);
   renderHeroGalleryStrip(galleryImages);
   if (typeof renderGallerySection === "function") renderGallerySection(galleryImages);
 
@@ -3749,7 +3816,16 @@ form?.addEventListener("submit", async (event) => {
   } catch (error) {
     submissionInFlight = false;
     statusMessage.classList.add("error");
-    statusMessage.textContent = `Something went wrong: ${error.message}. Please try again.`;
+    // Gateway down (network failure or plan restriction): guide parents to the
+    // WhatsApp fallback instead of a dead-end technical error.
+    const gatewayDown = SUPABASE_DOWN || error instanceof TypeError || /restricted|quota|failed to fetch/i.test(error.message || "");
+    if (gatewayDown) {
+      statusMessage.innerHTML = 'Online registration is temporarily under maintenance. Please register on WhatsApp instead — '
+        + 'message <a href="https://wa.me/918607234098?text=Hi%2C%20I%20want%20to%20register%20for%20LPU%20Summer%20School%202026" target="_blank" rel="noopener"><strong>+91 86072 34098</strong></a>'
+        + ' with the student\'s name, class, and chosen track, and our team will complete it for you.';
+    } else {
+      statusMessage.textContent = `Something went wrong: ${error.message}. Please try again.`;
+    }
     submitButton.textContent = "Proceed to Payment";
     updateSubmitState();
   }
