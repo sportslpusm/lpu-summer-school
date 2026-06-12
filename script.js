@@ -1,5 +1,8 @@
-const SUPABASE_URL = "https://bynpuhoysivxxlblxica.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5bnB1aG95c2l2eHhsYmx4aWNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MTE1NjAsImV4cCI6MjA5NDQ4NzU2MH0.JltZJYggs2ycs3u0HUelRMivZgsByW_g5-n3qz6EaPk";
+const SUPABASE_URL = "https://laessbhhxbdydhhkseia.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhZXNzYmhoeGJkeWRoaGtzZWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNTM2MDksImV4cCI6MjA5NjgyOTYwOX0.aSlaFFW2pLwO06t3CNZBsQk4vSC5I55O_KaWsGPCwPc";
+// The previous project (quota-restricted); files hosted there are unreachable, so
+// images on this host map to local copies or branded placeholders instead.
+const OLD_SUPABASE_HOST = "bynpuhoysivxxlblxica.supabase.co";
 
 // Emergency static fallback: when the Supabase gateway is unreachable (e.g. the
 // free-plan egress quota restriction), the site hydrates from /site-data.json (a
@@ -28,6 +31,7 @@ function optimizedImg(url, width, quality) {
   if (!url || typeof url !== "string") return url;
   var local = IMG_LOCAL_MAP[imgBasename(url)];
   if (local) return local;
+  if (url.indexOf(OLD_SUPABASE_HOST) !== -1) return ""; // old project unreachable
   if (url.indexOf("/storage/v1/object/public/") === -1) return url;
   if (SUPABASE_DOWN) return "";
   var rendered = url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
@@ -3139,8 +3143,13 @@ function renderHeroGalleryStrip(images) {
     }
   }
 
-  galleryImages = uniqueHeroImages(galleryImages).filter((im) =>
-    !SUPABASE_DOWN || IMG_LOCAL_MAP[imgBasename(im.src)] || String(im.src).indexOf("supabase") === -1);
+  galleryImages = uniqueHeroImages(galleryImages)
+    .map((im) => ({ src: IMG_LOCAL_MAP[imgBasename(im.src)] || im.src, alt: im.alt }))
+    .filter((im) => {
+      const src = String(im.src);
+      if (src.indexOf(OLD_SUPABASE_HOST) !== -1) return false; // old project unreachable
+      return !SUPABASE_DOWN || src.indexOf("supabase") === -1 || src.startsWith("assets/");
+    });
   renderHeroGalleryStrip(galleryImages);
   if (typeof renderGallerySection === "function") renderGallerySection(galleryImages);
 

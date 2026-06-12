@@ -5,8 +5,8 @@
    ===================================================================== */
 "use strict";
 
-const SUPABASE_URL = "https://bynpuhoysivxxlblxica.supabase.co";
-const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5bnB1aG95c2l2eHhsYmx4aWNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MTE1NjAsImV4cCI6MjA5NDQ4NzU2MH0.JltZJYggs2ycs3u0HUelRMivZgsByW_g5-n3qz6EaPk";
+const SUPABASE_URL = "https://laessbhhxbdydhhkseia.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhZXNzYmhoeGJkeWRoaGtzZWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNTM2MDksImV4cCI6MjA5NjgyOTYwOX0.aSlaFFW2pLwO06t3CNZBsQk4vSC5I55O_KaWsGPCwPc";
 const SESSION_KEY = "lpu_admin_session";
 const REG_PAGE_SIZE = 50;
 
