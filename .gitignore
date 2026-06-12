@@ -28,3 +28,4 @@ REBUILD_HOME_CONTRACT.md
 SECURITY_INTERNAL.md
 nocache_server.py
 supabase/functions/_deprecated_backup/
+_regen/
