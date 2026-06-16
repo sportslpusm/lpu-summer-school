@@ -2547,7 +2547,7 @@ function renderConfirmSummary() {
 
 // ── Auto-save form draft so a refresh mid-form doesn't lose typing ──────
 const REG_DRAFT_KEY = "lpu_reg_draft";
-const DRAFT_TEXT_FIELDS = ["studentName", "classLevel", "studentAge", "schoolName", "city", "guardianTitle", "guardianName", "phone", "email", "emergencyPhone", "medicalNote"];
+const DRAFT_TEXT_FIELDS = ["studentName", "studentAge", "schoolName", "city", "guardianTitle", "guardianName", "phone", "email", "emergencyPhone", "medicalNote"];
 let regDraftRestored = false;
 let regDraftLocked = false; // stop saving once a registration has been created
 
@@ -3204,7 +3204,7 @@ function showReceipt(data) {
   const progDatesEl = document.querySelector('[data-cfg="program-dates"]');
   const progDatesStr = receiptProgram?.meta?.dates || (progDatesEl ? progDatesEl.textContent : "");
   const rows = [
-    ["Student", `<strong>${esc(data.student_name || "")}</strong> (${esc(data.class_level || "")}${data.student_age ? `, Age ${esc(data.student_age)}` : ""})`],
+    ["Student", `<strong>${esc(data.student_name || "")}</strong>${data.student_age ? ` (Age ${esc(data.student_age)})` : ""}`],
     ["Guardian", esc(data.guardian_name || "")],
     ["Program", esc(data.program_name || "LPU Summer School 2026")],
     ["Courses", (data.courses || []).map(c => esc(c)).join(", ")],
@@ -3822,7 +3822,7 @@ form?.addEventListener("submit", async (event) => {
     program_slug: program.slug,
     student_name: String(formData.get("studentName") || "").trim(),
     student_age: studentAge,
-    class_level: String(formData.get("classLevel") || "").trim(),
+    class_level: null,
     school_name: String(formData.get("schoolName") || "").trim(),
     city: String(formData.get("city") || "").trim(),
     guardian_name: guardianName,

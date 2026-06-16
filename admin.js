@@ -501,7 +501,7 @@ function renderRegistrations() {
       <td class="cell-sub">${fmtDateTime(r.created_at)}</td>
       <td class="cell-strong">${esc(r.student_name)}</td>
       <td>${esc(r.program_name || "—")}</td>
-      <td class="cell-sub">${r.student_age ? r.student_age + " yrs" : "—"} · ${esc(r.class_level || "")}</td>
+      <td class="cell-sub">${r.student_age ? r.student_age + " yrs" : "—"}${r.class_level ? " · " + esc(r.class_level) : ""}</td>
       <td>${esc(r.guardian_name || "—")}</td>
       <td class="cell-sub">${esc(r.phone || "—")}</td>
       <td class="cell-strong">${fmtFee(r.total_fee)}</td>
@@ -548,7 +548,7 @@ async function openRegistration(id) {
     <div class="modal-detail">
       <dl>
         <dt>Submitted</dt><dd>${fmtDateTime(r.created_at)}</dd>
-        <dt>Student</dt><dd>${esc(r.student_name)} (${r.student_age || "?"} yrs, ${esc(r.class_level || "")})</dd>
+        <dt>Student</dt><dd>${esc(r.student_name)} (${r.student_age || "?"} yrs${r.class_level ? ", " + esc(r.class_level) : ""})</dd>
         <dt>School / city</dt><dd>${esc(r.school_name || "—")}, ${esc(r.city || "—")}</dd>
         <dt>Guardian</dt><dd>${esc(r.guardian_name || "—")}</dd>
         <dt>Phone</dt><dd>${esc(r.phone || "—")} · emergency ${esc(r.emergency_phone || "—")}</dd>
