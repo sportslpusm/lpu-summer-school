@@ -4,18 +4,18 @@
     {
       "id": "ef9b78a5-614c-4f00-9760-80d79e1232d6",
       "slug": "campus",
-      "name": "2 Week Campus Program",
-      "short_label": "Full 2-week program - one track, all classes included",
-      "description": "A focused two-week LPU campus journey where students pick one track, learn with mentors six days a week, build real outcomes, and present their best work in a grand showcase.",
+      "name": "9-Day Campus Program",
+      "short_label": "Full 9-day program - one track, all classes included",
+      "description": "A focused nine-day LPU campus journey where students pick one track, learn with mentors six days a week (Monday to Saturday, Sundays off), build real outcomes, and present their best work in a grand showcase.",
       "cta_context": "For students ready to learn by doing inside a vibrant university campus.",
-      "dates_label": "22 June to 4 July 2026",
-      "start_date": "2026-06-22",
-      "end_date": "2026-07-04",
+      "dates_label": "20 June to 30 June 2026",
+      "start_date": "2026-06-20",
+      "end_date": "2026-06-30",
       "mode": "On Campus",
-      "duration": "2 weeks",
+      "duration": "9 days",
       "location": "LPU Campus, Phagwara",
-      "registration_deadline": "2026-06-21T18:29:59+00:00",
-      "deadline_label": "21 June 2026",
+      "registration_deadline": "2026-06-19T18:29:59+00:00",
+      "deadline_label": "19 June 2026",
       "seats_label": "Seats Left",
       "seats_base": 24,
       "seats_min": null,
@@ -1082,7 +1082,7 @@
       },
       "programs": {
         "slug": "campus",
-        "name": "2 Week Campus Program"
+        "name": "9-Day Campus Program"
       }
     },
     {
@@ -1130,7 +1130,7 @@
       },
       "programs": {
         "slug": "campus",
-        "name": "2 Week Campus Program"
+        "name": "9-Day Campus Program"
       }
     },
     {
@@ -1161,7 +1161,7 @@
       "id": "90cd7c87-7377-4aac-8699-8a92f9be5469",
       "session_id": "b2000000-0000-0000-0000-000000000003",
       "name": "Idea to StartUp to Pitch to Funding",
-      "description": "The full founder journey in two weeks: shape an idea, build it into a startup plan, craft the pitch and learn how real funding works — ending in a Shark Tank-style pitch.",
+      "description": "The full founder journey across the program: shape an idea, build it into a startup plan, craft the pitch and learn how real funding works — ending in a Shark Tank-style pitch.",
       "category": "entrepreneurship",
       "class_range": "Classes 8-12",
       "image_url": "/assets/courses/idea-to-startup.jpg",
@@ -1178,7 +1178,7 @@
       },
       "programs": {
         "slug": "campus",
-        "name": "2 Week Campus Program"
+        "name": "9-Day Campus Program"
       }
     },
     {
@@ -1226,7 +1226,7 @@
       },
       "programs": {
         "slug": "campus",
-        "name": "2 Week Campus Program"
+        "name": "9-Day Campus Program"
       }
     },
     {
@@ -1250,7 +1250,7 @@
       },
       "programs": {
         "slug": "campus",
-        "name": "2 Week Campus Program"
+        "name": "9-Day Campus Program"
       }
     },
     {
@@ -1274,7 +1274,7 @@
       },
       "programs": {
         "slug": "campus",
-        "name": "2 Week Campus Program"
+        "name": "9-Day Campus Program"
       }
     },
     {
@@ -1298,7 +1298,7 @@
       },
       "programs": {
         "slug": "campus",
-        "name": "2 Week Campus Program"
+        "name": "9-Day Campus Program"
       }
     },
     {
@@ -1322,7 +1322,7 @@
       },
       "programs": {
         "slug": "campus",
-        "name": "2 Week Campus Program"
+        "name": "9-Day Campus Program"
       }
     },
     {
@@ -1346,7 +1346,7 @@
       },
       "programs": {
         "slug": "campus",
-        "name": "2 Week Campus Program"
+        "name": "9-Day Campus Program"
       }
     },
     {
@@ -1370,7 +1370,7 @@
       },
       "programs": {
         "slug": "campus",
-        "name": "2 Week Campus Program"
+        "name": "9-Day Campus Program"
       }
     },
     {
@@ -1394,7 +1394,7 @@
       },
       "programs": {
         "slug": "campus",
-        "name": "2 Week Campus Program"
+        "name": "9-Day Campus Program"
       }
     },
     {
@@ -1418,7 +1418,7 @@
       },
       "programs": {
         "slug": "campus",
-        "name": "2 Week Campus Program"
+        "name": "9-Day Campus Program"
       }
     },
     {
@@ -1442,7 +1442,7 @@
       },
       "programs": {
         "slug": "campus",
-        "name": "2 Week Campus Program"
+        "name": "9-Day Campus Program"
       }
     },
     {
@@ -1466,7 +1466,7 @@
       },
       "programs": {
         "slug": "campus",
-        "name": "2 Week Campus Program"
+        "name": "9-Day Campus Program"
       }
     },
     {
@@ -1490,7 +1490,7 @@
       },
       "programs": {
         "slug": "campus",
-        "name": "2 Week Campus Program"
+        "name": "9-Day Campus Program"
       }
     },
     {
@@ -1514,7 +1514,7 @@
       },
       "programs": {
         "slug": "campus",
-        "name": "2 Week Campus Program"
+        "name": "9-Day Campus Program"
       }
     },
     {
@@ -1538,7 +1538,7 @@
       },
       "programs": {
         "slug": "campus",
-        "name": "2 Week Campus Program"
+        "name": "9-Day Campus Program"
       }
     },
     {
@@ -1562,7 +1562,7 @@
       },
       "programs": {
         "slug": "campus",
-        "name": "2 Week Campus Program"
+        "name": "9-Day Campus Program"
       }
     },
     {
@@ -1586,7 +1586,7 @@
       },
       "programs": {
         "slug": "campus",
-        "name": "2 Week Campus Program"
+        "name": "9-Day Campus Program"
       }
     }
   ],
@@ -1699,7 +1699,7 @@
     },
     {
       "key": "registration_deadline",
-      "value": "2026-06-21T23:59:59+05:30"
+      "value": "2026-06-19T23:59:59+05:30"
     }
   ],
   "stats": [

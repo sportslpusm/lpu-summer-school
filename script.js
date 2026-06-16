@@ -125,20 +125,20 @@ const FALLBACK_HERO_IMAGES = [
 
 const HERO_PROGRAMS = {
   campus: {
-    name: "2 Week Campus Program",
-    description: "A focused two-week LPU campus journey where students pick one track, learn with mentors six days a week, build visible outcomes, and present their best work in a grand showcase.",
+    name: "9-Day Campus Program",
+    description: "A focused nine-day LPU campus journey where students pick one track, learn with mentors six days a week (Monday to Saturday, Sundays off), build visible outcomes, and present their best work in a grand showcase.",
     context: "For students ready to learn by doing inside a vibrant university campus.",
     backgroundImage: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779163726439-f0drdpdqahd.png",
-    startDate: "2026-06-22",
-    endDate: "2026-07-04",
+    startDate: "2026-06-20",
+    endDate: "2026-06-30",
     scheduleType: "selectable",
     dateDisplayMode: "date_range",
     accommodationMode: "optional",
     allowHostel: true,
     allowMess: true,
-    facts: { eligibility: "Grades 6-12", duration: "2 weeks", mode: "On Campus", focus: "Track-based learning" },
-    urgency: { deadlineLabel: "21 June 2026", deadline: "2026-06-21T23:59:59+05:30", seatsBase: 24, seatsMin: 6, note: "Final seats moving fast. Register today." },
-    meta: { dates: "22 Jun to 4 Jul 2026", mode: "On Campus", duration: "2 weeks", location: "LPU Campus, Phagwara" }
+    facts: { eligibility: "Grades 6-12", duration: "9 days", mode: "On Campus", focus: "Track-based learning" },
+    urgency: { deadlineLabel: "19 June 2026", deadline: "2026-06-19T23:59:59+05:30", seatsBase: 24, seatsMin: 6, note: "Final seats moving fast. Register today." },
+    meta: { dates: "20 Jun to 30 Jun 2026", mode: "On Campus", duration: "9 days", location: "LPU Campus, Phagwara" }
   },
   online: {
     name: "Online Course",
@@ -437,7 +437,7 @@ function programUsesFixedSchedule(program) {
   return program?.scheduleType === "fixed" || FIXED_SCHEDULE_PROGRAMS.has(program?.slug);
 }
 
-// --- Track model (e.g. 2 Week Campus): pick ONE umbrella track, attend all its classes ---
+// --- Track model (e.g. 9-Day Campus): pick ONE umbrella track, attend all its classes ---
 const TRACK_META = [
   { slug: "ai-robots",        name: "AI, Robots & Future Tech",         blurb: "AI tools, IoT, full-stack web and CAD for future engineers." },
   { slug: "creative-arts",    name: "Creative Arts",                    blurb: "Textile art, home-decor design and a world made of paper." },
