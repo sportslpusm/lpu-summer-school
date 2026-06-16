@@ -2528,14 +2528,13 @@ function renderConfirmSummary() {
   const studentName = String(fd.get("studentName") || "").trim();
   if (!program || !studentName) { el.hidden = true; return; }
   const age = fd.get("studentAge");
-  const classLevel = String(fd.get("classLevel") || "");
   const courseNames = selectedCourseNames(program);
   const hostelVal = String(fd.get("hostel") || "none");
   const stayLabel = programShowsHostelStep(program)
     ? hostelLabelForOption(hostelVal)
     : (programIncludesAccommodation(program) ? "Included in the program" : "");
   const rows = [
-    ["Student", `${esc(studentName)}${age ? ` &middot; ${esc(age)} yrs` : ""}${classLevel ? ` &middot; ${esc(classLevel)}` : ""}`],
+    ["Student", `${esc(studentName)}${age ? ` &middot; ${esc(age)} yrs` : ""}`],
     ["Program", esc(program.name)],
     ["Classes", courseNames.length ? courseNames.map(esc).join(", ") : "Not chosen yet"],
   ];
@@ -3876,7 +3875,7 @@ form?.addEventListener("submit", async (event) => {
     if (gatewayDown) {
       statusMessage.innerHTML = 'Online registration is temporarily under maintenance. Please register on WhatsApp instead — '
         + 'message <a href="https://wa.me/918607234098?text=Hi%2C%20I%20want%20to%20register%20for%20LPU%20Summer%20School%202026" target="_blank" rel="noopener"><strong>+91 86072 34098</strong></a>'
-        + ' with the student\'s name, class, and chosen track, and our team will complete it for you.';
+        + ' with the student\'s name, age, and chosen track, and our team will complete it for you.';
     } else {
       statusMessage.textContent = `Something went wrong: ${error.message}. Please try again.`;
     }
