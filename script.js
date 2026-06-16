@@ -3251,7 +3251,7 @@ document.querySelector("[data-print-receipt]")?.addEventListener("click", () => 
 let pendingRegistration = null;
 let submissionInFlight = false;
 let paymentModalBound = false; // guard against duplicate event binding
-const LPU_PAYTM_PAYMENT_URL = "https://secure.paytmpayments.com/link/paymentForm/38633/LL_920680970";
+const LPU_PAYTM_PAYMENT_URL = "https://secure.paytmpayments.com/link/paymentForm/25698/LL_925406030";
 
 // Body-level file input (outside modal — avoids overflow/clip/backdrop mobile bugs)
 const screenshotInput = document.getElementById("screenshotFileInput");

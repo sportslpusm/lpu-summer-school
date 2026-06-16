@@ -1,18 +1,18 @@
 # Project Context: LPU Summer School
 
-Last audited: 2026-05-26, Asia/Calcutta.
+Last audited: 2026-05-28, Asia/Calcutta.
 
 This file is the permanent project memory for the LPU Summer School site. Update it whenever changing routes, data shape, Supabase objects, payment behavior, admin behavior, deployment settings, environment requirements, or major UI flows.
 
 ## Project Purpose
 
-This repository powers the LPU Summer School 2026 public website, registration flow, UPI screenshot payment flow, and browser-based admin dashboard.
+This repository powers the LPU Summer School 2026 public website, registration flow, official LPU Paytm handoff plus screenshot payment proof flow, and browser-based admin dashboard.
 
 The site lets families:
 
 - Browse program tracks, session schedules, fee tiers, contact details, and gallery images.
 - Register a student by choosing one course per selected session.
-- Pay manually through UPI deep links or UPI ID/QR.
+- Pay only through the official LPU Paytm payment page, then return to upload a screenshot.
 - Upload a payment screenshot for later admin verification.
 - See a pending-verification receipt after screenshot upload.
 
@@ -22,7 +22,7 @@ Admins can:
 - View, filter, export, approve, reject, or cancel registrations.
 - Manage programs, sessions, courses, fee tiers, gallery images, and site settings.
 - Upload course/gallery images into Supabase Storage.
-- Send confirmation email through a Supabase Edge Function after approval.
+- Send registration-created, confirmation, and rejection email through a Supabase Edge Function.
 
 ## Repository Shape
 
@@ -35,12 +35,19 @@ Tracked source files:
 - `styles.css`: public homepage, registration, payment modal, receipt, and mobile styles.
 - `admin.js`: admin auth, data loading, CRUD, storage upload, email trigger, and dashboard UI.
 - `admin.css`: admin dashboard styles.
+- `vercel.json`: Vercel static hosting config. It enables clean extensionless URLs and redirects old `.html` paths to clean routes.
+- `supabase/functions/send-email/index.ts`: deployed source for the email Edge Function. It supports a restricted public registration-created email path and authenticated admin emails.
 - `supabase/migrations/20260521170842_program_model.sql`: program-aware schema, seed programs, and public registration RPC.
 - `supabase/migrations/20260521171245_tighten_program_security.sql`: tightened RPC/admin execute surface.
 - `supabase/migrations/20260521181947_tighten_program_public_policy.sql`: narrowed active program public read policy to anon.
 - `supabase/migrations/20260526084756_update_hostel_daily_rates.sql`: updates hostel config to daily per-bed rates and recalculates hostel totals in the registration RPC from daily rate times program duration days.
 - `supabase/migrations/20260526155902_admin_logic_cleanup.sql`: adds durable `course_names` and `payment_review_note`, adds real program registration stats RPC, and updates registration RPC validation for dynamic program/session/course selections, real capacity, dates, and per-program fees.
 - `supabase/migrations/20260527034215_staff_camp_fixed_schedule.sql`: updates `create_program_registration` so `staff-camp` ignores parent-selected course IDs and automatically registers the full active fixed schedule.
+- `supabase/migrations/20260527161641_age_based_course_eligibility.sql`: adds per-course `min_age`, registration `student_age`, and server-side age eligibility enforcement in `create_program_registration`.
+- `supabase/migrations/20260527194218_program_schedule_accommodation_rules.sql`: adds program-level `schedule_type`, `accommodation_mode`, optional mess settings, included-package notes, broader class/age constraints, and server-side accommodation/mess fee enforcement.
+- `supabase/migrations/20260527202649_remove_gst_from_registration_totals.sql`: removes tax/GST charging from new registration totals by forcing the legacy tax field to zero and recalculating totals as base/session fee plus selected accommodation/meal add-ons only.
+- `supabase/migrations/20260529092848_relax_registration_class_level_constraint.sql`: relaxes registration `class_level` to any non-empty value up to 100 characters and allows `student_age` from 1 to 70, preventing payment handoff failures for early-childhood, `NA`, or future custom levels.
+- `supabase/migrations/20260603052846_add_program_date_display_mode.sql`: adds `programs.date_display_mode` (`date_range`, `self_paced`, `to_be_announced`), marks Online Course as self-paced, and updates registration RPC gating so self-paced programs can open without start/end dates while date-range programs still require dates.
 - `assets/dsosww-logo.png`, `assets/lpu-naac-logo.png`, `assets/sww-logo.png`: tracked local image assets.
 - `.gitignore`: ignores `node_modules/`, `.playwright-mcp/`, `.code-review-graph/`, root `*.png` screenshots except `assets/*.png`, `.claude/`, and `.vercel/`.
 
@@ -53,7 +60,7 @@ Important local/generated files:
 No local files currently exist for:
 
 - Supabase RLS/storage policies.
-- Supabase Edge Function source.
+- Supabase Edge Function source for `create-registration` and `upload-screenshot`.
 - Environment variable examples.
 - Package manager config, build scripts, tests, linting, or bundling.
 - Backend/API server code.
@@ -86,12 +93,19 @@ Browser pages
 - Frontend: vanilla HTML, CSS, JavaScript.
 - Hosting: Vercel static project.
 - Backend services: Supabase REST, Auth, Storage, and Edge Functions.
-- Payment model: manual UPI payment plus screenshot verification.
-- Email: inferred Supabase Edge Function named `send-email`.
+- Payment model: external official LPU Paytm payment page plus manual screenshot verification.
+- Email: Supabase Edge Function `send-email` backed by Brevo configuration in `secure_config`.
 - Build system: none. Files are served directly.
 - Runtime dependencies: none checked into repo.
 
 ## Routing And Pages
+
+Vercel `cleanUrls` exposes clean public routes:
+
+- `/` -> `index.html`
+- `/register` -> `register.html`
+- `/admin` -> `admin.html`
+- Legacy `/index.html`, `/register.html`, and `/admin.html` redirect to the clean routes.
 
 ### `index.html`
 
@@ -105,7 +119,7 @@ Public landing page with:
 - Track grid populated from Supabase `courses`.
 - Session cards populated from Supabase `sessions` and `courses`.
 - Fee table populated from Supabase `fee_tiers`.
-- Hostel fee note.
+- Hostel/mess fee note.
 - Recognition section.
 - Footer/contact overlay.
 - Floating register and floating contact buttons.
@@ -115,15 +129,15 @@ Public landing page with:
 Registration page with:
 
 - Shared header/footer/contact overlay.
-- Registration hero and step progress.
-- Student details block.
-- Parent/guardian details block.
+- Registration hero and step progress. Desktop hero content is constrained into a centered two-column composition to avoid large empty gaps on wide screens. The hero info cards are program-aware: before a program is chosen they show neutral values, then dates, schedule type, venue, and deadline update from the selected program so families are not misled by one fixed schedule.
+- Student details block with age-based eligibility and class/level options from early childhood (`Not in school yet (Age 1-2)`, playgroup, pre-nursery, nursery, LKG, UKG), Class 1 through Class 12, and post-school levels such as diploma, undergraduate, graduate, postgraduate, doctoral/research scholar, working professional, and other. Age input accepts 1 through 70.
+- Parent/guardian details block. The form asks for a guardian title (`Mr.`, `Mrs.`, `Ms.`, `Dr.`, `Prof.`, `Master`, `Miss`, `Shri`, `Smt.`) and combines it with the guardian name in the existing `guardian_name` value for certificate/admin use.
 - Dynamic program picker for all active programs. Registration now starts with no default program selected; mobile uses a native dropdown so families explicitly choose the program before seeing schedules/classes/fees.
 - Dynamic session/class cards generated from the selected program's `sessions` and `courses`; supports more than three sessions while preserving first-three legacy columns for older admin/export compatibility.
-- Optional hostel/meals radio group.
+- Optional accommodation/meals radio group. The Stay/Food step and block are shown only when the selected program has `accommodation_mode = optional` and at least one add-on (`allow_hostel` or `allow_mess`) is enabled; otherwise the progress bar hides the step and renumbers visible steps. Programs with `accommodation_mode = included` hide the add-on step and show included-package copy in fee/payment summaries.
 - Additional info and consent.
 - Sticky submit/fee summary.
-- UPI payment modal.
+- Paytm payment handoff modal.
 - Screenshot upload state machine.
 - Pending-verification receipt modal shown after screenshot upload.
 - Body-level hidden file input for mobile upload reliability.
@@ -137,16 +151,18 @@ Admin page with:
 - Supabase Auth email/password login.
 - Forgot password flow.
 - Dashboard shell after login.
-- Tabs: Registrations, Programs, Courses, Sessions, Fees, Gallery, Settings.
+- Tabs: Home, Registrations, Programs, Courses, Sessions, Fees, Gallery, Settings.
+- Home dashboard with key numbers for total registrations, pending payment reviews, verified payments, and registrations today, plus quick lists for pending payment reviews and program setup issues.
 - Shared modal for CRUD forms and registration detail view.
 
-## Content Security Policy
+## Content Security Policy / SEO Shell
 
-- `index.html`: `script-src 'self'`, `style-src 'self' 'unsafe-inline'`, `connect-src 'self' https://bynpuhoysivxxlblxica.supabase.co`, `img-src 'self' https: data:`.
-- `register.html`: same pattern, with local working-tree change to also allow `blob:` images.
-- `admin.html`: allows `script-src 'self' 'unsafe-inline'` because admin renders inline `onclick` handlers into table/modal HTML.
-
-Risk: `register.html` includes an inline `onclick="window.print()"` button while its CSP does not allow inline scripts. The print button may be blocked unless CSP is relaxed or the handler is moved into `script.js`.
+- `index.html`: `script-src 'self'` plus a pinned SHA-256 hash for the inline JSON-LD schema block, `style-src 'self' 'unsafe-inline'`, `connect-src 'self' https://bynpuhoysivxxlblxica.supabase.co`, and `img-src 'self' https: data:`.
+- `register.html`: same pattern, with `blob:` allowed in `img-src` so payment screenshot object URL previews can render.
+- `admin.html`: allows `script-src 'self' 'unsafe-inline'` because admin still renders inline handlers into table/modal HTML.
+- `vercel.json` adds response hardening headers: `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options`, a restrictive `Permissions-Policy`, and `Content-Security-Policy: frame-ancestors 'none'`.
+- Public SEO/social assets now include `/robots.txt`, `/sitemap.xml`, `/assets/site.webmanifest`, `/assets/lpu-circle-logo.png`, and `/assets/lpu-summer-school-og.png`.
+- Home and register pages have canonical URLs, Open Graph/Twitter metadata, and favicon/apple-touch/manifest links. Admin is explicitly `noindex, nofollow, noarchive`.
 
 ## Supabase Integration
 
@@ -188,18 +204,19 @@ Added by `supabase/migrations/20260521170842_program_model.sql`; most recently u
 Important columns:
 
 - Identity/display: `id`, `slug`, `name`, `short_label`, `description`, `cta_context`, `sort_order`, `is_active`
-- Program metadata: `dates_label`, `start_date`, `end_date`, `mode`, `duration`, `location`
+- Program metadata: `date_display_mode`, `dates_label`, `start_date`, `end_date`, `mode`, `duration`, `location`
 - Registration urgency: `registration_deadline`, `deadline_label`, `seats_label`, `seats_base`, `seats_min`, `seats_note`
-- Fee behavior: `fee_mode`, `fee_status`, `base_fee`, `gst_rate`, `allow_hostel`, `registration_enabled`
+- Fee/registration behavior: `fee_mode`, `fee_status`, `base_fee`, `registration_enabled`
+- Program rules: `schedule_type` (`selectable` or `fixed`), `accommodation_mode` (`none`, `optional`, or `included`), `allow_hostel`, `allow_mess`, `mess_meal_rate`, `mess_meals_per_day`, `included_services`
 - Media: `image_url`, `background_image_url`
 
 Seeded programs:
 
-- `campus`: 2 Week Campus Program; registration open; session-count fee tiers; hostel allowed.
-- `online`: Online Course; date/fee to be announced; registration closed until admin enables it.
+- `campus`: 2 Week Campus Program; registration open; session-count fee tiers; optional hostel bed and mess add-ons allowed.
+- `online`: Online Course; self-paced schedule display; registration stays closed until admin enables fee, schedule, and registration.
 - `staff-camp`: LPU Staff Kid Summer Camp; fixed schedule package where parents do not choose courses; active sessions/courses are displayed as included schedule items and are auto-attached by the registration RPC.
 - `skills`: Tailor-Made Skills Workshop; date/fee to be announced; registration closed.
-- `immersion`: LPU Immersion Program; date known; fee to be announced; registration closed.
+- `immersion`: LPU Immersion Program; date known; fee to be announced; registration closed; accommodation/food can be treated as included package services when a package price is announced.
 
 Used by:
 
@@ -244,6 +261,7 @@ Verified columns:
 - `description`
 - `category`
 - `class_range`
+- `min_age`
 - `image_url`
 - `is_active`
 - `sort_order`
@@ -252,8 +270,8 @@ Verified columns:
 Used by:
 
 - Homepage track grid and mobile course bottom sheet, filtered by selected program and category.
-- Registration course dropdowns, filtered by selected program and session.
-- Admin Courses CRUD, with program filter/assignment and program-filtered session choices.
+- Registration course dropdowns, filtered by selected program, session, and entered student age.
+- Admin Courses CRUD, with program filter/assignment, program-filtered session choices, and editable minimum age.
 
 `session_id` references `sessions.id`; `program_id` references `programs.id`.
 
@@ -304,6 +322,8 @@ Verified keys:
 - `hero_bg_staff_camp`
 - `hostel_food_fee` (daily AC hostel bed rate per student bed; currently intended as Rs. 300/day)
 - `hostel_only_fee` (daily Non-AC hostel bed rate per student bed; currently intended as Rs. 100/day)
+- `mess_meal_fee` (default mess meal rate per student, per meal; currently Rs. 80)
+- `mess_meals_per_day` (default number of mess meals charged per student per day; currently 3)
 - `max_seats`
 - `program_director`
 - `project_manager_1`
@@ -317,9 +337,9 @@ Used by:
 - Public contact/footer settings.
 - Program date/deadline display.
 - Desktop/tablet hero program backgrounds through `hero_bg_*` keys. These are separate from `gallery_images`.
-- Hostel daily per-bed rate labels and calculations.
+- Hostel daily per-bed and mess meal labels/calculations.
 - Admin Settings tab.
-- Inferred Edge Function payment setup through `upi_id`.
+- Legacy/inferred payment setup through `upi_id`; the current browser/admin flow labels it as legacy, no longer shows UPI deep links to families, and instead sends users to the official LPU Paytm payment page.
 
 #### `gallery_images`
 
@@ -349,7 +369,7 @@ Important columns:
 - Guardian/contact: `guardian_name`, `phone`, `email`, `emergency_phone`
 - Course selections: legacy `session1_course`, `session2_course`, `session3_course`, plus `selected_course_ids` JSONB and durable `course_names` JSONB for all selected classes/activities
 - Hostel: `hostel_option`, `hostel_amount`
-- Payment/fees: `session_fee`, `gst_amount`, `total_fee`, `payment_reference`, `payment_status`
+- Payment/fees: `session_fee`, legacy `gst_amount` (kept for compatibility and zero for new rows), `total_fee`, `payment_reference`, `payment_status`
 - Verification/admin: `status`, `screenshot_url`, `verified_by`, `verified_at`, `payment_review_note`
 - Notes: `medical_note`
 
@@ -371,12 +391,12 @@ Verified table exists but currently has zero rows. It is retained for historical
 - `razorpay_payment_id`
 - `razorpay_signature`
 - `base_amount`
-- `gst_amount`
+- legacy `gst_amount`
 - `total_amount`
 - `currency`
 - `status`
 
-The current public payment flow is manual UPI screenshot verification, not Razorpay capture.
+The current public payment flow is official LPU Paytm handoff plus manual screenshot verification, not Razorpay capture.
 
 ## Storage
 
@@ -412,22 +432,21 @@ Request payload:
 - `email`
 - `emergency_phone`
 - `course_ids`
-- For `staff-camp`, `course_ids` may be empty. The RPC ignores browser selections and auto-selects all active courses in active staff-camp sessions because this program has a fixed schedule.
+- For programs with `schedule_type = fixed` (including `staff-camp`), `course_ids` may be empty. The RPC ignores browser selections and auto-selects all active courses in active sessions because the program has a fixed schedule.
 - `hostel_option`
 - `medical_note`
 
 Server/database responsibilities:
 
 - Validate required fields and selected program.
-- Reject inactive programs, closed registration, fee-to-be-announced programs, and programs missing start/end dates.
+- Reject inactive programs, closed registration, fee-to-be-announced programs, programs with `date_display_mode = to_be_announced`, and date-range programs missing start/end dates. Self-paced programs can open without start/end dates.
 - Enforce `registration_deadline` and real `programs.seats_base` capacity before creating a registration.
 - Validate selected course IDs are active, belong to the selected program, and do not duplicate a session.
-- For `staff-camp`, auto-select all active schedule items from active sessions and allow those fixed activities to be submitted without parent selection.
+- For fixed-schedule programs, auto-select all active schedule items from active sessions and allow those fixed activities to be submitted without parent selection.
 - Recalculate fee from program-specific `fee_tiers` or `programs.base_fee`.
-- Apply hostel fee only when the program allows hostel. Hostel settings are daily per-bed rates; the RPC multiplies the selected daily rate by program duration days, preferring duration text such as `2 weeks` -> 14 days, then falling back to program start/end dates.
-- Calculate GST from `programs.gst_rate`.
+- Apply accommodation/food add-on fees only when `programs.accommodation_mode = optional` and the related add-on is enabled. Hostel settings are daily per-bed rates; mess food is `mess meal rate * meals per day`. The RPC multiplies the selected daily add-on rate by program duration days, preferring duration text such as `2 weeks` -> 14 days, then falling back to program start/end dates. Programs with `accommodation_mode = included` force `hostel_option = included` and do not add a separate hostel/mess amount.
 - Create a pending registration with program snapshot, durable `course_names`, selected course IDs, first-three legacy course fields, and a unique payment reference.
-- Return UPI payment data and receipt-ready fields.
+- Return legacy UPI payment data and receipt-ready fields. The current UI ignores UPI deep-link fields and uses the returned totals/reference to guide the user through the official LPU Paytm payment page.
 
 Expected response fields used by UI:
 
@@ -437,12 +456,12 @@ Expected response fields used by UI:
 - `program_name`
 - `session_fee`
 - `hostel_amount`
-- `gst_amount`
+- `gst_amount` (legacy compatibility field; new registrations return `0`)
 - `total_amount`
 - `courses`
-- `upi_id`
-- `upi_url`
-- `qr_data_url`
+- `upi_id` (legacy; not shown in current UI)
+- `upi_url` (legacy; not shown in current UI)
+- `qr_data_url` (legacy; not shown in current UI)
 
 ### `public.get_program_registration_stats()`
 
@@ -464,7 +483,7 @@ Security note:
 
 ## Edge Functions
 
-Function source is not present in the repo. Current client code still depends on:
+`send-email` source is now tracked under `supabase/functions/send-email/index.ts`. Source for older/other functions is still not present in the repo. Current client code still depends on:
 
 ### `create-registration`
 
@@ -494,14 +513,14 @@ Inferred responsibilities:
 
 ### `send-email`
 
-Called by `admin.js`:
+Called by `script.js` after registration creation and by `admin.js` after approval/direct confirmation/rejection:
 
 - URL: `/functions/v1/send-email`
 - Method: `POST`
-- Headers include `Content-Type`, `apikey`, and admin `Authorization` bearer token.
-- Body: `{ to, subject, html }`
+- For public registration-created emails, headers include public `apikey`/anon bearer token and body is `{ type: "registration_received", registration_id, payment_reference }`. The Edge Function verifies the registration with the service role and generates the email server-side; it does not accept arbitrary public HTML.
+- For admin emails, headers include `Content-Type`, `apikey`, and admin `Authorization` bearer token. Body is `{ to, subject, html }`.
 
-Used after admin approval/confirmation. Failures are caught and only logged in the browser console, so email failure does not block admin approval.
+Email uses Brevo via a `brevo_api_key` stored in `secure_config`, sender `usc.sww@lpu.co.in`, and the name `LPU Summer School`. Admin email failures are shown as toast errors while preserving the registration status update; public registration-created email failures are non-blocking and logged in the browser console.
 
 ## Public Data Flow
 
@@ -524,33 +543,34 @@ Important: REST fetch failures are mostly silent and leave hardcoded HTML/JS fal
 ## Registration Flow
 
 1. User explicitly chooses one of the five active programs. No program is selected by default; mobile shows a dropdown instead of swipe cards for clearer selection.
-2. Registration only opens if that program has `registration_enabled = true`, start/end dates, `fee_status = ready`, usable fee configuration, and at least one active session/course.
-3. User fills student, guardian, session/course or activity/course, hostel, medical note, and consent fields.
-4. Session/course cards are generated from the selected program and filtered to that program. `staff-camp` is a fixed schedule: parents see the active schedule items from admin data, but no checkboxes/dropdowns are shown and no course choice is required.
-5. Hostel UI is hidden/disabled when the selected program does not allow hostel.
-6. Validation runs per field/block and controls the submit button.
-7. Main fee is based on the selected program's fee mode: `session_count` uses fee tiers by selected count, while `package`/`custom` use `programs.base_fee`.
-8. Hostel fee is calculated from `HOSTEL_DAILY_RATES`, overridden by `site_config`, then multiplied by the selected program's chargeable duration days. The public labels must say per student bed, per day.
-9. GST is calculated client-side from the selected program GST rate for display only.
-10. On submit, the browser calls `public.create_program_registration`. Selectable programs send the chosen course IDs; `staff-camp` sends the active fixed schedule IDs when available, and the database also auto-fills them as a server-side guard.
-11. The database/RPC recalculates all server-truth amounts and creates the registration.
-12. The returned payment data opens the UPI payment modal.
+2. Registration only opens if that program has `registration_enabled = true`, announced schedule timing (`date_range` with start/end dates or `self_paced`), `fee_status = ready`, usable fee configuration, and at least one active session/course.
+3. User fills student, student age, current class/level, guardian, session/course or fixed schedule review, optional accommodation/meal add-ons when available, medical note, and consent fields.
+4. Session/course cards are generated from the selected program and filtered to that program. Selectable course options are disabled unless the entered student age meets that course's `min_age`; the UI refreshes immediately when age changes.
+5. Programs with `schedule_type = fixed` are fixed schedules: parents see active schedule items from admin data, but no checkboxes/dropdowns are shown and no course choice is required. Age validation still runs against all fixed activities.
+6. Stay/Food UI is hidden/disabled unless the selected program has `accommodation_mode = optional` and admin has enabled hostel and/or mess add-ons. Programs with `accommodation_mode = included` keep the add-on step hidden and show the package inclusion note.
+7. Validation runs per field/block and controls the submit button. Phone inputs are sanitized to valid phone characters and capped to 10-15 digits, email is trimmed/lowercased and capped to standard email length, and error messages are linked to fields with `aria-invalid`/`aria-describedby`.
+8. Main fee is based on the selected program's fee mode: `session_count` uses fee tiers by selected count, while `package`/`custom` use `programs.base_fee`.
+9. Accommodation/meal fees are calculated from hostel daily bed rates plus optional mess daily rate (`mess_meal_rate * mess_meals_per_day`), overridden by program settings or `site_config`, then multiplied by the selected program's chargeable duration days. The public labels must say per student bed/per student, per day.
+10. On submit, the browser calls `public.create_program_registration` with `student_age`. Selectable programs send the chosen course IDs; fixed-schedule programs send active fixed schedule IDs when available, and the database also auto-fills them as a server-side guard.
+11. The database/RPC recalculates all server-truth amounts, rejects under-age course selections, and creates the registration.
+12. The returned payment data opens the Paytm payment handoff modal and queues a server-generated "registration created" email through the `send-email` Edge Function using `registration_id` plus `payment_reference`.
 13. Pending registration state is stored in `sessionStorage` as `lpu_pending_reg` for up to two hours.
-14. User pays externally in a UPI app or manually by UPI ID/QR.
-15. User selects a screenshot.
-16. Browser validates `file`, `file.size`, and image MIME/extension before processing.
-17. Browser creates a preview with `URL.createObjectURL()` and waits for `img.onload` before enabling submit.
-18. Browser attempts compression only after preview/decode succeeds; large images and HEIC/HEIF are converted to JPEG when possible.
-19. If compression/blob creation fails after a valid preview, the browser falls back to the original validated image instead of blocking submission.
-20. Browser posts the screenshot to `upload-screenshot`.
-21. UI shows a fixed pending-verification receipt modal, keeps the background locked, and clears/revokes upload preview state.
+14. User opens the official LPU Paytm payment page: `https://secure.paytmpayments.com/link/paymentForm/25698/LL_925406030`.
+15. User manually enters the same full name/reference, mobile number, email, and fee amount on Paytm. The Paytm page does not currently accept query/hash autofill parameters and no API/webhook access is available.
+16. User selects a screenshot.
+17. Browser validates `file`, `file.size`, and image MIME/extension before processing.
+19. Browser creates a preview with `URL.createObjectURL()` and waits for `img.onload` before enabling submit.
+20. Browser attempts compression only after preview/decode succeeds; large images and HEIC/HEIF are converted to JPEG when possible.
+21. If compression/blob creation fails after a valid preview, the browser falls back to the original validated image instead of blocking submission.
+22. Browser posts the screenshot to `upload-screenshot`.
+23. UI shows a fixed pending-verification receipt modal, keeps the background locked, and clears/revokes upload preview state.
 
 ## Payment Verification Flow
 
-Payment is not gateway-verified. It is a manual UPI flow:
+Payment is not gateway-verified by this website. It is an external Paytm plus manual screenshot review flow:
 
 1. Database RPC creates a pending registration and payment reference.
-2. User pays via UPI outside the site.
+2. User pays on the official LPU Paytm payment page.
 3. User uploads a payment screenshot.
 4. Admin reviews screenshot in `admin.html`.
 5. Admin approves:
@@ -581,19 +601,24 @@ Payment is not gateway-verified. It is a manual UPI flow:
 
 - Loads `registrations` ordered by `created_at.desc`.
 - Filters by program, registration status, payment status, and search text.
+- Shows 50 registrations per page in the browser to keep the table manageable for admins.
 - Exports all registration fields to CSV.
 - Shows screenshot thumbnail and registration detail modal.
 - Approves/rejects payment verification.
+- Each row also has a permanent delete action with a browser confirmation dialog before `DELETE registrations?id=eq.{id}`.
+- Row actions use explicit text labels (`View`, `Delete`, `Approve`, `Reject`, `Confirm`, `Cancel`) and show toast feedback after success/error.
 - Rejection now captures a `payment_review_note`; approval/rejection stores the logged-in admin email when available instead of only the literal `"admin"`.
-- Sends confirmation email on approval or direct confirm status.
+- Sends confirmation email on approval/direct confirm status and rejection email when payment proof is rejected. Email failures are shown to the admin as toast errors while preserving the registration status update.
 - Detail modal and confirmation email read all selected courses from durable `course_names`/snapshot data first, then fall back to legacy `session1_course` through `session3_course`.
 
 ### Programs
 
 - CRUD over `programs`.
-- Admin can edit names/labels, hero descriptions, start/end dates, registration deadline, mode, location, seat capacity/note, fee type/status, base fee, GST percent, hostel allowance, registration enabled, active state, sort order, card image, and background image.
-- Date label, duration, and deadline label are derived automatically from date fields. GST is entered as a human percent such as `18`, then saved internally as `0.18`.
-- Program readiness shows missing dates/sessions/courses/fees and real reserved seats so the admin does not rely on fake urgency labels.
+- Search plus readiness and active/inactive filters are available.
+- Admin can edit names/labels, hero descriptions, schedule timing display, start/end dates, registration deadline, mode, location, seat capacity/note, fee type/status, base fee, program schedule mode, accommodation/food mode, hostel/mess add-on rules, included package note, registration enabled, active state, sort order, card image, and background image.
+- Schedule timing has three modes: `Date range` derives date label/duration from start/end dates, `Self-paced` displays `Self-paced` and can open without start/end dates, and `To be announced` displays unannounced timing and blocks registration until changed.
+- Date label, duration, and deadline label are derived automatically from the schedule timing/date fields. Families pay only the configured base/session price plus selected accommodation/meal add-ons.
+- Program readiness shows missing schedule timing/sessions/courses/fees and real reserved seats so the admin does not rely on fake urgency labels.
 - Program image/background image can be uploaded to the `images` bucket or entered as a URL.
 - Program activation is separate from registration opening. Keep `registration_enabled = false` and `fee_status = to_be_announced` until sessions, courses, and fees are configured.
 
@@ -601,7 +626,7 @@ Payment is not gateway-verified. It is a manual UPI flow:
 
 - CRUD over `sessions`.
 - Sessions belong to a program through `program_id`.
-- Admin can filter sessions by program.
+- Admin can search sessions and filter by program.
 - `time_slot` is edited as start/end native time inputs and saved as `"HH:MM - HH:MM"`.
 - Delete calls only `DELETE sessions?id=eq.{id}`; cascade behavior is database-defined and not visible in repo.
 
@@ -610,28 +635,31 @@ Payment is not gateway-verified. It is a manual UPI flow:
 - CRUD over `courses`.
 - Courses belong to both `program_id` and `session_id`.
 - Relation display uses `select=*,programs(name),sessions(name,time_slot,program_id)`.
-- Admin can filter courses by program.
+- Admin can search courses and filter by program, session, and category.
 - Course form filters the session dropdown to the selected program and validates that the selected session belongs to the selected program before saving.
+- Course form uses `min_age` as the eligibility control. The legacy `class_range` field is written only as a compatibility label such as `Age 14+`.
 - Can upload image to `images` bucket or enter an image URL.
 - Categories supported in UI: `tech`, `creative`, `career`, `sports`, `general`.
-- For `staff-camp`, Courses are schedule items, not choices. Admin should keep one or more active course/activity rows under the desired staff-camp sessions; registration will include all active rows automatically.
+- For any program with `schedule_type = fixed`, Courses are schedule items, not choices. Admin should keep one or more active course/activity rows under the desired sessions; registration will include all active rows automatically.
 
 ### Fees
 
 - CRUD over `fee_tiers`.
 - Fee tiers belong to a program through `program_id`.
-- Admin can filter fee tiers by program.
+- Admin can search fee tiers and filter by program.
 - Fee tier UI labels the count as "selected sessions"; fee calculation assumes a tier exists for the selected program and selected session count unless the program uses package/custom/base fee mode.
 
 ### Gallery
 
 - CRUD over `gallery_images`.
+- Admin can search gallery images and filter by active/inactive state.
 - Can upload to `images` bucket or enter an image URL.
 - Active gallery images feed only the homepage hero auto-advancing strip. They do not control program backgrounds. Recommended upload ratio is 16:9.
 
 ### Settings
 
-- Loads and edits all rows from `site_config`.
+- Loads and edits all rows from `site_config`, grouped into Event & Contact, Hostel & Food Defaults, Legacy/Fallback, Hero Backgrounds, and Other Settings so the settings screen is not one flat grid.
+- Settings can be searched by key/label/description.
 - Adds virtual Settings rows for `hero_bg_campus`, `hero_bg_online`, `hero_bg_staff_camp`, `hero_bg_skills`, and `hero_bg_immersion` if missing; saving a value inserts the missing row. These fields support direct file upload or URL entry.
 - Special input handling for dates, datetime, numeric fields, and text.
 - `registration_deadline` is edited as date/time and saved as IST ISO string with `+05:30`.
@@ -651,7 +679,9 @@ Admin:
 
 - `$()` and `$$()` query helpers.
 - `apiGet`, `apiInsert`, `apiUpdate`, `apiDelete` wrappers.
-- Shared modal with dirty-state detection.
+- Shared modal with dirty-state detection and required-field validation before save.
+- Toast feedback through `showToast()` for admin actions and save/error outcomes.
+- Admin tables render as labeled cards on mobile so non-technical admins do not need to pan horizontally to understand each row.
 - Table rows use rendered inline handlers such as `onclick="editCourse(...)"`.
 - Admin image upload helper writes directly to Supabase Storage.
 - Program options and filters are generated from the `programs` table, then reused by Sessions, Courses, Fees, and Registrations.
@@ -663,7 +693,9 @@ Deployment is static and linked to Vercel:
 - Main production URL: `https://summerschool.unisportscouncil.co.in/`
 - Vercel project name: `lpu-summer-school`
 - Local Vercel metadata exists in `.vercel/project.json`, but `.vercel/` is ignored and should not be committed.
-- There is no `vercel.json`, package script, build output, or framework config.
+- `vercel.json` enables Vercel clean URLs and redirects legacy `.html` paths to extensionless routes.
+- `vercel.json` also adds security headers and immutable cache headers for `/assets/*`.
+- There is no package script, build output, or framework config.
 - Expected deployment artifact is the repo root static files.
 - Supabase database migrations are tracked locally under `supabase/migrations/` and have already been applied to production through Supabase MCP.
 
@@ -673,25 +705,27 @@ Missing deployment details:
 - Vercel team/member access.
 - Vercel environment variables, if any.
 - Supabase Auth redirect URLs for password recovery.
-- Edge Function deployment/configuration process.
+- Edge Function deployment/configuration process for `create-registration` and `upload-screenshot`; `send-email` is deployed through Supabase MCP and mirrored in the repo.
 
 ## Known Issues / TODO / Risks
 
-- Backend source is still incomplete: program migrations are now tracked, but historical RLS policies, storage policies, old seed data, Edge Function source, and environment docs are still missing from the repo.
+- Backend source is still incomplete: program migrations and `send-email` source are now tracked, but historical RLS policies, storage policies, old seed data, other Edge Function source, and environment docs are still missing from the repo.
 - Need Supabase dashboard/service-role access to fully verify storage policies, triggers, Auth settings, and Edge Function settings beyond MCP/table inspection.
 - Supabase URL and anon key are duplicated in `script.js` and `admin.js`; future key/project changes can drift.
 - Admin performs direct browser CRUD against Supabase REST; security depends entirely on RLS/admin policies that are not visible here.
+- Live `registrations` RLS currently allows SELECT/UPDATE/DELETE for any authenticated Supabase user. This keeps the admin panel working but should be tightened to an explicit admin allowlist or `app_metadata` claim before creating more Supabase Auth users.
 - Public registration creation now uses anon-callable `public.create_program_registration`, a `SECURITY DEFINER` RPC. It is intentionally public but should be monitored, rate-limited if possible, and kept strictly validated.
+- Per-course eligibility is now age-based. Keep `courses.min_age` maintained in admin; `class_range` is legacy display/export compatibility and should not drive eligibility.
 - `public.get_program_registration_stats()` is also anon-callable so the public hero can show real capacity; it returns only aggregate counts, but Supabase advisor still flags it as a public `SECURITY DEFINER` function.
 - Supabase advisors still warn that public storage buckets `images` and `payment-screenshots` allow broad object listing, and several RLS policies re-evaluate auth functions per row. These are existing security/performance cleanup items outside this feature pass.
 - `upload-screenshot` still appears unauthenticated from the browser because it sends no auth or apikey headers. Verify CORS, JWT verification, rate limits, spam protection, server-side validation, and file validation.
-- Manual UPI screenshot verification is fragile and not payment-gateway verified.
+- Manual Paytm screenshot verification is fragile and not payment-gateway verified. Because LPU has not provided API keys, webhooks, or admin access to the Paytm merchant account, this site cannot automatically confirm successful payment; admin reconciliation must remain manual.
 - `verified_by` now uses the stored admin email when available, but the admin auth/session model is still browser-local and should eventually store a stable user id/audit table server-side.
-- Confirmation email failure is non-blocking and only logged to console, so admins may think email was sent when it failed.
+- Admin confirmation/rejection email failure is non-blocking but now surfaces as a toast error. Public "registration created" email failure is non-blocking and logged to the browser console so payment flow is never blocked.
 - Programs without dates, fee, sessions, or courses now appear as coming soon/closed in registration, but admins can still make content inconsistent if they enable display before setup is complete.
-- `staff-camp` fixed-schedule behavior is currently slug-based in `script.js` and `create_program_registration`. If future programs need fixed schedules, add a real `selection_mode` column instead of hardcoding more slugs.
+- Fixed-schedule behavior is now program-controlled through `programs.schedule_type`. Keep Staff Kid Summer Camp set to `fixed`; future programs can use the same admin option without slug-specific code.
 - Legacy `session1_course`, `session2_course`, `session3_course` columns still exist for older exports/email compatibility. New complete selections are stored in `course_names` and `selected_course_ids`; future schema cleanup should move registration-course joins into a relational child table.
-- Fee/hostel/GST calculation happens in the client for display and is recalculated server-side by `create_program_registration`. Hostel options use legacy values `hostel_only` and `hostel_food` for compatibility, but the visible labels are now Non-AC hostel bed and AC hostel bed.
+- Fee/accommodation/mess calculation happens in the client for display and is recalculated server-side by `create_program_registration`. Legacy values `hostel_only` and `hostel_food` remain for compatibility, while new values add mess combinations (`hostel_only_mess`, `hostel_food_mess`, `mess_only`) and included-package support (`included`).
 - Public content fetch failures are mostly silent, leaving stale hardcoded fallback content.
 - Deadline/countdown display is advisory in the browser, but `create_program_registration` now enforces `registration_deadline` server-side.
 - Homepage seat display now uses `get_program_registration_stats()` and `programs.seats_base`; programs without real announced capacity/deadline show `Seats Update / TBA`.
@@ -699,6 +733,7 @@ Missing deployment details:
 - Screenshot upload currently includes detailed temporary console logging for file metadata, preview/decode/compression/upload states. Remove or gate these logs after the mobile upload issue is confirmed fixed in production.
 - `admin.html` allows `script-src 'unsafe-inline'` to support inline handlers, which increases XSS impact if any escaping is missed.
 - Admin auth token is stored in `localStorage`; XSS would expose it.
+- Public SEO metadata is static. If the event year, dates, or primary domain change, update `index.html`, `register.html`, `/sitemap.xml`, `/assets/site.webmanifest`, and regenerate `/assets/lpu-summer-school-og.png`.
 - Admin image uploads have no visible client-side size/compression limits.
 - `deleteSession` assumes deleting a session deletes or handles courses, but cascade behavior is unknown.
 - Site uses a mix of hardcoded static values and dynamic `site_config`; future edits should avoid updating only one source.
@@ -711,12 +746,12 @@ To fully operate/manage this project as primary engineer, obtain:
 
 - Supabase dashboard access for project `bynpuhoysivxxlblxica`.
 - Supabase service role key or exported SQL schema, RLS policies, storage policies, triggers, and seed data.
-- Supabase Edge Function source for `create-registration`, `upload-screenshot`, and `send-email`.
+- Supabase Edge Function source for `create-registration` and `upload-screenshot`.
 - Edge Function environment variables and deployment instructions.
 - Storage bucket list and policies, especially the payment screenshot bucket/path.
 - Admin test account credentials and a safe staging/test registration process.
 - Email provider credentials/config used by `send-email`.
-- UPI/payment owner details and reconciliation process.
+- Paytm/payment owner details and reconciliation process.
 - Vercel project/team access and deployment permissions.
 - Production domain/DNS access and Supabase Auth redirect URL settings.
 

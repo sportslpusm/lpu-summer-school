@@ -7,7 +7,7 @@ const SENDER_EMAIL = "summerschool@lpu.co.in";
 const SENDER_NAME = "LPU Summer School";
 const CONTACT_EMAIL = "summerschool@lpu.co.in";
 const CONTACT_PHONE = "+91 860 723 4098";
-const LPU_PAYTM_PAYMENT_URL = "https://secure.paytmpayments.com/link/paymentForm/38633/LL_920680970";
+const LPU_PAYTM_PAYMENT_URL = "https://secure.paytmpayments.com/link/paymentForm/25698/LL_925406030";
 
 const ALLOWED_ORIGINS = new Set([
   "https://summerschool.unisportscouncil.co.in",
