@@ -379,7 +379,7 @@ function populateFilters() {
 }
 
 function updateNavBadge() {
-  const pending = state.registrations.filter((r) => r.payment_status === "verification_pending").length;
+  const pending = state.registrations.filter((r) => r.payment_status === "verification_pending" && !["cancelled", "rejected"].includes(r.status)).length;
   const badge = $("[data-nav-pending]");
   badge.hidden = pending === 0;
   badge.textContent = pending;
@@ -410,7 +410,9 @@ function renderActive() {
    Dashboard
    ===================================================================== */
 function renderDashboard() {
-  const regs = state.registrations;
+  // Active registrations only — cancelled/rejected (e.g. de-duplicated rows) stay
+  // in the full Registrations list but must not clutter the dashboard or its counts.
+  const regs = state.registrations.filter((r) => !["cancelled", "rejected"].includes(r.status));
   const pending = regs.filter((r) => r.payment_status === "verification_pending");
   const unpaid = regs.filter((r) => r.payment_status === "unpaid");
   const verified = regs.filter((r) => r.payment_status === "paid");
