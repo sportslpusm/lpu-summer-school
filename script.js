@@ -3647,7 +3647,21 @@ function showPaymentSection(data) {
         });
       } catch (err) {
         uploadLog("error", "upload submission failure", { error: err?.message || String(err), file: describeFile(selectedFile) });
-        setUploadStatus(section, err.message, true);
+        // If storage/the gateway is unreachable (network failure, plan restriction,
+        // quota) the parent's registration is already saved — guide them to WhatsApp
+        // to send the screenshot instead of a dead-end error.
+        const gatewayDown = SUPABASE_DOWN || err instanceof TypeError || /restricted|quota|failed to fetch|load failed|networkerror/i.test(err.message || "");
+        const statusEl = section.querySelector("[data-upload-status]");
+        if (gatewayDown && statusEl) {
+          statusEl.classList.add("error");
+          statusEl.innerHTML = 'Uploads are temporarily under maintenance. Your registration is saved (ref <strong>'
+            + esc(pendingRegistration.payment_reference || "") + '</strong>) — please send your payment screenshot on WhatsApp to '
+            + '<a href="https://wa.me/918607234098?text='
+            + encodeURIComponent('Hi, here is my payment screenshot for LPU Summer School 2026. Ref: ' + (pendingRegistration.payment_reference || ''))
+            + '" target="_blank" rel="noopener"><strong>+91 86072 34098</strong></a> and our team will confirm it.';
+        } else {
+          setUploadStatus(section, err.message, true);
+        }
         setUploadState(section, "ready", "upload failed; keeping preview ready");
         btn.disabled = false;
         btn.textContent = "Submit Registration";
