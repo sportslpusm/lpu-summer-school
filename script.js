@@ -109,8 +109,12 @@ const heroProgramMeta = {
   dates: document.querySelector('[data-hero-meta="dates"]'),
   mode: document.querySelector('[data-hero-meta="mode"]'),
   duration: document.querySelector('[data-hero-meta="duration"]'),
+  ages: document.querySelector('[data-hero-meta="ages"]'),
   location: document.querySelector('[data-hero-meta="location"]')
 };
+// Minimum age per program (fallback before course data loads); the live value is
+// computed from each program's actual course min-ages in programAgesText().
+const PROGRAM_MIN_AGE_FALLBACK = { campus: 14, "staff-camp": 5, skills: 12, immersion: 12 };
 
 const FALLBACK_HERO_IMAGES = [
   { src: "https://bynpuhoysivxxlblxica.supabase.co/storage/v1/object/public/images/1779163726439-f0drdpdqahd.png", alt: "LPU campus summer school moment" },
@@ -981,6 +985,15 @@ function updateHeroProgram(programKey, animate = true, options = {}) {
     Object.entries(program.meta).forEach(([key, value]) => {
       if (heroProgramMeta[key]) heroProgramMeta[key].textContent = value;
     });
+
+    // Eligibility age ("14+") in the hero summary so parents see it up front,
+    // not only on the course cards below. Hidden for programs with no age set.
+    if (heroProgramMeta.ages) {
+      const agesText = programAgesText(programKey);
+      heroProgramMeta.ages.textContent = agesText;
+      const agesRow = heroProgramMeta.ages.closest("[data-hero-ages-row]");
+      if (agesRow) agesRow.hidden = !agesText;
+    }
 
     Object.entries(program.facts).forEach(([key, value]) => {
       if (heroProgramFacts[key]) heroProgramFacts[key].textContent = value;
@@ -1937,6 +1950,21 @@ function courseEligibilityLabel(course) {
   return minAge > 0 ? `Age ${minAge}+` : "All eligible ages";
 }
 
+// Program-level minimum age ("14+") for the hero summary: the lowest age across the
+// program's active courses, falling back to a static map before course data loads.
+function programAgesText(programKey) {
+  const prog = getProgram(programKey);
+  if (prog && prog.id) {
+    const ages = publicCourses
+      .filter((c) => c.program_id === prog.id && c.is_active !== false)
+      .map((c) => courseMinAge(c))
+      .filter((a) => a > 0);
+    if (ages.length) return `${Math.min(...ages)}+`;
+  }
+  const fb = PROGRAM_MIN_AGE_FALLBACK[programKey];
+  return fb ? `${fb}+` : "";
+}
+
 function studentAgeValue() {
   if (!studentAgeInput) return null;
   const age = Number.parseInt(studentAgeInput.value, 10);
@@ -2249,6 +2277,8 @@ function renderRegistrationTrackCards(program) {
   const cards = tracks.map((track) => {
     const isSel = selectedTrack === track.slug;
     const ineligible = hasAge && track.courses.some((c) => !courseAgeEligible(c, studentAge));
+    const trackAges = track.courses.map((c) => courseMinAge(c)).filter((a) => a > 0);
+    const trackMinAge = trackAges.length ? Math.min(...trackAges) : 0;
     // Mini-timetable: classes grouped by day pattern with aligned time -> class rows,
     // so each option reads like the schedule a student will actually follow.
     const dayGroups = new Map();
@@ -2266,7 +2296,7 @@ function renderRegistrationTrackCards(program) {
         <span class="track-option-radio" aria-hidden="true"></span>
         <span class="track-option-body">
           <span class="track-option-head">
-            <strong>${esc(track.name)}</strong>
+            <span class="track-option-title"><strong>${esc(track.name)}</strong>${trackMinAge ? `<span class="track-age-badge">Age ${trackMinAge}+</span>` : ""}</span>
             <small>${esc(track.blurb)}</small>
           </span>
           <span class="track-option-classes">${classes}</span>

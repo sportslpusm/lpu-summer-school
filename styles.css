@@ -972,6 +972,8 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 .track-option.invalid { border-color: #c0392b; }
 .track-option-head strong { display: block; font-family: var(--font-display); font-size: 1.12rem; color: var(--ink); }
 .track-option-head small { display: block; margin-top: 2px; color: var(--muted); font-size: 0.86rem; }
+.track-option-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.track-age-badge { display: inline-block; padding: 2px 9px; border-radius: 999px; background: var(--orange-wash); color: var(--orange-dark); font-size: 0.7rem; font-weight: 800; letter-spacing: 0.04em; border: 1px solid var(--orange-soft); white-space: nowrap; }
 .track-option-classes { display: block; margin-top: 12px; }
 /* mini-timetable inside each track option: day headers + aligned time/class rows */
 .track-sched { display: block; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); padding: 4px 0 8px; overflow: hidden; }
