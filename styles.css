@@ -991,6 +991,9 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.
 .track-common-note { margin-top: 12px; font-size: 0.84rem; color: var(--muted); background: var(--cream-2); border-radius: var(--radius-sm); padding: 12px 14px; }
 .track-common-note strong { color: var(--ink); }
 .track-common-note i { color: var(--orange); font-style: normal; }
+.track-common-lunch { display: block; margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--line); }
+.track-common-lunch strong:last-of-type { color: #c0392b; }
+.tday-lunch small, .timetable .tt-lunch small { display: block; margin-top: 4px; font-size: 0.62rem; font-weight: 600; letter-spacing: 0.01em; text-transform: none; color: var(--muted-2); }
 
 /* ---- hostel / stay (step 4) ---- */
 .hostel-radios { display: flex; flex-direction: column; gap: 12px; }

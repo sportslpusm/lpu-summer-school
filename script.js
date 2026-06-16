@@ -479,7 +479,7 @@ function renderCampusTimetable() {
     const cells = row.cells.map((cell) => {
       const text = typeof cell === "string" ? cell : cell.text;
       const span = (typeof cell === "object" && cell.span) ? ` colspan="${cell.span}"` : "";
-      if (text === "LUNCH") return `<td class="tt-lunch">Lunch</td>`;
+      if (text === "LUNCH") return `<td class="tt-lunch">Lunch break<small>own food</small></td>`;
       return `<td${span}${span ? ' class="tt-span"' : ""}>${esc(text)}</td>`;
     }).join("");
     const trackCell = seenTracks.has(row.track)
@@ -552,7 +552,7 @@ function renderTrackDayRow(row) {
     timeIdx += span;
 
     if (text === "LUNCH") {
-      return `<div class="tday-cell tday-cell-lunch"><span class="tday-time">${esc(timeLabel)}</span><div class="tday-lunch">Lunch break</div></div>`;
+      return `<div class="tday-cell tday-cell-lunch"><span class="tday-time">${esc(timeLabel)}</span><div class="tday-lunch">Lunch break<small>own food &mdash; not provided</small></div></div>`;
     }
     const course = campusCourseByName(text);
     if (course) {
@@ -2314,7 +2314,8 @@ function renderRegistrationTrackCards(program) {
     </div>
     <div class="track-common-note">
       <span>Every track's day also includes:</span>
-      <strong>Lunch</strong> 12:45 - 1:30 PM <i>&middot;</i> <strong>Mobile Photography / Personality Development</strong> 1:30 - 2:30 PM <i>&middot;</i> <strong>JunkGenie / science hour</strong> 2:30 - 3:30 PM <i>&middot;</i> <strong>Art &amp; Culture or Sports</strong> 3:30 PM onwards
+      <strong>Mobile Photography / Personality Development</strong> 1:30 - 2:30 PM <i>&middot;</i> <strong>JunkGenie / science hour</strong> 2:30 - 3:30 PM <i>&middot;</i> <strong>Art &amp; Culture or Sports</strong> 3:30 PM onwards
+      <span class="track-common-lunch">There's a <strong>lunch break</strong> 12:45 - 1:30 PM &mdash; meals are <strong>not provided</strong>, so students bring or buy their own lunch (optional mess food can be added during registration).</span>
     </div>
     <p class="eligibility-note ${selIneligible ? "warning" : ""}">
       ${!open
